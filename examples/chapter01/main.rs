@@ -1,5 +1,14 @@
 
+// Use an alias name for glsl_cookbook_rs crate.
+extern crate glsl_cookbook_rs as cookbook;
+
+mod scenebasic;
+
+use scenebasic::SceneBasic;
+use cookbook::scene::{Scene, SceneData};
+
 fn main() {
+
     #[allow(unused_imports)]
     use glium::{glutin, Surface};
 
@@ -9,10 +18,13 @@ fn main() {
     let display = glium::Display::new(wb, cb, &events_loop).unwrap();
 
     let mut closed = false;
+
+    let scene_data = SceneData::new(800, 600);
+    let mut scene = SceneBasic::new(&display, scene_data);
+
     while !closed {
-        let mut target = display.draw();
-        target.clear_color(0.0, 0.0, 1.0, 1.0);
-        target.finish().unwrap();
+        scene.render(&display);
+        scene.update(0.0);
 
         events_loop.poll_events(|ev| {
             match ev {

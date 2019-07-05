@@ -7,4 +7,10 @@ edition = "2018"
 description = "A Rust implementation of *OpenGL 4 Shading Language Cookbook 3rd*"
 
 [dependencies]
-glium = "0.23.0"
+glium = "0.24.0"
+vek   = "0.9.7"
+
+
+[[example]]
+name = "chapter01"
+path = "examples/chapter01/main.rs"
