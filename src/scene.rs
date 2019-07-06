@@ -10,7 +10,7 @@ pub trait Scene {
     fn render(&self, display: &glium::Display);
 
     /// Called when screen is resized.
-    fn resize(&mut self, width: usize, height: usize);
+    fn resize(&mut self, width: u32, height: u32);
 
 
     fn scene_data(&self) -> &SceneData;
@@ -23,13 +23,18 @@ pub trait Scene {
     fn set_animate(&mut self, animate: bool) {
         self.scene_data_mut().is_animate = animate;
     }
+
+    fn set_dimension(&mut self, width: u32, height: u32) {
+        self.scene_data_mut().width  = width;
+        self.scene_data_mut().height = height;
+    }
 }
 
 
 #[derive(Debug, Clone)]
 pub struct SceneData {
-    pub width: usize,
-    pub height: usize,
+    pub width : u32,
+    pub height: u32,
 
     pub projection: Mat4F,
     pub view: Mat4F,
@@ -40,7 +45,7 @@ pub struct SceneData {
 
 impl SceneData {
 
-    pub fn new(width: usize, height: usize) -> SceneData {
+    pub fn new(width: u32, height: u32) -> SceneData {
         SceneData {
             width, height,
 

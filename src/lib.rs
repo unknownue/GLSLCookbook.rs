@@ -1,5 +1,6 @@
 
 pub mod scene;
+pub mod scenerunner;
 
 
 pub type Mat4F = vek::Mat4<f32>;
