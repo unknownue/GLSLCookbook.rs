@@ -1,5 +1,9 @@
 
 fn main() {
+    simple_window()
+}
+
+fn simple_window() {
     #[allow(unused_imports)]
     use glium::{glutin, Surface};
 

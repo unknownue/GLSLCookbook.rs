@@ -111,8 +111,7 @@ impl Scene for SceneBasic {
     /// Called when screen is resized.
     fn resize(&mut self, width: u32, height: u32) {
 
-        self.scene_data.width  = width;
-        self.scene_data.height = height;
+        self.scene_data.set_dimension(width, height);
 
         // TODO: Find equivalent way to set viewport(glViewport).
         // unimplemented!()

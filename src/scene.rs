@@ -33,21 +33,21 @@ pub trait Scene {
 
 #[derive(Debug, Clone)]
 pub struct SceneData {
-    pub width : u32,
-    pub height: u32,
+    width : u32,
+    height: u32,
 
-    pub projection: Mat4F,
-    pub view: Mat4F,
-    pub model: Mat4F,
+    projection: Mat4F,
+    view: Mat4F,
+    model: Mat4F,
 
-    pub is_animate: bool,
+    is_animate: bool,
 }
 
 impl SceneData {
 
-    pub fn new(width: u32, height: u32) -> SceneData {
+    pub fn unset() -> SceneData {
         SceneData {
-            width, height,
+            width: 0, height: 0,
 
             projection: Default::default(),
             view: Default::default(),
@@ -57,4 +57,8 @@ impl SceneData {
         }
     }
 
+    pub fn set_dimension(&mut self, width: u32, height: u32) {
+        self.width = width;
+        self.height = height;
+    }
 }
