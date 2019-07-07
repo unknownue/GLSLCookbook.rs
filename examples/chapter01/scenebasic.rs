@@ -1,6 +1,7 @@
 
 use cookbook::scene::{Scene, SceneData};
 use glium::backend::Facade;
+use glium::program::{Program, ProgramCreationError};
 use glium::Surface;
 
 
@@ -61,7 +62,7 @@ impl SceneBasic {
         SceneBasic { scene_data, vertex_buffer, program }
     }
 
-    fn compile_shader_program(display: &impl Facade) -> Result<glium::Program, glium::program::ProgramCreationError> {
+    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
         println!("Compiling Shader Program");
 
     	// Load vertex shader contents of file.
@@ -74,17 +75,16 @@ impl SceneBasic {
         glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
     }
 
-    fn _load_shader_binary(_format: i32) -> glium::Program {
-        println!("Loading shader binary: shader/program.bin");
-
+    fn _load_shader_binary(_format: glium::program::Binary) -> Result<Program, ProgramCreationError> {
+        println!("Loading shader binary: shader/program.bin (format = %d)", );
         unimplemented!()
     }
 
-    fn _load_spriv_shader() -> glium::Program {
+    fn _load_spriv_shader() -> Result<Program, ProgramCreationError>  {
         unimplemented!()
     }
 
-    fn _write_shader_binary() -> glium::Program {
+    fn _write_shader_binary() -> Result<Program, ProgramCreationError>  {
         unimplemented!()
     }
 }

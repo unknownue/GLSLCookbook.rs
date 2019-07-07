@@ -22,9 +22,7 @@ lazy_static! {
 
 fn main() {
 
-    // TODO: Use the parse_command_line_args call.
-    // let recipe = SceneRunner::parse_command_line_args();
-    let recipe = String::from("basic");
+    let recipe = SceneRunner::parse_command_line_args(&HASHMAP).unwrap();
     let title: String = String::from("Chapter 1 - ") + &recipe;
 
     let mut runner = SceneRunner::new(title, 500, 500, 0);

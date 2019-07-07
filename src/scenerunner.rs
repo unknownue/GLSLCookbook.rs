@@ -2,11 +2,13 @@
 use glium::glutin;
 use crate::scene::Scene;
 
+use std::collections::HashMap;
+
 
 pub struct SceneRunner {
 
     display: glium::backend::glutin::Display, // display manage the surface window.
-    events_loop : glutin::EventsLoop,
+    events_loop: glutin::EventsLoop,
 
     fb_width  : u32,
     fb_height : u32,
@@ -103,13 +105,34 @@ impl SceneRunner {
 
     }
 
-    // TODO: printHelpInfo function is not implemented yet.
-    pub fn print_help_info(&self) {
-        unimplemented!()
+    pub fn print_help_info(program_name: &str, candidate_scenes: &HashMap<String, String>) {
+        println!("Usage: {} recipe-name\n", program_name);
+        println!("Recipe names: \n");
+
+        for scene in candidate_scenes {
+            println!("  {}: {}\n", scene.0, scene.1);
+        }
     }
-    // TODO: parseCLArgs function is not implemented yet.
-    pub fn parse_command_line_args() -> String {
-        unimplemented!()
+
+    // TODO: Return Result type instead of Option type.
+    pub fn parse_command_line_args(candidate_scenes: &HashMap<String, String>) -> Option<String> {
+
+        let args: Vec<String> = std::env::args().collect();
+
+        if args.len() < 2 {
+            SceneRunner::print_help_info(&args[0], candidate_scenes);
+            // TODO: Return Error type.
+            None
+        } else {
+            if candidate_scenes.iter().any(|s| s.0 == &args[1]) {
+                Some(args[1].clone())
+            } else {
+                println!("Unknown recipe: {}\n\n", args[1]);
+                SceneRunner::print_help_info(&args[0], candidate_scenes);
+                // TODO: Return Error type.
+                None
+            }
+        }
     }
 
     pub fn display_backend(&self) -> &glium::backend::glutin::Display {
