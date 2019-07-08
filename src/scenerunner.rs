@@ -1,6 +1,7 @@
 
 use glium::glutin;
 use crate::scene::Scene;
+use crate::utils;
 
 use std::collections::HashMap;
 
@@ -30,12 +31,12 @@ impl SceneRunner {
             .with_multisampling(samples);
         let cb = SceneRunner::with_context_gl_request(cb);
 
-        // TODO: Print dump info about current OpenGL context.
-        // GLUtils::dumpGLInfo();
-
         // TODO: handle expect().
         let display = glium::Display::new(wb, cb, &events_loop)
             .expect("Unable to create OpenGL context.");
+
+        // Print dump info about current OpenGL context.
+        utils::dump_gl_info(&display, false);
 
         // TODO: Get Framebuffer size.
         let (fb_width, fb_height) = display.get_framebuffer_dimensions();
@@ -106,11 +107,11 @@ impl SceneRunner {
     }
 
     pub fn print_help_info(program_name: &str, candidate_scenes: &HashMap<String, String>) {
-        println!("Usage: {} recipe-name\n", program_name);
-        println!("Recipe names: \n");
+        println!("Usage: {} recipe-name", program_name);
+        println!("Recipe names: ");
 
         for scene in candidate_scenes {
-            println!("  {}: {}\n", scene.0, scene.1);
+            println!("  {}: {}", scene.0, scene.1);
         }
     }
 
@@ -127,7 +128,7 @@ impl SceneRunner {
             if candidate_scenes.iter().any(|s| s.0 == &args[1]) {
                 Some(args[1].clone())
             } else {
-                println!("Unknown recipe: {}\n\n", args[1]);
+                println!("Unknown recipe: {}\n", args[1]);
                 SceneRunner::print_help_info(&args[0], candidate_scenes);
                 // TODO: Return Error type.
                 None

@@ -63,7 +63,8 @@ impl SceneBasic {
     }
 
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
-        println!("Compiling Shader Program");
+        
+        // println!("Compiling Shader Program");
 
     	// Load vertex shader contents of file.
         let vertex_shader_code = include_str!("shaders/basic.vert.glsl");
