@@ -2,6 +2,7 @@
 use glium::glutin;
 use crate::scene::Scene;
 use crate::utils;
+use crate::error::{GLResult, GLError};
 
 use std::collections::HashMap;
 
@@ -62,19 +63,19 @@ impl SceneRunner {
     }
 
     // TODO: Return a Result indicating the Running status.
-    pub fn run(&mut self, scene: &mut impl Scene) {
+    pub fn run(&mut self, scene: &mut impl Scene) -> GLResult<()> {
 
         scene.set_dimension(self.fb_width, self.fb_height);
         scene.resize(self.fb_width, self.fb_height);
 
         // Enter the main loop
-        self.main_loop(scene);
+        self.main_loop(scene)
 
         // TODO: Insert End Debug Messager.
 
     }
 
-    fn main_loop(&mut self, scene: &mut impl Scene) {
+    fn main_loop(&mut self, scene: &mut impl Scene) -> GLResult<()> {
 
         let mut should_close = false;
 
@@ -84,11 +85,7 @@ impl SceneRunner {
             let time = 0.0;
 
             scene.update(time);
-            scene.render(&self.display);
-
-            // TODO: Vertify if the function swap_buffer is necessary.
-            // TODO: handle unwrap().
-            // self.display.swap_buffers().unwrap();
+            scene.render(&self.display)?;
 
             self.events_loop.poll_events(|ev| {
                 match ev {
@@ -104,6 +101,7 @@ impl SceneRunner {
             });
         }
 
+        Ok(())
     }
 
     pub fn print_help_info(program_name: &str, candidate_scenes: &HashMap<String, String>) {
@@ -116,22 +114,24 @@ impl SceneRunner {
     }
 
     // TODO: Return Result type instead of Option type.
-    pub fn parse_command_line_args(candidate_scenes: &HashMap<String, String>) -> Option<String> {
+    pub fn parse_command_line_args(candidate_scenes: &HashMap<String, String>) -> GLResult<String> {
 
         let args: Vec<String> = std::env::args().collect();
 
         if args.len() < 2 {
             SceneRunner::print_help_info(&args[0], candidate_scenes);
             // TODO: Return Error type.
-            None
+            let help_message = "You must provide at least 2 arguments;\nFor example: $ cargo r --example chapter01 basic\n";
+            Err(GLError::args(help_message))
         } else {
             if candidate_scenes.iter().any(|s| s.0 == &args[1]) {
-                Some(args[1].clone())
+                Ok(args[1].clone())
             } else {
                 println!("Unknown recipe: {}\n", args[1]);
                 SceneRunner::print_help_info(&args[0], candidate_scenes);
-                // TODO: Return Error type.
-                None
+
+                let help_message = format!("Unknown recipe: {}\n", args[1]);
+                Err(GLError::args(help_message))
             }
         }
     }

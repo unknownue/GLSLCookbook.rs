@@ -8,7 +8,8 @@ description = "A Rust implementation of *OpenGL 4 Shading Language Cookbook 3rd*
 
 [dependencies]
 glium = "0.24.0"
-vek   = "0.9.7"
+vek = "0.9.7"
+failure = "0.1.5"
 lazy_static = "1.3.0"
 
 [[example]]

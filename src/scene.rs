@@ -1,5 +1,6 @@
 
 use crate::Mat4F;
+use crate::error::GLResult;
 
 pub trait Scene {
 
@@ -7,7 +8,7 @@ pub trait Scene {
     fn update(&mut self, t: f32);
 
     /// Draw your scene.
-    fn render(&self, display: &glium::Display);
+    fn render(&self, display: &glium::Display) -> GLResult<()>;
 
     /// Called when screen is resized.
     fn resize(&mut self, width: u32, height: u32);

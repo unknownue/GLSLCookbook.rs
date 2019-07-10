@@ -11,6 +11,7 @@ use cookbook::scene::SceneData;
 use std::collections::HashMap;
 use lazy_static::lazy_static;
 
+
 lazy_static! {
     static ref HASHMAP: HashMap<String, String> = {
         let mut m = HashMap::new();
@@ -19,6 +20,18 @@ lazy_static! {
     };
 }
 
+macro_rules! run {
+    ($runner:ident, $scene:ident) => {
+        let mut scene = match $scene {
+            | Ok(scene) => scene,
+            | Err(err) => panic!("{}", err),
+        };
+        match $runner.run(&mut scene) {
+            | Ok(_) => {},
+            | Err(err) => println!("{}", err),
+        }
+    };
+}
 
 fn main() {
 
@@ -30,8 +43,8 @@ fn main() {
 
     match recipe.as_ref() {
         | "basic" => {
-            let mut scene = SceneBasic::new(runner.display_backend(), scene_data);
-            runner.run(&mut scene);
+            let scene = SceneBasic::new(runner.display_backend(), scene_data);
+            run!(runner, scene);
         },
         | _ => panic!("Unknown Scene."),
     };

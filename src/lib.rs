@@ -1,6 +1,8 @@
 
 pub mod scene;
 pub mod scenerunner;
+pub mod error;
+
 mod utils;
 
 
