@@ -68,7 +68,7 @@ impl SceneBasic {
 
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
 
-        // println!("Compiling Shader Program");
+        println!("Compiling Shader Program");
 
     	// Load vertex shader contents of file.
         let vertex_shader_code = include_str!("shaders/basic.vert.glsl");
@@ -77,7 +77,11 @@ impl SceneBasic {
         let fragment_shader_code = include_str!("shaders/basic.frag.glsl");
 
         // use the wrapper function provided by glium to create program directly.
-        glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
+        let program = glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None);
+
+        println!("Finish Shader Compiling");
+
+        program
     }
 
     fn _load_shader_binary(_format: glium::program::Binary) -> Result<Program, ProgramCreationError> {

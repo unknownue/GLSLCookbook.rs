@@ -90,10 +90,21 @@ impl SceneRunner {
             self.events_loop.poll_events(|ev| {
                 match ev {
                     glutin::Event::WindowEvent { event, .. } => match event {
-                        glutin::WindowEvent::CloseRequested => should_close = true,
+                        | glutin::WindowEvent::CloseRequested => should_close = true,
+                        | glutin::WindowEvent::KeyboardInput { input, .. } => {
+                            if let Some(code) = input.virtual_keycode {
+                                match code {
+                                    | glium::glutin::VirtualKeyCode::Space => {
+                                        scene.set_animate(true);
+                                    },
+                                    | glium::glutin::VirtualKeyCode::Escape => {
+                                        should_close = true;
+                                    },
+                                    | _ => {},
+                                }
+                            }
+                        },
 
-                        // TODO: Check for Escape key event.
-                        // TODO: Check for Space Key event to toggle animation.
                         _ => (),
                     },
                     _ => (),
@@ -113,7 +124,6 @@ impl SceneRunner {
         }
     }
 
-    // TODO: Return Result type instead of Option type.
     pub fn parse_command_line_args(candidate_scenes: &HashMap<String, String>) -> GLResult<String> {
 
         let args: Vec<String> = std::env::args().collect();
