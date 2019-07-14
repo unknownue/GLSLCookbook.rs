@@ -2,7 +2,12 @@
 use crate::Mat4F;
 use crate::error::GLResult;
 
-pub trait Scene {
+use glium::backend::Facade;
+
+
+pub trait Scene: Sized {
+
+    fn new(display: &impl Facade, scene_data: SceneData) -> GLResult<Self>;
 
     /// This is called prior to every frame. Use this to update your animation.
     fn update(&mut self, t: f32);

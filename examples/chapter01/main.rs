@@ -5,8 +5,10 @@ extern crate glsl_cookbook_rs as cookbook;
 mod scenebasic;
 
 use scenebasic::SceneBasic;
+
 use cookbook::scenerunner::SceneRunner;
-use cookbook::scene::SceneData;
+use cookbook::scene::{Scene, SceneData};
+use cookbook::error::{GLResult, GLError};
 
 use std::collections::HashMap;
 use lazy_static::lazy_static;
@@ -20,32 +22,31 @@ lazy_static! {
     };
 }
 
-macro_rules! run {
-    ($runner:ident, $scene:ident) => {
-        let mut scene = match $scene {
-            | Ok(scene) => scene,
-            | Err(err) => panic!("{}", err),
-        };
-        match $runner.run(&mut scene) {
-            | Ok(_) => {},
-            | Err(err) => println!("{}", err),
-        }
-    };
+fn run<S: Scene>(recipe: String) -> GLResult<()> {
+
+    let title: String = String::from("Chapter 1 - ") + &recipe;
+
+    let mut runner = SceneRunner::new(title, 500, 500, 0)?;
+    let scene_data = SceneData::unset();
+
+    let mut scene = S::new(runner.display_backend(), scene_data)?;
+    runner.run(&mut scene)
+}
+
+fn _main() -> GLResult<()> {
+
+    let recipe = SceneRunner::parse_command_line_args(&HASHMAP)?;
+
+    match recipe.as_ref() {
+        | "basic" => run::<SceneBasic>(recipe),
+        | _       => Err(GLError::args("Unknown Scene")),
+    }
 }
 
 fn main() {
 
-    let recipe = SceneRunner::parse_command_line_args(&HASHMAP).unwrap();
-    let title: String = String::from("Chapter 1 - ") + &recipe;
-
-    let mut runner = SceneRunner::new(title, 500, 500, 0);
-    let scene_data = SceneData::unset();
-
-    match recipe.as_ref() {
-        | "basic" => {
-            let scene = SceneBasic::new(runner.display_backend(), scene_data);
-            run!(runner, scene);
-        },
-        | _ => panic!("Unknown Scene."),
-    };
+    match _main() {
+        | Ok(())   => {},
+        | Err(err) => panic!("{}", err),
+    }
 }

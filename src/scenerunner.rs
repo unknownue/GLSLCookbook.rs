@@ -18,11 +18,10 @@ pub struct SceneRunner {
 
 impl SceneRunner {
 
-    pub fn new(title: impl Into<String>, width: u32, height: u32, samples: u16) -> SceneRunner {
+    pub fn new(title: impl Into<String>, width: u32, height: u32, samples: u16) -> GLResult<SceneRunner> {
 
         let events_loop = glutin::EventsLoop::new();
 
-        // TODO: unwrap() is not handle here.
         let wb = glutin::WindowBuilder::new()
             .with_title(title)
             .with_dimensions((width, height).into())
@@ -34,19 +33,20 @@ impl SceneRunner {
 
         // TODO: handle expect().
         let display = glium::Display::new(wb, cb, &events_loop)
-            .expect("Unable to create OpenGL context.");
+            .map_err(|_| GLError::device("Unable to create OpenGL context."))?;
 
         // Print dump info about current OpenGL context.
         utils::dump_gl_info(&display, false);
 
-        // TODO: Get Framebuffer size.
+        // Get Framebuffer size.
         let (fb_width, fb_height) = display.get_framebuffer_dimensions();
 
         // Initialization
         // TODO: Set up debug calllback
 
 
-        SceneRunner { display, events_loop, fb_width, fb_height }
+        let runner = SceneRunner { display, events_loop, fb_width, fb_height };
+        Ok(runner)
     }
 
     #[cfg(not(target_os = "macos"))]
@@ -130,7 +130,6 @@ impl SceneRunner {
 
         if args.len() < 2 {
             SceneRunner::print_help_info(&args[0], candidate_scenes);
-            // TODO: Return Error type.
             let help_message = "You must provide at least 2 arguments;\nFor example: $ cargo r --example chapter01 basic\n";
             Err(GLError::args(help_message))
         } else {
