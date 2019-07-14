@@ -2,6 +2,8 @@
 use glium::backend::Context;
 use glium::CapabilitiesSource;
 
+use glium::debug::{Source, MessageType, Severity};
+
 
 pub fn dump_gl_info(context: &Context, is_print_extensions: bool) {
     println!("-------------------------------------------------------------");
@@ -53,3 +55,38 @@ pub fn dump_gl_info(context: &Context, is_print_extensions: bool) {
 //         }
 //     }
 // }
+
+
+/// See https://docs.rs/glium/0.25.1/glium/debug/type.DebugCallback.html for more detail.
+pub fn debug_callback(source: Source, message_type: MessageType, severity: Severity, identifier: u32, _is_handle: bool, message: &str) {
+
+    let source_str = match source {
+        Source::WindowSystem   => String::from("WindowSys"),
+        Source::Application    => String::from("Application"),
+        Source::Api            => String::from("OpenGL"),
+        Source::ShaderCompiler => String::from("ShaderCompiler"),
+        Source::ThirdParty     => String::from("3rdParty"),
+        Source::OtherSource    => String::from("Other"),
+    };
+
+    let type_str = match message_type {
+        MessageType::Error              => String::from("Error"),
+        MessageType::DeprecatedBehavior => String::from("Deprecated"),
+        MessageType::UndefinedBehavior  => String::from("Undefined"),
+        MessageType::Portability        => String::from("Portability"),
+        MessageType::Performance        => String::from("Performance"),
+        MessageType::Marker             => String::from("Marker"),
+        MessageType::PushGroup          => String::from("PushGrp"),
+        MessageType::PopGroup           => String::from("PopGrp"),
+        MessageType::Other              => String::from("Other"),
+    };
+
+    let severity_str = match severity {
+        Severity::High => String::from("HIGH"),
+        Severity::Medium => String::from("MED"),
+        Severity::Low => String::from("LOW"),
+        Severity::Notification => String::from("NOTIFY"),
+    };
+
+    eprint!("{}:{}[{}]({}):{}", source_str, type_str, severity_str, identifier, message);
+}

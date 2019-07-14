@@ -76,7 +76,7 @@ impl fmt::Display for GLError {
 pub enum GLErrorKind {
 
     /// An error occurred while building connection between application and Vulkan.
-    #[fail(display = "Some wrong when parsing command line arguments")]
+    #[fail(display = "Something wrong when parsing command line arguments: \n\t{}", description)]
     Args { description: String },
     /// An error occurred while compiling shaders in OpenGL.
     #[fail(display = "Failed to create program: {:?}", _0)]
