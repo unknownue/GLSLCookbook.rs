@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 pub struct SceneRunner {
 
-    display: glium::backend::glutin::Display, // display manage the surface window.
+    display: glium::Display, // display manage the surface window.
     events_loop: glutin::EventsLoop,
 
     fb_width  : u32,
@@ -66,20 +66,18 @@ impl SceneRunner {
 
     #[cfg(not(target_os = "macos"))]
     fn with_context_gl_request(builder: glium::ContextBuilder) -> glutin::ContextBuilder {
-        // Select OpenGL 4.6 for windows and linux.
+        // Select OpenGL 4.6 on Windows and Linux.
         builder.with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl), (4, 6))
     }
 
-
     #[cfg(target_os = "macos")]
     fn with_context_gl_request(builder: glutin::ContextBuilder) -> glutin::ContextBuilder {
-        // Select OpenGL 4.1 for windows and linux.
+        // Select OpenGL 4.1 on macOS.
         builder.with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (4, 1)))
     }
 
     pub fn run(&mut self, scene: &mut impl Scene) -> GLResult<()> {
 
-        scene.set_dimension(self.fb_width, self.fb_height);
         scene.resize(self.fb_width, self.fb_height);
 
         // Enter the main loop
@@ -98,7 +96,7 @@ impl SceneRunner {
 
         while !should_close {
 
-            // Find equivalent call to glfwGetTime()
+            // FIXME: Find equivalent call to glfwGetTime()
             let time = 0.0;
 
             scene.update(time);
@@ -133,12 +131,14 @@ impl SceneRunner {
     }
 
     pub fn print_help_info(program_name: &str, candidate_scenes: &HashMap<String, String>) {
-        eprintln!("Usage: {} recipe-name", program_name);
-        eprintln!("Candidate recipe names: ");
+        println!("-------------------------------------------------------------");
+        println!("Usage: {} recipe-name", program_name);
+        print!("Candidate recipe names: ");
 
         for scene in candidate_scenes {
-            eprintln!("\t{}", scene.0);
+            print!(" {}", scene.0);
         }
+        println!("\n-------------------------------------------------------------");
     }
 
     pub fn parse_command_line_args(candidate_scenes: &HashMap<String, String>) -> GLResult<(String, String)> {
@@ -161,7 +161,7 @@ impl SceneRunner {
         }
     }
 
-    pub fn display_backend(&self) -> &glium::backend::glutin::Display {
+    pub fn display_backend(&self) -> &glium::Display {
         &self.display
     }
 }

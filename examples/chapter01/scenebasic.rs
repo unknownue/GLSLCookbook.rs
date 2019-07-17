@@ -28,39 +28,6 @@ pub struct SceneBasic {
     program: glium::Program,
 }
 
-impl SceneBasic {
-
-    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
-
-        println!("Compiling Shader Program");
-
-    	// Load vertex shader contents of file.
-        let vertex_shader_code = include_str!("shaders/basic.vert.glsl");
-
-    	// Load fragment shader contents of file.
-        let fragment_shader_code = include_str!("shaders/basic.frag.glsl");
-
-        // use the wrapper function provided by glium to create program directly.
-        let program = glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None);
-
-        println!("Finish Shader Compiling");
-
-        program
-    }
-
-    fn _load_shader_binary(_format: glium::program::Binary) -> Result<Program, ProgramCreationError> {
-        println!("Loading shader binary: shader/program.bin (format = %d)", );
-        unimplemented!()
-    }
-
-    fn _load_spriv_shader() -> Result<Program, ProgramCreationError>  {
-        unimplemented!()
-    }
-
-    fn _write_shader_binary() -> Result<Program, ProgramCreationError>  {
-        unimplemented!()
-    }
-}
 
 impl Scene for SceneBasic {
 
@@ -111,26 +78,57 @@ impl Scene for SceneBasic {
         // For simplicity, we do not use index buffer.
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
+        let draw_params = glium::draw_parameters::DrawParameters {
+            viewport: Some(self.scene_data.viewport()),
+            ..Default::default()
+        };
+
         let mut target = display.draw();
         target.clear_color(0.5, 0.5, 0.5, 1.0);
-        target.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &Default::default()).unwrap();
+        target.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &draw_params).unwrap();
 
         // Glium swap the buffer in swapchain for you.
         target.finish()
             .map_err(|_| GLError::device("Something wrong when swapping framebuffers."))
     }
-
-    /// Called when screen is resized.
-    fn resize(&mut self, width: u32, height: u32) {
-
-        self.scene_data.set_dimension(width, height);
-
-        // TODO: Find equivalent way to set viewport(glViewport).
-        // unimplemented!()
-    }
-
+    
     #[inline(always)]
     fn scene_data(&self) -> &SceneData { &self.scene_data }
     #[inline(always)]
     fn scene_data_mut(&mut self) -> &mut SceneData { &mut self.scene_data }
+}
+
+
+impl SceneBasic {
+
+    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+
+        println!("Compiling Shader Program");
+
+    	// Load vertex shader contents of file.
+        let vertex_shader_code = include_str!("shaders/basic.vert.glsl");
+
+    	// Load fragment shader contents of file.
+        let fragment_shader_code = include_str!("shaders/basic.frag.glsl");
+
+        // use the wrapper function provided by glium to create program directly.
+        let program = glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None);
+
+        println!("Finish Shader Compiling");
+
+        program
+    }
+
+    fn _load_shader_binary(_format: glium::program::Binary) -> Result<Program, ProgramCreationError> {
+        println!("Loading shader binary: shader/program.bin (format = %d)", );
+        unimplemented!()
+    }
+
+    fn _load_spriv_shader() -> Result<Program, ProgramCreationError>  {
+        unimplemented!()
+    }
+
+    fn _write_shader_binary() -> Result<Program, ProgramCreationError>  {
+        unimplemented!()
+    }
 }
