@@ -93,8 +93,19 @@ pub fn debug_callback(source: Source, message_type: MessageType, severity: Sever
 
 
 pub fn print_active_attribs(program: &glium::Program) {
+    println!("-------------------------------------------------------------");
     println!("Active attributes:");
     for (name, attribute) in program.attributes() {
-        println!("\tName: {:10} Location: {} - Type: {:?}", name, attribute.location, attribute.ty);
+        println!("\tName: {:10}  Location: {}  Type: {:?}", name, attribute.location, attribute.ty);
     }
+    println!("-------------------------------------------------------------");
+}
+
+pub fn print_active_uniforms(program: &glium::Program) {
+    println!("-------------------------------------------------------------");
+    println!("Active uniforms:");
+    for (name, uniform) in program.uniforms() {
+        println!("\tName: {:10}  Location: {}  Type: {:?}", name, uniform.location, uniform.ty);
+    }
+    println!("-------------------------------------------------------------");
 }

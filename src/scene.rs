@@ -7,7 +7,7 @@ use glium::backend::Facade;
 
 pub trait Scene: Sized {
 
-    fn new(display: &impl Facade, scene_data: SceneData) -> GLResult<Self>;
+    fn new(display: &impl Facade) -> GLResult<Self>;
 
     /// This is called prior to every frame. Use this to update your animation.
     fn update(&mut self, t: f32);
@@ -46,15 +46,35 @@ pub struct SceneData {
     is_animate: bool,
 }
 
-impl SceneData {
+impl Default for SceneData {
 
-    pub fn unset() -> SceneData {
+    fn default() -> SceneData {
         SceneData {
             width: 800, height: 600,
             is_animate: false,
             projection : Default::default(),
             view       : Default::default(),
             model      : Default::default(),
+        }
+    }
+}
+
+impl SceneData {
+
+    pub fn new(is_animate: bool) -> SceneData {
+        SceneData {
+            width: 800, height: 600,
+            projection : Default::default(),
+            view       : Default::default(),
+            model      : Default::default(),
+            is_animate,
+        }
+    }
+
+    pub fn new_detail(is_animate: bool, projection: Mat4F, view: Mat4F, model: Mat4F) -> SceneData {
+        SceneData {
+            width: 800, height: 600,
+            projection, view, model, is_animate,
         }
     }
 

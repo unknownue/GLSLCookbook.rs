@@ -3,10 +3,12 @@
 use cookbook::scene::{Scene, SceneData};
 use cookbook::error::{GLResult, GLError, GLErrorKind};
 use cookbook::utils;
+use cookbook::Mat4F;
 
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
 use glium::Surface;
+use glium::uniform;
 
 
 #[repr(C)]
@@ -24,34 +26,42 @@ const TRIANGLE: [Vertex; 3] = [
 
 
 #[derive(Debug)]
-pub struct SceneBasicAttrib {
+pub struct SceneBasicUniform {
     scene_data: SceneData,
     vertex_buffer: glium::VertexBuffer<Vertex>,
     program: glium::Program,
+
+    angle: f32,
 }
 
+impl Scene for SceneBasicUniform {
 
-impl Scene for SceneBasicAttrib {
+    fn new(display: &impl Facade) -> GLResult<SceneBasicUniform> {
 
-    fn new(display: &impl Facade) -> GLResult<SceneBasicAttrib> {
-
-        let program = SceneBasicAttrib::compile_shader_program(display)
+        let program = SceneBasicUniform::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
 
         glium::implement_vertex!(Vertex, position, color);
         let vertex_buffer = glium::VertexBuffer::new(display, &TRIANGLE)
             .map_err(GLErrorKind::CreateBuffer)?;
 
-        utils::print_active_attribs(&program);
+        utils::print_active_uniforms(&program);
 
-        let scene_data: SceneData = Default::default();
+        // set true to enable animation.
+        let scene_data = SceneData::new(true);
 
-        let scene = SceneBasicAttrib { scene_data, vertex_buffer, program };
+        let scene = SceneBasicUniform {
+            scene_data, vertex_buffer, program,
+            angle: 0.0,
+        };
         Ok(scene)
     }
 
     fn update(&mut self, _t: f32) {
-        // nothing to do, just keep it empty
+
+        if self.is_animating() {
+            self.angle = (self.angle + 1.0) % 360.0;
+        }
     }
 
     fn render(&self, display: &glium::Display) -> GLResult<()> {
@@ -63,9 +73,13 @@ impl Scene for SceneBasicAttrib {
             ..Default::default()
         };
 
+        let uniforms = uniform! {
+            RotationMatrix: Mat4F::identity().rotated_z(self.angle.to_radians()).into_col_arrays(),
+        };
+
         let mut target = display.draw();
         target.clear_color(0.5, 0.5, 0.5, 1.0);
-        target.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &draw_params)
+        target.draw(&self.vertex_buffer, &no_indices, &self.program, &uniforms, &draw_params)
             .map_err(GLErrorKind::DrawError)?;
 
         target.finish()
@@ -79,17 +93,13 @@ impl Scene for SceneBasicAttrib {
 }
 
 
-impl SceneBasicAttrib {
+impl SceneBasicUniform {
 
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
 
-    	// Load vertex shader contents of file.
-        let vertex_shader_code = include_str!("shaders/basic.vert.glsl");
+        let vertex_shader_code   = include_str!("shaders/basic_uniform.vert.glsl");
+        let fragment_shader_code = include_str!("shaders/basic_uniform.frag.glsl");
 
-    	// Load fragment shader contents of file.
-        let fragment_shader_code = include_str!("shaders/basic.frag.glsl");
-
-        // use the wrapper function provided by glium to create program directly.
         glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
     }
 }

@@ -7,7 +7,7 @@ mod scenebasic;
 use scenebasic::SceneBasic;
 
 use cookbook::scenerunner::SceneRunner;
-use cookbook::scene::{Scene, SceneData};
+use cookbook::scene::Scene;
 use cookbook::error::GLResult;
 
 use std::collections::HashMap;
@@ -33,9 +33,8 @@ fn run<S: Scene>(recipe: String) -> GLResult<()> {
     let title: String = String::from(TITLE_PREFIX) + &recipe;
 
     let mut runner = SceneRunner::new(title, WINDOW_WIDTH, WINDOW_HEIGHT, IS_ENABLE_DEBUG, MULTISAMPLING)?;
-    let scene_data = SceneData::unset();
 
-    let mut scene = S::new(runner.display_backend(), scene_data)?;
+    let mut scene = S::new(runner.display_backend())?;
     runner.run(&mut scene)
 }
 

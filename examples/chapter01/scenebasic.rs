@@ -32,7 +32,7 @@ pub struct SceneBasic {
 impl Scene for SceneBasic {
 
     /// Load textures, initialize shaders, etc.
-    fn new(display: &impl Facade, scene_data: SceneData) -> GLResult<SceneBasic> {
+    fn new(display: &impl Facade) -> GLResult<SceneBasic> {
 
         // **************************************************************************************
         // Choose one of the following options for the shader program.
@@ -62,6 +62,8 @@ impl Scene for SceneBasic {
         glium::implement_vertex!(Vertex, position, color);
         let vertex_buffer = glium::VertexBuffer::new(display, &TRIANGLE)
             .map_err(GLErrorKind::CreateBuffer)?;
+
+        let scene_data: SceneData = Default::default();
 
         // All the initialization work has done.
         let scene = SceneBasic { scene_data, vertex_buffer, program };
