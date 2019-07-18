@@ -61,41 +61,40 @@ pub fn dump_gl_info(context: &Context, is_print_extensions: bool) {
 pub fn debug_callback(source: Source, message_type: MessageType, severity: Severity, identifier: u32, _is_handle: bool, message: &str) {
 
     let source_str = match source {
-        Source::WindowSystem   => String::from("WindowSys"),
-        Source::Application    => String::from("Application"),
-        Source::Api            => String::from("OpenGL"),
-        Source::ShaderCompiler => String::from("ShaderCompiler"),
-        Source::ThirdParty     => String::from("3rdParty"),
-        Source::OtherSource    => String::from("Other"),
+        Source::WindowSystem   => "WindowSys",
+        Source::Application    => "Application",
+        Source::Api            => "OpenGL",
+        Source::ShaderCompiler => "ShaderCompiler",
+        Source::ThirdParty     => "3rdParty",
+        Source::OtherSource    => "Other",
     };
 
     let type_str = match message_type {
-        MessageType::Error              => String::from("Error"),
-        MessageType::DeprecatedBehavior => String::from("Deprecated"),
-        MessageType::UndefinedBehavior  => String::from("Undefined"),
-        MessageType::Portability        => String::from("Portability"),
-        MessageType::Performance        => String::from("Performance"),
-        MessageType::Marker             => String::from("Marker"),
-        MessageType::PushGroup          => String::from("PushGrp"),
-        MessageType::PopGroup           => String::from("PopGrp"),
-        MessageType::Other              => String::from("Other"),
+        MessageType::Error              => "Error",
+        MessageType::DeprecatedBehavior => "Deprecated",
+        MessageType::UndefinedBehavior  => "Undefined",
+        MessageType::Portability        => "Portability",
+        MessageType::Performance        => "Performance",
+        MessageType::Marker             => "Marker",
+        MessageType::PushGroup          => "PushGrp",
+        MessageType::PopGroup           => "PopGrp",
+        MessageType::Other              => "Other",
     };
 
     let severity_str = match severity {
-        Severity::High => String::from("HIGH"),
-        Severity::Medium => String::from("MED"),
-        Severity::Low => String::from("LOW"),
-        Severity::Notification => String::from("NOTIFY"),
+        Severity::High         => "HIGH",
+        Severity::Medium       => "MED",
+        Severity::Low          => "LOW",
+        Severity::Notification => "NOTIFY",
     };
 
-    eprint!("{}:{}[{}]({}):{}", source_str, type_str, severity_str, identifier, message);
+    print!("{}:{}[{}]({}):{}", source_str, type_str, severity_str, identifier, message);
 }
 
 
 pub fn print_active_attribs(program: &glium::Program) {
-
     println!("Active attributes:");
     for (name, attribute) in program.attributes() {
-        println!("\tName: {}, Location: {} - Type: {:?}", name, attribute.location, attribute.ty);
+        println!("\tName: {:10} Location: {} - Type: {:?}", name, attribute.location, attribute.ty);
     }
 }

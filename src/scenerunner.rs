@@ -92,7 +92,8 @@ impl SceneRunner {
 
     fn main_loop(&mut self, scene: &mut impl Scene) -> GLResult<()> {
 
-        let mut should_close = false;
+        let mut should_close  = false;
+        let mut should_resize = false;
 
         while !should_close {
 
@@ -104,8 +105,10 @@ impl SceneRunner {
 
             self.events_loop.poll_events(|ev| {
                 match ev {
+                    // TODO: Handle window resize event
                     glutin::Event::WindowEvent { event, .. } => match event {
                         | glutin::WindowEvent::CloseRequested => should_close = true,
+                        | glutin::WindowEvent::Resized(_)     => should_resize = true,
                         | glutin::WindowEvent::KeyboardInput { input, .. } => {
                             if let Some(code) = input.virtual_keycode {
                                 match code {
@@ -125,9 +128,21 @@ impl SceneRunner {
                     _ => (),
                 }
             });
+
+            if should_resize {
+                should_resize = false;
+                self.resize_window(scene);
+            }
         }
 
         Ok(())
+    }
+
+    fn resize_window(&mut self, scene: &mut impl Scene) {
+        let (new_width, new_height) = self.display.get_framebuffer_dimensions();
+        self.fb_width  = new_width;
+        self.fb_height = new_height;
+        scene.resize(self.fb_width, self.fb_height);
     }
 
     pub fn print_help_info(program_name: &str, candidate_scenes: &HashMap<String, String>) {

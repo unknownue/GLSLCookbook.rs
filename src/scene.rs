@@ -50,18 +50,16 @@ impl SceneData {
 
     pub fn unset() -> SceneData {
         SceneData {
-            width: 0, height: 0,
-
-            projection: Default::default(),
-            view: Default::default(),
-            model: Default::default(),
-
+            width: 800, height: 600,
             is_animate: false,
+            projection : Default::default(),
+            view       : Default::default(),
+            model      : Default::default(),
         }
     }
 
     pub fn set_dimension(&mut self, width: u32, height: u32) {
-        self.width = width;
+        self.width  = width;
         self.height = height;
     }
 
