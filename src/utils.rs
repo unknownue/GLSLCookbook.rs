@@ -90,3 +90,12 @@ pub fn debug_callback(source: Source, message_type: MessageType, severity: Sever
 
     eprint!("{}:{}[{}]({}):{}", source_str, type_str, severity_str, identifier, message);
 }
+
+
+pub fn print_active_attribs(program: &glium::Program) {
+
+    println!("Active attributes:");
+    for (name, attribute) in program.attributes() {
+        println!("\tName: {}, Location: {} - Type: {:?}", name, attribute.location, attribute.ty);
+    }
+}

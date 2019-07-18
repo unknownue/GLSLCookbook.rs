@@ -60,7 +60,8 @@ impl Scene for SceneBasic {
 
         /////////////////// Create the VertexBuffer ////////////////////
         glium::implement_vertex!(Vertex, position, color);
-        let vertex_buffer = glium::VertexBuffer::new(display, &TRIANGLE).unwrap();
+        let vertex_buffer = glium::VertexBuffer::new(display, &TRIANGLE)
+            .map_err(GLErrorKind::CreateBuffer)?;
 
         // All the initialization work has done.
         let scene = SceneBasic { scene_data, vertex_buffer, program };
@@ -85,13 +86,14 @@ impl Scene for SceneBasic {
 
         let mut target = display.draw();
         target.clear_color(0.5, 0.5, 0.5, 1.0);
-        target.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &draw_params).unwrap();
+        target.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &draw_params)
+            .map_err(GLErrorKind::DrawError)?;
 
         // Glium swap the buffer in swapchain for you.
         target.finish()
             .map_err(|_| GLError::device("Something wrong when swapping framebuffers."))
     }
-    
+
     #[inline(always)]
     fn scene_data(&self) -> &SceneData { &self.scene_data }
     #[inline(always)]

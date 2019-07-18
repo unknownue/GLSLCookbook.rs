@@ -81,6 +81,12 @@ pub enum GLErrorKind {
     /// An error occurred while compiling shaders in OpenGL.
     #[fail(display = "Failed to create program: {:?}", _0)]
     CreateProgram(glium::program::ProgramCreationError),
+    /// An error occurred while creating buffers in OpenGL.
+    #[fail(display = "Failed to create buffer: {:?}", _0)]
+    CreateBuffer(glium::vertex::BufferCreationError),
+    /// An error occurred draw commands.
+    #[fail(display = "Error occurred when drawing: {:?}", _0)]
+    DrawError(glium::DrawError),
     /// An error indicated requiring some unsupported feature.
     #[fail(display = "Feature {} is not supported in current OpenGL Device.", feature)]
     UnSupport { feature: &'static str },
