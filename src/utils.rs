@@ -105,7 +105,8 @@ pub fn print_active_uniforms(program: &glium::Program) {
     println!("-------------------------------------------------------------");
     println!("Active uniforms:");
     for (name, uniform) in program.uniforms() {
-        println!("\tName: {:10}  Location: {}  Type: {:?}", name, uniform.location, uniform.ty);
+        let uniform_size = if let Some(size) = uniform.size { format!("Array({})", size) } else { String::new() };
+        println!("\tName: {:10}  Location: {}  Type: {:?} {}", name, uniform.location, uniform.ty, uniform_size);
     }
     println!("-------------------------------------------------------------");
 }

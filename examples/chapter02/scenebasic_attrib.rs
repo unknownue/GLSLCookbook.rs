@@ -50,7 +50,7 @@ impl Scene for SceneBasicAttrib {
         Ok(scene)
     }
 
-    fn update(&mut self, _t: f32) {
+    fn update(&mut self, _delta_time: f32) {
         // nothing to do, just keep it empty
     }
 

@@ -57,10 +57,10 @@ impl Scene for SceneBasicUniform {
         Ok(scene)
     }
 
-    fn update(&mut self, _t: f32) {
+    fn update(&mut self, delta_time: f32) {
 
         if self.is_animating() {
-            self.angle = (self.angle + 1.0) % 360.0;
+            self.angle = (self.angle + 50.0 * delta_time) % 360.0;
         }
     }
 

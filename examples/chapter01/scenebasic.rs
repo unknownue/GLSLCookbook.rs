@@ -71,7 +71,7 @@ impl Scene for SceneBasic {
     }
 
     /// This is called prior to every frame. Use this to update your animation.
-    fn update(&mut self, _t: f32) {
+    fn update(&mut self, _delta_time: f32) {
         // nothing to do, just keep it empty
     }
 

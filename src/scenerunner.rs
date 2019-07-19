@@ -3,6 +3,7 @@ use glium::glutin;
 use crate::scene::Scene;
 use crate::utils;
 use crate::error::{GLResult, GLError};
+use crate::timer::Timer;
 
 use std::collections::HashMap;
 
@@ -95,12 +96,11 @@ impl SceneRunner {
         let mut should_close  = false;
         let mut should_resize = false;
 
+        let mut timer = Timer::new();
+
         while !should_close {
 
-            // FIXME: Find equivalent call to glfwGetTime()
-            let time = 0.0;
-
-            scene.update(time);
+            scene.update(timer.delta_time());
             scene.render(&self.display)?;
 
             self.events_loop.poll_events(|ev| {
@@ -133,6 +133,8 @@ impl SceneRunner {
                 should_resize = false;
                 self.resize_window(scene);
             }
+
+            timer.tick_frame();
         }
 
         Ok(())
