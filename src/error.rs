@@ -93,7 +93,7 @@ pub enum GLErrorKind {
     #[fail(display = "Error occurred when drawing: {:?}", _0)]
     DrawError(glium::DrawError),
     /// An error indicated requiring some unsupported feature.
-    #[fail(display = "Feature {} is not supported in current OpenGL Device.", feature)]
+    #[fail(display = "Feature {} is not supported in glium or current OpenGL Device.", feature)]
     UnSupport { feature: &'static str },
     /// An error triggered by Invalid Device operations.
     #[fail(display = "Invalid Operation: {}", ops_description)]

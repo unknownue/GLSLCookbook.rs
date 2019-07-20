@@ -4,10 +4,12 @@ extern crate glsl_cookbook_rs as cookbook;
 mod scenebasic_attrib;
 mod scenebasic_uniform;
 mod scenebasic_uniformblock;
+mod sceneseparable;
 
 use scenebasic_attrib::SceneBasicAttrib;
 use scenebasic_uniform::SceneBasicUniform;
 use scenebasic_uniformblock::SceneBasicUniformBlock;
+use sceneseparable::SceneSeparable;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -49,7 +51,7 @@ fn main() -> GLResult<()> {
     let (recipe, title) = SceneRunner::parse_command_line_args(&HASHMAP)?;
 
     match recipe.as_ref() {
-        | "separable"           => unimplemented!(),
+        | "separable"           => run::<SceneSeparable>(title),
         | "basic-attrib"        => run::<SceneBasicAttrib>(title),
         | "basic-uniform"       => run::<SceneBasicUniform>(title),
         | "basic-uniform-block" => run::<SceneBasicUniformBlock>(title),
