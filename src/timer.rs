@@ -5,6 +5,7 @@ const FPS_SAMPLE_COUNT: usize = 5;
 const FPS_SAMPLE_COUNT_FLOAT: f32 = FPS_SAMPLE_COUNT as f32;
 
 
+#[derive(Debug)]
 pub struct Timer {
 
     counter: Instant,
@@ -16,6 +17,7 @@ pub struct Timer {
 
 impl Timer {
 
+    /// Create a new timer class.
     pub fn new() -> Timer {
         Timer {
             counter: Instant::now(),

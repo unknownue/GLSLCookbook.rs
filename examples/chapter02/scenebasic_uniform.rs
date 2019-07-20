@@ -1,4 +1,3 @@
-//! This example is almost the same with chapter01.
 
 use cookbook::scene::{Scene, SceneData};
 use cookbook::error::{GLResult, GLError, GLErrorKind};
@@ -7,8 +6,8 @@ use cookbook::Mat4F;
 
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
-use glium::Surface;
 use glium::uniform;
+use glium::Surface;
 
 
 #[repr(C)]

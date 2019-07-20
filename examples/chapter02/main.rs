@@ -3,9 +3,11 @@ extern crate glsl_cookbook_rs as cookbook;
 
 mod scenebasic_attrib;
 mod scenebasic_uniform;
+mod scenebasic_uniformblock;
 
 use scenebasic_attrib::SceneBasicAttrib;
 use scenebasic_uniform::SceneBasicUniform;
+use scenebasic_uniformblock::SceneBasicUniformBlock;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -24,10 +26,10 @@ const MULTISAMPLING: u16 = 0; // Disable multisamping.
 lazy_static! {
     static ref HASHMAP: HashMap<String, String> = {
         let mut m = HashMap::new();
-        m.insert("basic-attrib".into(),        "Prints active attributes.".into());
-		m.insert("basic-uniform".into(),       "Basic scene with a uniform variable.".into());
-		m.insert("basic-uniform-block".into(), "Scene with a uniform block variable.".into());
-		m.insert("separable".into(),           "Scene using separable shaders and program pipelines.".into());
+        m.insert("basic-attrib".into(),        "Prints active attributes".into());
+		m.insert("basic-uniform".into(),       "Basic scene with a uniform variable".into());
+		m.insert("basic-uniform-block".into(), "Scene with a uniform block variable".into());
+		m.insert("separable".into(),           "Scene using separable shaders and program pipelines".into());
         m
     };
 }
@@ -50,7 +52,7 @@ fn main() -> GLResult<()> {
         | "separable"           => unimplemented!(),
         | "basic-attrib"        => run::<SceneBasicAttrib>(title),
         | "basic-uniform"       => run::<SceneBasicUniform>(title),
-        | "basic-uniform-block" => unimplemented!(),
+        | "basic-uniform-block" => run::<SceneBasicUniformBlock>(title),
         | _ => unreachable!(),
     }
 }

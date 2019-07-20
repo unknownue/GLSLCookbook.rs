@@ -35,7 +35,7 @@ impl GLError {
         GLError::from(GLErrorKind::Window { description: description.as_ref().to_string() })
     }
 
-    /// A convenience routine for creating an error associated with a path.
+    /// A convenient routine for creating an error associated with a path.
     pub fn path(path: impl AsRef<Path>)-> GLError {
         GLError::from(GLErrorKind::Path { path: path.as_ref().to_path_buf() })
     }
@@ -48,6 +48,11 @@ impl GLError {
         GLError::from(GLErrorKind::Custom {
             description: description.as_ref().to_string()
         })
+    }
+
+    // A convenient method to handle error return by uniform block buffer creation.
+    pub fn uniform_block(e: glium::buffer::BufferCreationError) -> GLError {
+        GLError::from(GLErrorKind::CreateBuffer(glium::vertex::BufferCreationError::BufferCreationError(e)))
     }
 }
 

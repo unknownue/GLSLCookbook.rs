@@ -105,7 +105,6 @@ impl SceneRunner {
 
             self.events_loop.poll_events(|ev| {
                 match ev {
-                    // TODO: Handle window resize event
                     glutin::Event::WindowEvent { event, .. } => match event {
                         | glutin::WindowEvent::CloseRequested => should_close  = true,
                         | glutin::WindowEvent::Resized(_)     => should_resize = true,

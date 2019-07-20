@@ -110,3 +110,33 @@ pub fn print_active_uniforms(program: &glium::Program) {
     }
     println!("-------------------------------------------------------------");
 }
+
+pub fn print_active_uniform_blocks(program: &glium::Program) {
+
+    println!("-------------------------------------------------------------");
+    println!("Active Uniform blocks:");
+    for (_name, block) in program.get_uniform_blocks() {
+        print_uniform_block_layout(&block.layout, 1);
+    }
+    println!("-------------------------------------------------------------");
+}
+
+fn print_uniform_block_layout(layout: &glium::program::BlockLayout, indent: usize) {
+
+    use glium::program::BlockLayout;
+
+    match layout {
+        | BlockLayout::Struct { members } => {
+            for (name, member) in members {
+                (0..indent).for_each(|_| print!("\t"));
+                println!("{}:", name);
+                print_uniform_block_layout(&member, indent + 1);
+            }
+        },
+        | BlockLayout::BasicType { ty, offset_in_buffer } => {
+            (1..indent).for_each(|_| print!("\t"));
+            println!("\tType: {:?}  Offset in block: {}", ty, offset_in_buffer);
+        },
+        | _ => unimplemented!(),
+    }
+}
