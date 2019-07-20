@@ -14,8 +14,8 @@ use glium::Surface;
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 struct Vertex {
-    VertexPosition: [f32; 3],
-    VertexTexCoord: [f32; 2],
+    VertexPosition: [f32; 3], // Vertex Position
+    VertexTexCoord: [f32; 2], // Vertex texture coordinates
 }
 
 const TRIANGLE: [Vertex; 6] = [
@@ -118,6 +118,7 @@ impl Scene for SceneBasicUniformBlock {
 
 impl SceneBasicUniformBlock {
 
+    // TODO: The following code has not been test yet!
     #[cfg(not(target_os = "macos"))]
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
 

@@ -9,17 +9,18 @@ use glium::program::{Program, ProgramCreationError};
 use glium::Surface;
 
 
+#[allow(non_snake_case)]
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 struct Vertex {
-    position : [f32; 3],
-    color    : [f32; 3],
+    VertexPosition: [f32; 3],
+    VertexColor   : [f32; 3],
 }
 
 const TRIANGLE: [Vertex; 3] = [
-    Vertex { position: [-0.8, -0.8, 0.0], color: [1.0, 0.0, 0.0] },
-    Vertex { position: [ 0.8, -0.8, 0.0], color: [0.0, 1.0, 0.0] },
-    Vertex { position: [ 0.0,  0.8, 0.0], color: [0.0, 0.0, 1.0] },
+    Vertex { VertexPosition: [-0.8, -0.8, 0.0], VertexColor: [1.0, 0.0, 0.0] },
+    Vertex { VertexPosition: [ 0.8, -0.8, 0.0], VertexColor: [0.0, 1.0, 0.0] },
+    Vertex { VertexPosition: [ 0.0,  0.8, 0.0], VertexColor: [0.0, 0.0, 1.0] },
 ];
 
 
@@ -38,7 +39,7 @@ impl Scene for SceneBasicAttrib {
         let program = SceneBasicAttrib::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
 
-        glium::implement_vertex!(Vertex, position, color);
+        glium::implement_vertex!(Vertex, VertexPosition, VertexColor);
         let vertex_buffer = glium::VertexBuffer::new(display, &TRIANGLE)
             .map_err(GLErrorKind::CreateBuffer)?;
 
