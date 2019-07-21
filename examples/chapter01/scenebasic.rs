@@ -1,6 +1,6 @@
 
 use cookbook::scene::{Scene, SceneData};
-use cookbook::error::{GLResult, GLError, GLErrorKind};
+use cookbook::error::{GLResult, GLError, GLErrorKind, BufferCreationErrorKind};
 
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
@@ -62,7 +62,7 @@ impl Scene for SceneBasic {
         /////////////////// Create the VertexBuffer ////////////////////
         glium::implement_vertex!(Vertex, VertexPosition, VertexColor);
         let vertex_buffer = glium::VertexBuffer::immutable(display, &TRIANGLE)
-            .map_err(GLErrorKind::CreateBuffer)?;
+            .map_err(BufferCreationErrorKind::Vertex)?;
 
         let scene_data: SceneData = Default::default();
 

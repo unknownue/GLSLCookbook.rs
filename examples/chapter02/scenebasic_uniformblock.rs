@@ -1,6 +1,6 @@
 
 use cookbook::scene::{Scene, SceneData};
-use cookbook::error::{GLResult, GLError, GLErrorKind};
+use cookbook::error::{GLResult, GLError, GLErrorKind, BufferCreationErrorKind};
 use cookbook::utils;
 
 use glium::backend::Facade;
@@ -56,7 +56,7 @@ impl Scene for SceneBasicUniformBlock {
         // -------------------------- Vertex Buffer ---------------------------------------
         glium::implement_vertex!(Vertex, VertexPosition, VertexTexCoord);
         let vertex_buffer = glium::VertexBuffer::immutable(display, &TRIANGLE)
-            .map_err(GLErrorKind::CreateBuffer)?;
+            .map_err(BufferCreationErrorKind::Vertex)?;
         // --------------------------------------------------------------------------------
 
 
@@ -69,7 +69,7 @@ impl Scene for SceneBasicUniformBlock {
             OuterColor: [0.0, 0.0, 0.0, 0.0],
             RadiusInner: 0.25,
             RadiusOuter: 0.45,
-        }).map_err(GLError::uniform_block)?;
+        }).map_err(BufferCreationErrorKind::UniformBlock)?;
 
         utils::print_active_uniform_blocks(&program);
         // println!("{:?}", scene.uniform_block.read());

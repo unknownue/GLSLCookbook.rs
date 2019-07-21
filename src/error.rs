@@ -49,11 +49,6 @@ impl GLError {
             description: description.as_ref().to_string()
         })
     }
-
-    // A convenient method to handle error return by uniform block buffer creation.
-    pub fn uniform_block(e: glium::buffer::BufferCreationError) -> GLError {
-        GLError::from(GLErrorKind::CreateBuffer(glium::vertex::BufferCreationError::BufferCreationError(e)))
-    }
 }
 
 impl Fail for GLError {
@@ -88,7 +83,7 @@ pub enum GLErrorKind {
     CreateProgram(glium::program::ProgramCreationError),
     /// An error occurred while creating buffers in OpenGL.
     #[fail(display = "Failed to create buffer: {:?}", _0)]
-    CreateBuffer(glium::vertex::BufferCreationError),
+    CreateBuffer(BufferCreationErrorKind),
     /// An error occurred draw commands.
     #[fail(display = "Error occurred when drawing: {:?}", _0)]
     DrawError(glium::DrawError),
@@ -125,3 +120,18 @@ impl From<Context<GLErrorKind>> for GLError {
     }
 }
 // -------------------------------------------------------------------------------------------
+
+
+#[derive(Debug, Clone)]
+pub enum BufferCreationErrorKind {
+    Vertex(glium::vertex::BufferCreationError),
+    Index(glium::index::BufferCreationError),
+    UniformBlock(glium::buffer::BufferCreationError),
+}
+
+impl From<BufferCreationErrorKind> for GLError {
+
+    fn from(ty: BufferCreationErrorKind) -> GLError {
+        GLErrorKind::CreateBuffer(ty).into()
+    }
+}

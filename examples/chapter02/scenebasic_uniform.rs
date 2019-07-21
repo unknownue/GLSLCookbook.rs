@@ -1,6 +1,6 @@
 
 use cookbook::scene::{Scene, SceneData};
-use cookbook::error::{GLResult, GLError, GLErrorKind};
+use cookbook::error::{GLResult, GLError, GLErrorKind, BufferCreationErrorKind};
 use cookbook::utils;
 use cookbook::Mat4F;
 
@@ -43,7 +43,7 @@ impl Scene for SceneBasicUniform {
 
         glium::implement_vertex!(Vertex, VertexPosition, VertexColor);
         let vertex_buffer = glium::VertexBuffer::immutable(display, &TRIANGLE)
-            .map_err(GLErrorKind::CreateBuffer)?;
+            .map_err(BufferCreationErrorKind::Vertex)?;
 
         utils::print_active_uniforms(&program);
 
