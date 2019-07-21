@@ -55,7 +55,7 @@ impl Scene for SceneBasicUniformBlock {
 
         // -------------------------- Vertex Buffer ---------------------------------------
         glium::implement_vertex!(Vertex, VertexPosition, VertexTexCoord);
-        let vertex_buffer = glium::VertexBuffer::new(display, &TRIANGLE)
+        let vertex_buffer = glium::VertexBuffer::immutable(display, &TRIANGLE)
             .map_err(GLErrorKind::CreateBuffer)?;
         // --------------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ impl Scene for SceneBasicUniformBlock {
         // let glium help to create uniform blocks.
         glium::implement_uniform_block!(BlobSettings, InnerColor, OuterColor, RadiusInner, RadiusOuter);
 
-        let uniform_block = UniformBuffer::persistent(display, BlobSettings {
+        let uniform_block = UniformBuffer::immutable(display, BlobSettings {
             InnerColor: [1.0, 1.0, 0.75, 1.0],
             OuterColor: [0.0, 0.0, 0.0, 0.0],
             RadiusInner: 0.25,
@@ -76,10 +76,10 @@ impl Scene for SceneBasicUniformBlock {
         // --------------------------------------------------------------------------------
 
 
-        // set true to enable animation.
-        let scene_data = SceneData::new(true);
-
-        let scene = SceneBasicUniformBlock { scene_data, vertex_buffer, program, uniform_block };
+        let scene = SceneBasicUniformBlock {
+            scene_data: Default::default(),
+            vertex_buffer, program, uniform_block
+        };
         Ok(scene)
     }
 

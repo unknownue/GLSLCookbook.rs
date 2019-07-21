@@ -4,7 +4,11 @@ pub mod scenerunner;
 pub mod error;
 pub mod utils;
 
+pub mod torus;
+
 mod timer;
+
+mod drawable;
 
 
 pub type Mat4F = vek::Mat4<f32>;

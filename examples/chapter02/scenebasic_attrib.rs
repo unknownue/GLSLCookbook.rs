@@ -40,7 +40,7 @@ impl Scene for SceneBasicAttrib {
             .map_err(GLErrorKind::CreateProgram)?;
 
         glium::implement_vertex!(Vertex, VertexPosition, VertexColor);
-        let vertex_buffer = glium::VertexBuffer::new(display, &TRIANGLE)
+        let vertex_buffer = glium::VertexBuffer::immutable(display, &TRIANGLE)
             .map_err(GLErrorKind::CreateBuffer)?;
 
         utils::print_active_attribs(&program);

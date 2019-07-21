@@ -61,7 +61,7 @@ impl Scene for SceneBasic {
 
         /////////////////// Create the VertexBuffer ////////////////////
         glium::implement_vertex!(Vertex, VertexPosition, VertexColor);
-        let vertex_buffer = glium::VertexBuffer::new(display, &TRIANGLE)
+        let vertex_buffer = glium::VertexBuffer::immutable(display, &TRIANGLE)
             .map_err(GLErrorKind::CreateBuffer)?;
 
         let scene_data: SceneData = Default::default();
