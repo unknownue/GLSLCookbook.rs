@@ -2,8 +2,10 @@
 extern crate glsl_cookbook_rs as cookbook;
 
 mod scenediffuse;
+mod scenephong;
 
 use scenediffuse::SceneDiffuse;
+use scenephong::ScenePhong;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -22,7 +24,7 @@ const MULTISAMPLING: u16 = 0; // Disable multisamping.
 lazy_static! {
     static ref HASHMAP: HashMap<String, String> = {
         let mut m = HashMap::new();
-        m.insert("phone".into(),      "Phong reflection mdoel (per-vertex)".into());
+        m.insert("phong".into(),      "Phong reflection mdoel (per-vertex)".into());
 		m.insert("diffuse".into(),    "Diffuse shading only".into());
 		m.insert("discard".into(),    "xample of discarding fragments".into());
 		m.insert("flat".into(),       "Flat shading".into());
@@ -47,7 +49,7 @@ fn main() -> GLResult<()> {
     let (recipe, title) = SceneRunner::parse_command_line_args(&HASHMAP)?;
 
     match recipe.as_ref() {
-        | "phone"      => unimplemented!(),
+        | "phong"      => run::<ScenePhong>(title),
         | "diffuse"    => run::<SceneDiffuse>(title),
         | "discard"    => unimplemented!(),
         | "flat"       => unimplemented!(),
