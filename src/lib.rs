@@ -7,9 +7,9 @@ pub mod utils;
 pub mod torus;
 
 mod timer;
-
 mod drawable;
 
+pub use drawable::Drawable;
 
 pub type Mat4F = vek::Mat4<f32>;
 pub type Mat3F = vek::Mat3<f32>;

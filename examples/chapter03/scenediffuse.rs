@@ -1,0 +1,105 @@
+
+use cookbook::scene::{Scene, SceneData};
+use cookbook::error::{GLResult, GLError, GLErrorKind};
+use cookbook::torus::Torus;
+use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
+use cookbook::Drawable;
+
+
+use glium::backend::Facade;
+use glium::program::{Program, ProgramCreationError};
+use glium::{Surface, uniform};
+
+
+#[derive(Debug)]
+pub struct SceneDiffuse {
+    scene_data: SceneData,
+    program: glium::Program,
+    torus: Torus,
+}
+
+impl Scene for SceneDiffuse {
+
+    fn new(display: &impl Facade) -> GLResult<SceneDiffuse> {
+
+        let program = SceneDiffuse::compile_shader_program(display)
+            .map_err(GLErrorKind::CreateProgram)?;
+        // cookbook::utils::print_active_uniforms(&program);
+
+        let torus = Torus::new(display, 0.7, 0.3, 30, 30)?;
+
+        let model = Mat4F::identity()
+            .rotated_x(-35.0_f32.to_radians())
+            .rotated_y( 35.0_f32.to_radians());
+        let view = Mat4F::look_at_lh(Vec3F::new(0.0, 0.0, 2.0), Vec3F::zero(), Vec3F::unit_y());
+        let projection = Mat4F::identity();
+
+        let scene_data = SceneData::new_detail(false, projection, view, model);
+
+        let scene = SceneDiffuse { scene_data, program, torus };
+        Ok(scene)
+    }
+
+    fn update(&mut self, _delta_time: f32) {
+        // nothing to do, just keep it empty
+    }
+
+    fn render(&self, display: &glium::Display) -> GLResult<()> {
+
+        let draw_params = glium::draw_parameters::DrawParameters {
+            viewport: Some(self.scene_data.viewport()),
+            depth: glium::Depth {
+                test: glium::DepthTest::IfLess,
+                write: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mv: Mat4F = self.scene_data.view * self.scene_data.model;
+        let uniforms = uniform! {
+            LightPosition: (self.scene_data.view * Vec4F::new(5.0, 5.0, 2.0, 1.0)).into_array(),
+            Kd: [0.9_f32, 0.5, 0.3],
+            Ld: [1.0_f32, 1.0, 1.0],
+            ModelViewMatrix: mv.clone().into_col_arrays(),
+            NormalMatrix: Mat3F::identity().into_col_arrays(),
+            // NormalMatrix: Mat3F::from_col_arrays([
+            //     Vec3F::new(mv[0])
+            // ]),
+            MVP: (self.scene_data.projection * mv).into_col_arrays(),
+        };
+
+
+        let mut target = display.draw();
+        target.clear_color(0.5, 0.5, 0.5, 1.0);
+        target.clear_depth(1.0);
+
+        self.torus.render(&mut target, &self.program, &draw_params, &uniforms)?;
+
+        target.finish()
+            .map_err(|_| GLError::device("Something wrong when swapping framebuffers."))
+    }
+
+    #[inline(always)]
+    fn scene_data(&self) -> &SceneData { &self.scene_data }
+    #[inline(always)]
+    fn scene_data_mut(&mut self) -> &mut SceneData { &mut self.scene_data }
+
+    fn resize(&mut self, width: u32, height: u32) {
+
+        self.scene_data_mut().set_dimension(width, height);
+        self.scene_data_mut().projection = Mat4F::perspective_lh_zo(70.0_f32.to_radians(), self.scene_data().width as f32 / self.scene_data.height as f32, 0.3, 100.0);
+    }
+}
+
+
+impl SceneDiffuse {
+
+    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+
+        let vertex_shader_code   = include_str!("shaders/diffuse.vert.glsl");
+        let fragment_shader_code = include_str!("shaders/diffuse.frag.glsl");
+
+        glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
+    }
+}

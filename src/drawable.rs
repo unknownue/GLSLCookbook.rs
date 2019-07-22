@@ -9,18 +9,22 @@ pub trait Drawable {
     fn render(&self, frame: &mut Frame, program: &Program, params: &DrawParameters, uniform: &impl Uniforms) -> GLResult<()>;
 }
 
-pub trait TriangleMesh<Vertex>
-    where Vertex: Copy
-{
-    fn buffers(&self) -> (&glium::VertexBuffer<Vertex>, &glium::IndexBuffer<u32>);
+pub trait TriangleMesh {
+    type VertexType: Copy;
+
+    fn buffers(&self) -> (&glium::VertexBuffer<Self::VertexType>, &glium::IndexBuffer<u32>);
 }
 
-impl<Vertex: Copy> Drawable for TriangleMesh<Vertex> {
+impl<T, V> Drawable for T
+    where
+        T: TriangleMesh<VertexType=V>,
+        V: Copy {
 
     fn render(&self, frame: &mut Frame, program: &Program, params: &DrawParameters, uniform: &impl Uniforms) -> GLResult<()> {
         let (vertices, indices) = self.buffers();
         frame.draw(vertices, indices, program, uniform, params)
-            .map_err(GLErrorKind::DrawError)?;
+            .map_err(|e| { println!("{}", e); GLErrorKind::DrawError(e) })?;
+            // .map_err(GLErrorKind::DrawError)?;
         Ok(())
     }
 }

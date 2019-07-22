@@ -36,12 +36,12 @@ pub trait Scene: Sized {
 
 #[derive(Debug, Clone)]
 pub struct SceneData {
-    width : u32,
-    height: u32,
+    pub width : u32,
+    pub height: u32,
 
-    projection: Mat4F,
-    view: Mat4F,
-    model: Mat4F,
+    pub projection: Mat4F,
+    pub view: Mat4F,
+    pub model: Mat4F,
 
     is_animate: bool,
 }

@@ -9,7 +9,7 @@ use crate::Vec3F;
 #[allow(non_snake_case)]
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
-struct TorusVertex {
+pub struct TorusVertex {
     VertexPosition: [f32; 3],
     VertexNormal  : [f32; 3],
     VertexTexCoord: [f32; 2],
@@ -106,7 +106,8 @@ impl Torus {
     }
 }
 
-impl TriangleMesh<TorusVertex> for Torus {
+impl TriangleMesh for Torus {
+    type VertexType = TorusVertex;
 
     fn buffers(&self) -> (&glium::VertexBuffer<TorusVertex>, &glium::IndexBuffer<u32>) {
         (&self.vbuffer, &self.ibuffer)
