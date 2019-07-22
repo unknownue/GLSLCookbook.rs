@@ -5,7 +5,6 @@ use cookbook::torus::Torus;
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
 use cookbook::Drawable;
 
-
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
 use glium::{Surface, uniform};
@@ -31,7 +30,7 @@ impl Scene for SceneDiffuse {
         let model = Mat4F::identity()
             .rotated_x(-35.0_f32.to_radians())
             .rotated_y( 35.0_f32.to_radians());
-        let view = Mat4F::look_at_lh(Vec3F::new(0.0, 0.0, 2.0), Vec3F::zero(), Vec3F::unit_y());
+        let view = Mat4F::look_at_rh(Vec3F::new(0.0, 0.0, 2.0), Vec3F::zero(), Vec3F::unit_y());
         let projection = Mat4F::identity();
 
         let scene_data = SceneData::new_detail(false, projection, view, model);
@@ -62,10 +61,12 @@ impl Scene for SceneDiffuse {
             Kd: [0.9_f32, 0.5, 0.3],
             Ld: [1.0_f32, 1.0, 1.0],
             ModelViewMatrix: mv.clone().into_col_arrays(),
-            NormalMatrix: Mat3F::identity().into_col_arrays(),
-            // NormalMatrix: Mat3F::from_col_arrays([
-            //     Vec3F::new(mv[0])
-            // ]),
+
+            // If your model-view matrix does not include any nonuniform scaling,
+            // then one can use the upper-left 3 x 3 of the model-view matrix in place of the normal matrix to transform your normal vectors.
+            // However, if your model-view matrix does include (uniform) scaling,
+            // you'll still need to (re)normalize your normal vectors after transforming them.
+            NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.scene_data.projection * mv).into_col_arrays(),
         };
 
@@ -74,6 +75,7 @@ impl Scene for SceneDiffuse {
         target.clear_color(0.5, 0.5, 0.5, 1.0);
         target.clear_depth(1.0);
 
+        // TODO: Call target.finish() before returning the GLError
         self.torus.render(&mut target, &self.program, &draw_params, &uniforms)?;
 
         target.finish()
@@ -88,7 +90,7 @@ impl Scene for SceneDiffuse {
     fn resize(&mut self, width: u32, height: u32) {
 
         self.scene_data_mut().set_dimension(width, height);
-        self.scene_data_mut().projection = Mat4F::perspective_lh_zo(70.0_f32.to_radians(), self.scene_data().width as f32 / self.scene_data.height as f32, 0.3, 100.0);
+        self.scene_data_mut().projection = Mat4F::perspective_rh_zo(70.0_f32.to_radians(), self.scene_data().width as f32 / self.scene_data.height as f32, 0.3, 100.0);
     }
 }
 

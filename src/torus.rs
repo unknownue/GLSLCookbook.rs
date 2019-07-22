@@ -63,7 +63,7 @@ impl Torus {
                 let cos_v = v.cos();
                 let sin_v = v.sin();
 
-                let r = outer_raidus + inner_radius * cos_u;
+                let r = outer_raidus + inner_radius * cos_v;
 
                 let vertex = TorusVertex {
                     VertexPosition: [r * cos_u, r * sin_u, inner_radius * sin_v],
