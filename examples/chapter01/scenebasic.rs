@@ -1,6 +1,6 @@
 
 use cookbook::scene::{Scene, SceneData};
-use cookbook::error::{GLResult, GLError, GLErrorKind, BufferCreationErrorKind};
+use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
@@ -77,7 +77,7 @@ impl Scene for SceneBasic {
     }
 
     /// Draw your scene.
-    fn render(&self, display: &glium::Display) -> GLResult<()> {
+    fn render(&self, frame: &mut glium::Frame) -> GLResult<()> {
 
         // For simplicity, we do not use index buffer.
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
@@ -87,14 +87,11 @@ impl Scene for SceneBasic {
             ..Default::default()
         };
 
-        let mut target = display.draw();
-        target.clear_color(0.5, 0.5, 0.5, 1.0);
-        target.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &draw_params)
+        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        frame.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &draw_params)
             .map_err(GLErrorKind::DrawError)?;
 
-        // Glium swap the buffer in swapchain for you.
-        target.finish()
-            .map_err(|_| GLError::device("Something wrong when swapping framebuffers."))
+        Ok(())
     }
 
     #[inline(always)]

@@ -1,6 +1,6 @@
 
 use cookbook::scene::{Scene, SceneData};
-use cookbook::error::{GLResult, GLError, GLErrorKind, BufferCreationErrorKind};
+use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::utils;
 
 use glium::backend::Facade;
@@ -87,7 +87,7 @@ impl Scene for SceneBasicUniformBlock {
         // nothing to do
     }
 
-    fn render(&self, display: &glium::Display) -> GLResult<()> {
+    fn render(&self, frame: &mut glium::Frame) -> GLResult<()> {
 
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
@@ -100,13 +100,11 @@ impl Scene for SceneBasicUniformBlock {
             BlobSettings: &self.uniform_block,
         };
 
-        let mut target = display.draw();
-        target.clear_color(0.5, 0.5, 0.5, 1.0);
-        target.draw(&self.vertex_buffer, &no_indices, &self.program, &uniforms, &draw_params)
+        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        frame.draw(&self.vertex_buffer, &no_indices, &self.program, &uniforms, &draw_params)
             .map_err(GLErrorKind::DrawError)?;
 
-        target.finish()
-            .map_err(|_| GLError::device("Something wrong when swapping framebuffers."))
+        Ok(())
     }
 
     #[inline(always)]

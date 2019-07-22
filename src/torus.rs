@@ -108,6 +108,7 @@ impl Torus {
 
 impl TriangleMesh for Torus {
     type VertexType = TorusVertex;
+    type IndexType  = u32;
 
     fn buffers(&self) -> (&glium::VertexBuffer<TorusVertex>, &glium::IndexBuffer<u32>) {
         (&self.vbuffer, &self.ibuffer)

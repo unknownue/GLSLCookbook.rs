@@ -49,6 +49,12 @@ impl GLError {
             description: description.as_ref().to_string()
         })
     }
+
+    pub fn rendering_finish(e: glium::SwapBuffersError) -> GLError {
+        GLError::from(GLErrorKind::Custom {
+            description: format!("Error occurred when swapping buffer: {}", e)
+        })
+    }
 }
 
 impl Fail for GLError {

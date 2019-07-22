@@ -13,7 +13,7 @@ pub trait Scene: Sized {
     fn update(&mut self, t: f32);
 
     /// Draw your scene.
-    fn render(&self, display: &glium::Display) -> GLResult<()>;
+    fn render(&self, frame: &mut glium::Frame) -> GLResult<()>;
 
     /// Called when screen is resized.
     fn resize(&mut self, width: u32, height: u32) {
@@ -81,6 +81,10 @@ impl SceneData {
     pub fn set_dimension(&mut self, width: u32, height: u32) {
         self.width  = width;
         self.height = height;
+    }
+
+    pub fn sceen_aspect_ratio(&self) -> f32 {
+        (self.width as f32) / (self.height as f32)
     }
 
     pub fn viewport(&self) -> glium::Rect {

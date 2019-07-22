@@ -101,7 +101,16 @@ impl SceneRunner {
         while !should_close {
 
             scene.update(timer.delta_time());
-            scene.render(&self.display)?;
+
+            let mut frame = self.display.draw();
+            match scene.render(&mut frame) {
+                | Ok(()) => frame.finish().map_err(GLError::rendering_finish)?,
+                | Err(e) => {
+                    // frame.finish() must be called no matter if any error occurred.
+                    frame.finish().map_err(GLError::rendering_finish)?;
+                    return Err(e)
+                }
+            }
 
             self.events_loop.poll_events(|ev| {
                 match ev {

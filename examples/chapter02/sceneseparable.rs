@@ -17,7 +17,7 @@ impl Scene for SceneSeparable {
         unimplemented!()
     }
 
-    fn render(&self, _display: &glium::Display) -> GLResult<()> {
+    fn render(&self, _frame: &mut glium::Frame) -> GLResult<()> {
         unimplemented!()
     }
 

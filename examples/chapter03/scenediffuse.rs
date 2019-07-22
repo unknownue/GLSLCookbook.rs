@@ -1,6 +1,6 @@
 
 use cookbook::scene::{Scene, SceneData};
-use cookbook::error::{GLResult, GLError, GLErrorKind};
+use cookbook::error::{GLResult, GLErrorKind};
 use cookbook::torus::Torus;
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
 use cookbook::Drawable;
@@ -43,7 +43,7 @@ impl Scene for SceneDiffuse {
         // nothing to do, just keep it empty
     }
 
-    fn render(&self, display: &glium::Display) -> GLResult<()> {
+    fn render(&self, frame: &mut glium::Frame) -> GLResult<()> {
 
         let draw_params = glium::draw_parameters::DrawParameters {
             viewport: Some(self.scene_data.viewport()),
@@ -70,28 +70,22 @@ impl Scene for SceneDiffuse {
             MVP: (self.scene_data.projection * mv).into_col_arrays(),
         };
 
+        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        frame.clear_depth(1.0);
 
-        let mut target = display.draw();
-        target.clear_color(0.5, 0.5, 0.5, 1.0);
-        target.clear_depth(1.0);
+        self.torus.render(frame, &self.program, &draw_params, &uniforms)
+    }
 
-        // TODO: Call target.finish() before returning the GLError
-        self.torus.render(&mut target, &self.program, &draw_params, &uniforms)?;
+    fn resize(&mut self, width: u32, height: u32) {
 
-        target.finish()
-            .map_err(|_| GLError::device("Something wrong when swapping framebuffers."))
+        self.scene_data.set_dimension(width, height);
+        self.scene_data.projection = Mat4F::perspective_rh_zo(70.0_f32.to_radians(), self.scene_data.sceen_aspect_ratio(), 0.3, 100.0);
     }
 
     #[inline(always)]
     fn scene_data(&self) -> &SceneData { &self.scene_data }
     #[inline(always)]
     fn scene_data_mut(&mut self) -> &mut SceneData { &mut self.scene_data }
-
-    fn resize(&mut self, width: u32, height: u32) {
-
-        self.scene_data_mut().set_dimension(width, height);
-        self.scene_data_mut().projection = Mat4F::perspective_rh_zo(70.0_f32.to_radians(), self.scene_data().width as f32 / self.scene_data.height as f32, 0.3, 100.0);
-    }
 }
 
 
