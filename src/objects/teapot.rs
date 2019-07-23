@@ -25,12 +25,12 @@ pub struct Teapot {
 
 impl Teapot {
 
-    pub fn new(display: &impl Facade, grid: usize, lid_transform: &Mat4F) -> GLResult<Teapot> {
+    pub fn new(display: &impl Facade, grid: usize, lid_transform: Mat4F) -> GLResult<Teapot> {
 
         glium::implement_vertex!(TeapotVertex, VertexPosition, VertexNormal, VertexTexCoord);
 
         let (mut vertices, indices) = Teapot::generate_patches(grid);
-        Teapot::move_lid(grid, &mut vertices, lid_transform);
+        Teapot::move_lid(grid, &mut vertices, &lid_transform);
 
         let vbuffer = glium::VertexBuffer::immutable(display, &vertices)
             .map_err(BufferCreationErrorKind::Vertex)?;
