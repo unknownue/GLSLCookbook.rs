@@ -1,7 +1,7 @@
 
 use cookbook::scene::{Scene, SceneData};
 use cookbook::error::{GLResult, GLErrorKind};
-use cookbook::torus::Torus;
+use cookbook::objects::torus::Torus;
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
 use cookbook::Drawable;
 

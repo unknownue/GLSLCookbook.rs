@@ -4,7 +4,7 @@ pub mod scenerunner;
 pub mod error;
 pub mod utils;
 
-pub mod torus;
+pub mod objects;
 
 mod timer;
 mod drawable;

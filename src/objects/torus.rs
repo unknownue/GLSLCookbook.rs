@@ -8,7 +8,7 @@ use crate::Vec3F;
 
 #[allow(non_snake_case)]
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct TorusVertex {
     VertexPosition: [f32; 3],
     VertexNormal  : [f32; 3],
