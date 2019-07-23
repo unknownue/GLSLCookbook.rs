@@ -28,6 +28,7 @@ uniform mat4 MVP;
 void main() {
 
     vec3 n = normalize(NormalMatrix * VertexNormal);
+    // camCoords is the vertex position of object in camera space.
     vec4 camCoords = ModelViewMatrix * vec4(VertexPosition, 1.0);
 
     vec3 ambient = La * Ka;
@@ -37,6 +38,7 @@ void main() {
     vec3 spec = vec3(0.0);
 
     if(sDotN > 0.0) {
+		// In camera space, the camera is at origin (0, 0, 0)
         vec3 v = normalize(-camCoords.xyz);
         vec3 r = reflect(-s, n);
         spec = Ls * Ks * pow(max(dot(r, v), 0.0), Shininess);

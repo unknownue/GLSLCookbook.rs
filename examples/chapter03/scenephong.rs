@@ -23,24 +23,21 @@ pub struct ScenePhong {
 
 #[allow(non_snake_case)]
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 struct LightInfo {
     LightPosition: [f32; 4],
-    La: [f32; 3],
-    _padding1: f32, // This padding trick is need here.
-    Ld: [f32; 3],
-    _padding2: f32,
+    // This padding trick is needed here. See https://github.com/glium/glium/issues/1203 for detail.
+    La: [f32; 3], _padding1: f32,
+    Ld: [f32; 3], _padding2: f32,
     Ls: [f32; 3],
 }
 
 #[allow(non_snake_case)]
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 struct MaterialInfo {
-    Ka: [f32; 3],
-    _padding1: f32,
-    Kd: [f32; 3],
-    _padding2: f32,
+    Ka: [f32; 3], _padding1: f32,
+    Kd: [f32; 3], _padding2: f32,
     Ks: [f32; 3],
     Shininess: f32,
 }
@@ -77,17 +74,17 @@ impl Scene for ScenePhong {
         glium::implement_uniform_block!(LightInfo, LightPosition, La, Ld, Ls);
         let lights = UniformBuffer::immutable(display, LightInfo {
             LightPosition: (view * world_light).into_array(),
-            La: [0.4_f32, 0.4, 0.4], _padding1: 0.0,
-            Ld: [1.0_f32, 1.0, 1.0], _padding2: 0.0,
-            Ls: [1.0_f32, 1.0, 1.0],
+            La: [0.4_f32, 0.4, 0.4],
+            Ld: [1.0_f32, 1.0, 1.0],
+            Ls: [1.0_f32, 1.0, 1.0], ..Default::default()
         }).map_err(BufferCreationErrorKind::UniformBlock)?;
 
         glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess);
         let materials = UniformBuffer::immutable(display, MaterialInfo {
-            Ka: [0.9_f32, 0.5, 0.3], _padding1: 0.0,
-            Kd: [0.9_f32, 0.5, 0.3], _padding2: 0.0,
+            Ka: [0.9_f32, 0.5, 0.3],
+            Kd: [0.9_f32, 0.5, 0.3],
             Ks: [0.8_f32, 0.8, 0.8],
-            Shininess: 100.0_f32,
+            Shininess: 100.0_f32, ..Default::default()
         }).map_err(BufferCreationErrorKind::UniformBlock)?;
 
         // cookbook::utils::print_active_uniform_blocks(&program);
@@ -150,6 +147,9 @@ impl ScenePhong {
 
         let vertex_shader_code   = include_str!("shaders/phong.vert.glsl");
         let fragment_shader_code = include_str!("shaders/phong.frag.glsl");
+
+        // let vertex_shader_code   = include_str!("shaders/function.vert.glsl");
+        // let fragment_shader_code = include_str!("shaders/function.frag.glsl");
 
         glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
     }
