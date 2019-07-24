@@ -8,6 +8,7 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter02 basic-uniform-block
     cargo r --release --example chapter03 diffuse
     cargo r --release --example chapter03 phong
+    cargo r --release --example chapter03 two-side
 else
     echo "Running example in Debug mode"
     cargo r --example chapter01 basic
@@ -16,4 +17,5 @@ else
     cargo r --example chapter02 basic-uniform-block
     cargo r --example chapter03 diffuse
     cargo r --example chapter03 phong
+    cargo r --example chapter03 two-side
 fi

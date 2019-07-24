@@ -4,8 +4,7 @@
 layout (location = 0) in vec3 VertexPosition;
 layout (location = 1) in vec3 VertexNormal;
 
-layout (location = 0) out vec3 FrontColor;
-layout (location = 1) out vec3 BackColor;
+layout (location = 0) out vec3 Color;
 
 uniform LightInfo {
     vec4 LightPosition; // Light position in eye coords.
@@ -48,8 +47,15 @@ void main() {
     vec3 tnorm = normalize(NormalMatrix * VertexNormal);
     vec3 camCoords = (ModelViewMatrix * vec4(VertexPosition, 1.0)).xyz;
 
-    FrontColor = phongModel(camCoords, tnorm);
-    BackColor  = phongModel(camCoords, -tnorm);
+    vec3 v = normalize(-camCoords.xyz);
+    float vDotN = dot(v, tnorm);
+
+        Color = phongModel(camCoords, tnorm);
+    if (vDotN >= 0.0) {
+        Color = phongModel(camCoords, tnorm);
+    } else {
+        Color = phongModel(camCoords, -tnorm);
+    }
 
     gl_Position = MVP * vec4(VertexPosition, 1.0);
 }

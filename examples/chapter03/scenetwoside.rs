@@ -67,7 +67,6 @@ impl Scene for SceneTwoside {
 
 
         // Initialize Uniforms --------------------------------------------------------
-
         glium::implement_uniform_block!(LightInfo, LightPosition, La, Ld, Ls);
         let lights = UniformBuffer::empty_dynamic(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
@@ -145,11 +144,11 @@ impl SceneTwoside {
 
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/twoside.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/twoside.frag.glsl");
+        // let vertex_shader_code   = include_str!("shaders/twoside.vert.glsl");
+        // let fragment_shader_code = include_str!("shaders/twoside.frag.glsl");
 
-        // let vertex_shader_code   = include_str!("shaders/function.vert.glsl");
-        // let fragment_shader_code = include_str!("shaders/function.frag.glsl");
+        let vertex_shader_code   = include_str!("shaders/twoside_conditional.vert.glsl");
+        let fragment_shader_code = include_str!("shaders/twoside_conditional.frag.glsl");
 
         glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
     }
