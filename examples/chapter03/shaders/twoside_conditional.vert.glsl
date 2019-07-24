@@ -50,7 +50,6 @@ void main() {
     vec3 v = normalize(-camCoords.xyz);
     float vDotN = dot(v, tnorm);
 
-        Color = phongModel(camCoords, tnorm);
     if (vDotN >= 0.0) {
         Color = phongModel(camCoords, tnorm);
     } else {

@@ -4,10 +4,12 @@ extern crate glsl_cookbook_rs as cookbook;
 mod scenediffuse;
 mod scenephong;
 mod scenetwoside;
+mod sceneflat;
 
 use scenediffuse::SceneDiffuse;
 use scenephong::ScenePhong;
 use scenetwoside::SceneTwoside;
+use sceneflat::SceneFlat;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -54,7 +56,7 @@ fn main() -> GLResult<()> {
         | "phong"      => run::<ScenePhong>(title),
         | "diffuse"    => run::<SceneDiffuse>(title),
         | "discard"    => unimplemented!(),
-        | "flat"       => unimplemented!(),
+        | "flat"       => run::<SceneFlat>(title),
         | "subroutine" => unimplemented!(),
         | "two-side"   => run::<SceneTwoside>(title),
         | _ => unreachable!(),
