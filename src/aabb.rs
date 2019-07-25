@@ -51,6 +51,10 @@ impl AABB {
     pub fn reset(&mut self) {
         (*self) = Default::default();
     }
+
+    pub fn center(&self) -> Vec3F {
+        (self.max + self.min) * 0.5
+    }
 }
 
 impl Add for AABB {

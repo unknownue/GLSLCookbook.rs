@@ -1,7 +1,7 @@
 
 use cookbook::scene::{Scene, SceneData};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
-use cookbook::objects::ObjMesh;
+use cookbook::objects::{ObjMesh, ObjMeshConfiguration};
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
 use cookbook::Drawable;
 
@@ -55,7 +55,12 @@ impl Scene for SceneFlat {
 
 
         // Initialize Mesh ------------------------------------------------------------
-        let ogre = ObjMesh::load(display, "media/bs_ears.obj")?;
+        let ogre = ObjMesh::load(display, "media/bs_ears.obj", ObjMeshConfiguration {
+            is_with_adjacency: false,
+            is_gen_tangents: false,
+            is_center: true,
+            is_print_load_message: true,
+        })?;
         // ----------------------------------------------------------------------------
 
 
