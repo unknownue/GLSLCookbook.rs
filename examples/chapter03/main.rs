@@ -5,11 +5,13 @@ mod scenediffuse;
 mod scenephong;
 mod scenetwoside;
 mod sceneflat;
+mod scenesubroutine;
 
 use scenediffuse::SceneDiffuse;
 use scenephong::ScenePhong;
 use scenetwoside::SceneTwoside;
 use sceneflat::SceneFlat;
+use scenesubroutine::SceneSubroutine;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -57,7 +59,7 @@ fn main() -> GLResult<()> {
         | "diffuse"    => run::<SceneDiffuse>(title),
         | "discard"    => unimplemented!(),
         | "flat"       => run::<SceneFlat>(title),
-        | "subroutine" => unimplemented!(),
+        | "subroutine" => run::<SceneSubroutine>(title),
         | "two-side"   => run::<SceneTwoside>(title),
         | _ => unreachable!(),
     }

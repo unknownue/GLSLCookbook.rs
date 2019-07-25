@@ -174,7 +174,7 @@ impl ObjMeshData {
                     triangle_indices[i] = pos_index as u32;
                 }
             },
-            | (false, true) => {
+            | (true, false) => {
                 for i in 0..3 {
                     // TODO: Handle unwrap()
                     let mut indices_split = line_splits.next().unwrap().split('/');
@@ -186,7 +186,7 @@ impl ObjMeshData {
                     triangle_indices[i] = pos_index as u32;
                 }
             },
-            | (true, false) => {
+            | (false, true) => {
                 for i in 0..3 {
                     // TODO: Handle unwrap()
                     let mut indices_split = line_splits.next().unwrap().split('/');

@@ -2,7 +2,7 @@
 use cookbook::scene::{Scene, SceneData};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::Teapot;
-use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
+use cookbook::{Mat4F, Mat3F, Vec3F};
 use cookbook::Drawable;
 
 use glium::backend::Facade;
@@ -12,7 +12,7 @@ use glium::{Surface, uniform, implement_uniform_block};
 
 
 #[derive(Debug)]
-pub struct SceneTwoside {
+pub struct SceneSubroutine {
     scene_data: SceneData,
     program: glium::Program,
 
@@ -42,34 +42,36 @@ struct MaterialInfo {
 }
 
 
-impl Scene for SceneTwoside {
+impl Scene for SceneSubroutine {
 
-    fn new(display: &impl Facade) -> GLResult<SceneTwoside> {
+    fn new(display: &impl Facade) -> GLResult<SceneSubroutine> {
 
         // Shader Program ------------------------------------------------------------
-        let program = SceneTwoside::compile_shader_program(display)
+        let program = SceneSubroutine::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
         // ----------------------------------------------------------------------------
 
 
         // Initialize Mesh ------------------------------------------------------------
-        let teapot = Teapot::new(display, 13, Mat4F::translation_3d(Vec3F::new(0.0, 1.5, 0.25)))?;
+        let teapot = Teapot::new(display, 13, Mat4F::identity())?;
         // ----------------------------------------------------------------------------
 
 
         // Initialize MVP -------------------------------------------------------------
-        let model = Mat4F::identity()
-            .translated_3d(Vec3F::new(0.0, -1.0, 0.0))
-            .rotated_x(-90.0_f32.to_radians());
-        let view = Mat4F::look_at_rh(Vec3F::new(3.0, 6.0, 3.0), Vec3F::zero(), Vec3F::unit_y());
+        let model = Mat4F::identity();
+        let view = Mat4F::look_at_rh(Vec3F::new(0.0, 2.0, 16.0), Vec3F::zero(), Vec3F::unit_y());
         let projection = Mat4F::identity();
         // ----------------------------------------------------------------------------
 
 
         // Initialize Uniforms --------------------------------------------------------
         glium::implement_uniform_block!(LightInfo, LightPosition, La, Ld, Ls);
-        let lights = UniformBuffer::empty_dynamic(display)
-            .map_err(BufferCreationErrorKind::UniformBlock)?;
+        let lights = UniformBuffer::immutable(display, LightInfo {
+            LightPosition: [0.0, 0.0, 0.0, 1.0],
+            La: [0.4_f32, 0.4, 0.4],
+            Ld: [1.0_f32, 1.0, 1.0],
+            Ls: [1.0_f32, 1.0, 1.0], ..Default::default()
+        }).map_err(BufferCreationErrorKind::UniformBlock)?;
 
         glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess);
         let materials = UniformBuffer::immutable(display, MaterialInfo {
@@ -83,7 +85,7 @@ impl Scene for SceneTwoside {
 
         let scene_data = SceneData::new_detail(false, projection, view, model);
 
-        let scene = SceneTwoside { scene_data, program, teapot, materials, lights };
+        let scene = SceneSubroutine { scene_data, program, teapot, materials, lights };
         Ok(scene)
     }
 
@@ -103,34 +105,52 @@ impl Scene for SceneTwoside {
             ..Default::default()
         };
 
-        let world_light = Vec4F::new(2.0, 4.0, 2.0, 1.0);
+        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        frame.clear_depth(1.0);
 
-        self.lights.write(&LightInfo {
-            LightPosition: (self.scene_data.view * world_light).into_array(),
-            La: [0.4_f32, 0.4, 0.4],
-            Ld: [1.0_f32, 1.0, 1.0],
-            Ls: [1.0_f32, 1.0, 1.0], ..Default::default()
-        });
 
-        let mv: Mat4F = self.scene_data.view * self.scene_data.model;
+        // Render teapot with Phong shading. --------------------------
+        let model = Mat4F::translation_3d(Vec3F::new(-3.0, -1.5, 0.0))
+            .rotated_x(-90.0_f32.to_radians());
+        let mv: Mat4F = self.scene_data.view * model;
+
         let uniforms = uniform! {
             LightInfo: &self.lights,
             MaterialInfo: &self.materials,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.scene_data.projection * mv).into_col_arrays(),
+            // Set Subroutine
+            shadeModel: ("phongModel", glium::program::ShaderStage::Vertex),
         };
 
-        frame.clear_color(0.5, 0.5, 0.5, 1.0);
-        frame.clear_depth(1.0);
+        self.teapot.render(frame, &self.program, &draw_params, &uniforms)?;
+        // -------------------------------------------------------------
+
+
+        // Render teapot with Diffuse shading. --------------------------
+        let model = Mat4F::translation_3d(Vec3F::new(3.0, -1.5, 0.0))
+            .rotated_x(-90.0_f32.to_radians());
+        let mv: Mat4F = self.scene_data.view * model;
+
+        let uniforms = uniform! {
+            LightInfo: &self.lights,
+            MaterialInfo: &self.materials,
+            ModelViewMatrix: mv.clone().into_col_arrays(),
+            NormalMatrix: Mat3F::from(mv).into_col_arrays(),
+            MVP: (self.scene_data.projection * mv).into_col_arrays(),
+            // Set Subroutine
+            shadeModel: ("diffuseOnly", glium::program::ShaderStage::Vertex),
+        };
 
         self.teapot.render(frame, &self.program, &draw_params, &uniforms)
+        // -------------------------------------------------------------
     }
 
     fn resize(&mut self, width: u32, height: u32) {
 
         self.scene_data.set_dimension(width, height);
-        self.scene_data.projection = Mat4F::perspective_rh_zo(70.0_f32.to_radians(), self.scene_data.sceen_aspect_ratio(), 0.3, 100.0);
+        self.scene_data.projection = Mat4F::perspective_rh_zo(50.0_f32.to_radians(), self.scene_data.sceen_aspect_ratio(), 0.3, 100.0);
     }
 
     #[inline(always)]
@@ -139,16 +159,12 @@ impl Scene for SceneTwoside {
     fn scene_data_mut(&mut self) -> &mut SceneData { &mut self.scene_data }
 }
 
-
-impl SceneTwoside {
+impl SceneSubroutine {
 
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/twoside.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/twoside.frag.glsl");
-
-        // let vertex_shader_code   = include_str!("shaders/twoside_conditional.vert.glsl");
-        // let fragment_shader_code = include_str!("shaders/twoside_conditional.frag.glsl");
+        let vertex_shader_code   = include_str!("shaders/subroutine.vert.glsl");
+        let fragment_shader_code = include_str!("shaders/subroutine.frag.glsl");
 
         glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
     }

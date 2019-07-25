@@ -9,6 +9,8 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter03 diffuse
     cargo r --release --example chapter03 phong
     cargo r --release --example chapter03 two-side
+    cargo r --release --example chapter03 flat
+    cargo r --release --example chapter03 subroutine
 else
     echo "Running example in Debug mode"
     cargo r --example chapter01 basic
@@ -18,4 +20,6 @@ else
     cargo r --example chapter03 diffuse
     cargo r --example chapter03 phong
     cargo r --example chapter03 two-side
+    cargo r --example chapter03 flat
+    cargo r --example chapter03 subroutine
 fi
