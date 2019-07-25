@@ -1,7 +1,7 @@
 
 use cookbook::scene::{Scene, SceneData};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
-use cookbook::objects::teapot::Teapot;
+use cookbook::objects::Teapot;
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
 use cookbook::Drawable;
 

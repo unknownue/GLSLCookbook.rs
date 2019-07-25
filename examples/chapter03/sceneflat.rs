@@ -1,7 +1,7 @@
 
 use cookbook::scene::{Scene, SceneData};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
-use cookbook::objects::teapot::Teapot;
+use cookbook::objects::ObjMesh;
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
 use cookbook::Drawable;
 
@@ -16,7 +16,7 @@ pub struct SceneFlat {
     scene_data: SceneData,
     program: glium::Program,
 
-    teapot: Teapot,
+    ogre: ObjMesh,
     materials: UniformBuffer<MaterialInfo>,
     lights   : UniformBuffer<LightInfo>,
 
@@ -55,15 +55,14 @@ impl Scene for SceneFlat {
 
 
         // Initialize Mesh ------------------------------------------------------------
-        let teapot = Teapot::new(display, 13, Mat4F::translation_3d(Vec3F::new(0.0, 1.5, 0.25)))?;
+        let ogre = ObjMesh::load(display, "media/bs_ears.obj")?;
         // ----------------------------------------------------------------------------
 
 
         // Initialize MVP -------------------------------------------------------------
         let model = Mat4F::identity()
-            .translated_3d(Vec3F::new(0.0, -1.0, 0.0))
-            .rotated_x(-90.0_f32.to_radians());
-        let view = Mat4F::look_at_rh(Vec3F::new(3.0, 6.0, 3.0), Vec3F::zero(), Vec3F::unit_y());
+            .rotated_y(25.0_f32.to_radians());
+        let view = Mat4F::look_at_rh(Vec3F::new(0.05, 0.55, 0.85), Vec3F::new(0.0, -0.25, 0.0), Vec3F::unit_y());
         let projection = Mat4F::identity();
         // ----------------------------------------------------------------------------
 
@@ -90,7 +89,7 @@ impl Scene for SceneFlat {
             Ls: [1.0_f32, 1.0, 1.0], ..Default::default()
         };
 
-        let scene = SceneFlat { scene_data, program, teapot, materials, lights, light_data };
+        let scene = SceneFlat { scene_data, program, ogre, materials, lights, light_data };
         Ok(scene)
     }
 
@@ -126,7 +125,7 @@ impl Scene for SceneFlat {
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
 
-        self.teapot.render(frame, &self.program, &draw_params, &uniforms)
+        self.ogre.render(frame, &self.program, &draw_params, &uniforms)
     }
 
     fn resize(&mut self, width: u32, height: u32) {

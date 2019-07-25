@@ -55,6 +55,12 @@ impl GLError {
             description: format!("Error occurred when swapping buffer: {}", e)
         })
     }
+
+    pub fn io(e: std::io::Error) -> GLError {
+        GLError::from(GLErrorKind::Custom {
+            description: format!("IO Error: {}", e)
+        })
+    }
 }
 
 impl Fail for GLError {

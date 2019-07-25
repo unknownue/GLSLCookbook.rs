@@ -8,6 +8,7 @@ pub mod objects;
 
 mod timer;
 mod drawable;
+mod aabb;
 
 pub use drawable::Drawable;
 
