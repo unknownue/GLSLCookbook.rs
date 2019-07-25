@@ -11,6 +11,7 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter03 two-side
     cargo r --release --example chapter03 flat
     cargo r --release --example chapter03 subroutine
+    cargo r --release --example chapter03 discard
 else
     echo "Running example in Debug mode"
     cargo r --example chapter01 basic
@@ -22,4 +23,5 @@ else
     cargo r --example chapter03 two-side
     cargo r --example chapter03 flat
     cargo r --example chapter03 subroutine
+    cargo r --example chapter03 discard
 fi

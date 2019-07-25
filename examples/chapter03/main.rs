@@ -6,12 +6,14 @@ mod scenephong;
 mod scenetwoside;
 mod sceneflat;
 mod scenesubroutine;
+mod scenediscard;
 
 use scenediffuse::SceneDiffuse;
 use scenephong::ScenePhong;
 use scenetwoside::SceneTwoside;
 use sceneflat::SceneFlat;
 use scenesubroutine::SceneSubroutine;
+use scenediscard::SceneDiscard;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -32,7 +34,7 @@ lazy_static! {
         let mut m = HashMap::new();
         m.insert("phong".into(),      "Phong reflection mdoel (per-vertex)".into());
 		m.insert("diffuse".into(),    "Diffuse shading only".into());
-		m.insert("discard".into(),    "xample of discarding fragments".into());
+		m.insert("discard".into(),    "example of discarding fragments".into());
 		m.insert("flat".into(),       "Flat shading".into());
 		m.insert("subroutine".into(), "Using a shader subroutine".into());
 		m.insert("two-side".into(),   "Two-sided lighting".into());
@@ -57,7 +59,7 @@ fn main() -> GLResult<()> {
     match recipe.as_ref() {
         | "phong"      => run::<ScenePhong>(title),
         | "diffuse"    => run::<SceneDiffuse>(title),
-        | "discard"    => unimplemented!(),
+        | "discard"    => run::<SceneDiscard>(title),
         | "flat"       => run::<SceneFlat>(title),
         | "subroutine" => run::<SceneSubroutine>(title),
         | "two-side"   => run::<SceneTwoside>(title),
