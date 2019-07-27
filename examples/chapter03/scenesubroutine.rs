@@ -1,5 +1,5 @@
 
-use cookbook::scene::Scene;
+use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::Teapot;
 use cookbook::{Mat4F, Mat3F, Vec3F};
@@ -106,7 +106,7 @@ impl Scene for SceneSubroutine {
             ..Default::default()
         };
 
-        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        frame.clear_color_srgb(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
 
 
@@ -164,6 +164,8 @@ impl SceneSubroutine {
         let vertex_shader_code   = include_str!("shaders/subroutine.vert.glsl");
         let fragment_shader_code = include_str!("shaders/subroutine.frag.glsl");
 
-        glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
+        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
+            .with_srgb_output(true);
+        glium::Program::new(display, sources)
     }
 }

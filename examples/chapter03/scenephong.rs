@@ -1,5 +1,5 @@
 
-use cookbook::scene::Scene;
+use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::Torus;
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
@@ -123,7 +123,7 @@ impl Scene for ScenePhong {
             MVP: (self.projection * mv).into_col_arrays(),
         };
 
-        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        frame.clear_color_srgb(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
 
         self.torus.render(frame, &self.program, &draw_params, &uniforms)
@@ -149,6 +149,8 @@ impl ScenePhong {
         // let vertex_shader_code   = include_str!("shaders/function.vert.glsl");
         // let fragment_shader_code = include_str!("shaders/function.frag.glsl");
 
-        glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
+        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
+            .with_srgb_output(true);
+        glium::Program::new(display, sources)
     }
 }

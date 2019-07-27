@@ -1,5 +1,5 @@
 
-use cookbook::scene::Scene;
+use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 
 use glium::backend::Facade;
@@ -79,7 +79,7 @@ impl Scene for SceneBasic {
         // For simplicity, we do not use index buffer.
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        frame.clear_color_srgb(0.5, 0.5, 0.5, 1.0);
         frame.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &Default::default())
             .map_err(GLErrorKind::DrawError)?;
 
@@ -105,7 +105,11 @@ impl SceneBasic {
         let fragment_shader_code = include_str!("shaders/basic.frag.glsl");
 
         // use the wrapper function provided by glium to create program directly.
-        let program = glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None);
+        // glium does not provide a method to set srgb output directly, so a custom GLSourceCode is introduced here.
+        // GLSourceCode is very similar to glium::program::SourceCode, but provides some customization to its members.
+        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
+            .with_srgb_output(true);
+        let program = glium::Program::new(display, sources);
 
         println!("Finish Shader Compiling");
 

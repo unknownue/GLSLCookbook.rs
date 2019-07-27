@@ -1,6 +1,6 @@
 //! This example is almost the same with chapter01.
 
-use cookbook::scene::Scene;
+use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::utils;
 
@@ -56,7 +56,7 @@ impl Scene for SceneBasicAttrib {
 
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        frame.clear_color_srgb(0.5, 0.5, 0.5, 1.0);
         frame.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &Default::default())
             .map_err(GLErrorKind::DrawError)?;
 
@@ -81,6 +81,8 @@ impl SceneBasicAttrib {
         let fragment_shader_code = include_str!("shaders/basic.frag.glsl");
 
         // use the wrapper function provided by glium to create program directly.
-        glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
+        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
+            .with_srgb_output(true);
+        glium::Program::new(display, sources)
     }
 }

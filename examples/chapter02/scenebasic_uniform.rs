@@ -1,5 +1,5 @@
 
-use cookbook::scene::Scene;
+use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::utils;
 use cookbook::Mat4F;
@@ -70,7 +70,7 @@ impl Scene for SceneBasicUniform {
             RotationMatrix: Mat4F::rotation_z(self.angle.to_radians()).into_col_arrays(),
         };
 
-        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        frame.clear_color_srgb(0.5, 0.5, 0.5, 1.0);
         frame.draw(&self.vertex_buffer, &no_indices, &self.program, &uniforms, &Default::default())
             .map_err(GLErrorKind::DrawError)?;
 
@@ -93,6 +93,8 @@ impl SceneBasicUniform {
         let vertex_shader_code   = include_str!("shaders/basic_uniform.vert.glsl");
         let fragment_shader_code = include_str!("shaders/basic_uniform.frag.glsl");
 
-        glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
+        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
+            .with_srgb_output(true);
+        glium::Program::new(display, sources)
     }
 }

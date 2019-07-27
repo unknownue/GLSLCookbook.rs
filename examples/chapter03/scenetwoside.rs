@@ -1,5 +1,5 @@
 
-use cookbook::scene::Scene;
+use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::Teapot;
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
@@ -19,7 +19,7 @@ pub struct SceneTwoside {
     teapot: Teapot,
     materials: UniformBuffer<MaterialInfo>,
     lights   : UniformBuffer<LightInfo>,
-    
+
     view       : Mat4F,
     model      : Mat4F,
     projection : Mat4F,
@@ -122,7 +122,7 @@ impl Scene for SceneTwoside {
             MVP: (self.projection * mv).into_col_arrays(),
         };
 
-        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        frame.clear_color_srgb(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
 
         self.teapot.render(frame, &self.program, &draw_params, &uniforms)
@@ -148,6 +148,8 @@ impl SceneTwoside {
         // let vertex_shader_code   = include_str!("shaders/twoside_conditional.vert.glsl");
         // let fragment_shader_code = include_str!("shaders/twoside_conditional.frag.glsl");
 
-        glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
+        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
+            .with_srgb_output(true);
+        glium::Program::new(display, sources)
     }
 }
