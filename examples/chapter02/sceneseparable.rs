@@ -1,5 +1,5 @@
 
-use cookbook::scene::{Scene, SceneData};
+use cookbook::scene::Scene;
 use cookbook::error::{GLResult, GLError};
 
 use glium::backend::Facade;
@@ -21,8 +21,8 @@ impl Scene for SceneSeparable {
         unimplemented!()
     }
 
-    #[inline(always)]
-    fn scene_data(&self) -> &SceneData { unimplemented!() }
-    #[inline(always)]
-    fn scene_data_mut(&mut self) -> &mut SceneData { unimplemented!() }
+    fn resize(&mut self, _width: u32, _height: u32) {}
+
+    fn is_animating(&self) -> bool { false }
+    fn toggle_animation(&mut self) {}
 }

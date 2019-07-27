@@ -1,6 +1,6 @@
 //! This example is almost the same with chapter01.
 
-use cookbook::scene::{Scene, SceneData};
+use cookbook::scene::Scene;
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::utils;
 
@@ -26,7 +26,6 @@ const TRIANGLE: [Vertex; 3] = [
 
 #[derive(Debug)]
 pub struct SceneBasicAttrib {
-    scene_data: SceneData,
     vertex_buffer: glium::VertexBuffer<Vertex>,
     program: glium::Program,
 }
@@ -45,9 +44,7 @@ impl Scene for SceneBasicAttrib {
 
         utils::print_active_attribs(&program);
 
-        let scene_data: SceneData = Default::default();
-
-        let scene = SceneBasicAttrib { scene_data, vertex_buffer, program };
+        let scene = SceneBasicAttrib { vertex_buffer, program };
         Ok(scene)
     }
 
@@ -59,22 +56,17 @@ impl Scene for SceneBasicAttrib {
 
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-        let draw_params = glium::draw_parameters::DrawParameters {
-            viewport: Some(self.scene_data.viewport()),
-            ..Default::default()
-        };
-
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
-        frame.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &draw_params)
+        frame.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &Default::default())
             .map_err(GLErrorKind::DrawError)?;
 
         Ok(())
     }
 
-    #[inline(always)]
-    fn scene_data(&self) -> &SceneData { &self.scene_data }
-    #[inline(always)]
-    fn scene_data_mut(&mut self) -> &mut SceneData { &mut self.scene_data }
+    fn resize(&mut self, _width: u32, _height: u32) {}
+
+    fn is_animating(&self) -> bool { false }
+    fn toggle_animation(&mut self) {}
 }
 
 

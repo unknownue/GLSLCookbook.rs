@@ -121,7 +121,10 @@ impl SceneRunner {
                             if let Some(code) = input.virtual_keycode {
                                 match code {
                                     | glium::glutin::VirtualKeyCode::Space => {
-                                        scene.set_animate(true);
+                                        match input.state {
+                                            | glutin::ElementState::Released => scene.toggle_animation(),
+                                            | glutin::ElementState::Pressed => {},
+                                        }
                                     },
                                     | glium::glutin::VirtualKeyCode::Escape => {
                                         should_close = true;

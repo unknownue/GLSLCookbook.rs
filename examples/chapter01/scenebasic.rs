@@ -1,5 +1,5 @@
 
-use cookbook::scene::{Scene, SceneData};
+use cookbook::scene::Scene;
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 
 use glium::backend::Facade;
@@ -24,7 +24,6 @@ const TRIANGLE: [Vertex; 3] = [
 
 #[derive(Debug)]
 pub struct SceneBasic {
-    scene_data: SceneData,
     vertex_buffer: glium::VertexBuffer<Vertex>,
     program: glium::Program,
 }
@@ -64,10 +63,8 @@ impl Scene for SceneBasic {
         let vertex_buffer = glium::VertexBuffer::immutable(display, &TRIANGLE)
             .map_err(BufferCreationErrorKind::Vertex)?;
 
-        let scene_data: SceneData = Default::default();
-
         // All the initialization work has done.
-        let scene = SceneBasic { scene_data, vertex_buffer, program };
+        let scene = SceneBasic { vertex_buffer, program };
         Ok(scene)
     }
 
@@ -82,22 +79,16 @@ impl Scene for SceneBasic {
         // For simplicity, we do not use index buffer.
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-        let draw_params = glium::draw_parameters::DrawParameters {
-            viewport: Some(self.scene_data.viewport()),
-            ..Default::default()
-        };
-
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
-        frame.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &draw_params)
+        frame.draw(&self.vertex_buffer, &no_indices, &self.program, &glium::uniforms::EmptyUniforms, &Default::default())
             .map_err(GLErrorKind::DrawError)?;
 
         Ok(())
     }
 
-    #[inline(always)]
-    fn scene_data(&self) -> &SceneData { &self.scene_data }
-    #[inline(always)]
-    fn scene_data_mut(&mut self) -> &mut SceneData { &mut self.scene_data }
+    fn resize(&mut self, _width: u32, _height: u32) {}
+    fn is_animating(&self) -> bool { false }
+    fn toggle_animation(&mut self) {}
 }
 
 

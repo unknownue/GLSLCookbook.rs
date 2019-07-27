@@ -1,5 +1,5 @@
 
-use cookbook::scene::{Scene, SceneData};
+use cookbook::scene::Scene;
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::utils;
 use cookbook::Mat4F;
@@ -27,11 +27,11 @@ const TRIANGLE: [Vertex; 3] = [
 
 #[derive(Debug)]
 pub struct SceneBasicUniform {
-    scene_data: SceneData,
     vertex_buffer: glium::VertexBuffer<Vertex>,
     program: glium::Program,
 
     angle: f32,
+    is_animate: bool,
 }
 
 impl Scene for SceneBasicUniform {
@@ -47,12 +47,10 @@ impl Scene for SceneBasicUniform {
 
         utils::print_active_uniforms(&program);
 
-        // set true to enable animation.
-        let scene_data = SceneData::new(true);
-
         let scene = SceneBasicUniform {
-            scene_data, vertex_buffer, program,
+            vertex_buffer, program,
             angle: 0.0,
+            is_animate: true, // Enalbe animation
         };
         Ok(scene)
     }
@@ -68,26 +66,23 @@ impl Scene for SceneBasicUniform {
 
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-        let draw_params = glium::draw_parameters::DrawParameters {
-            viewport: Some(self.scene_data.viewport()),
-            ..Default::default()
-        };
-
         let uniforms = uniform! {
-            RotationMatrix: Mat4F::identity().rotated_z(self.angle.to_radians()).into_col_arrays(),
+            RotationMatrix: Mat4F::rotation_z(self.angle.to_radians()).into_col_arrays(),
         };
 
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
-        frame.draw(&self.vertex_buffer, &no_indices, &self.program, &uniforms, &draw_params)
+        frame.draw(&self.vertex_buffer, &no_indices, &self.program, &uniforms, &Default::default())
             .map_err(GLErrorKind::DrawError)?;
 
         Ok(())
     }
 
-    #[inline(always)]
-    fn scene_data(&self) -> &SceneData { &self.scene_data }
-    #[inline(always)]
-    fn scene_data_mut(&mut self) -> &mut SceneData { &mut self.scene_data }
+    fn resize(&mut self, _width: u32, _height: u32) {}
+
+    #[inline]
+    fn is_animating(&self) -> bool { self.is_animate }
+    #[inline]
+    fn toggle_animation(&mut self) { self.is_animate = !self.is_animate; }
 }
 
 

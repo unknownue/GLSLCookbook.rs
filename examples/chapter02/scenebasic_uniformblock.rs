@@ -1,5 +1,5 @@
 
-use cookbook::scene::{Scene, SceneData};
+use cookbook::scene::Scene;
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::utils;
 
@@ -39,7 +39,6 @@ struct BlobSettings {
 
 #[derive(Debug)]
 pub struct SceneBasicUniformBlock {
-    scene_data: SceneData,
     vertex_buffer: glium::VertexBuffer<Vertex>,
     program: glium::Program,
 
@@ -76,10 +75,7 @@ impl Scene for SceneBasicUniformBlock {
         // --------------------------------------------------------------------------------
 
 
-        let scene = SceneBasicUniformBlock {
-            scene_data: Default::default(),
-            vertex_buffer, program, uniform_block
-        };
+        let scene = SceneBasicUniformBlock { vertex_buffer, program, uniform_block };
         Ok(scene)
     }
 
@@ -91,26 +87,21 @@ impl Scene for SceneBasicUniformBlock {
 
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-        let draw_params = glium::draw_parameters::DrawParameters {
-            viewport: Some(self.scene_data.viewport()),
-            ..Default::default()
-        };
-
         let uniforms = uniform! {
             BlobSettings: &self.uniform_block,
         };
 
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
-        frame.draw(&self.vertex_buffer, &no_indices, &self.program, &uniforms, &draw_params)
+        frame.draw(&self.vertex_buffer, &no_indices, &self.program, &uniforms, &Default::default())
             .map_err(GLErrorKind::DrawError)?;
 
         Ok(())
     }
 
-    #[inline(always)]
-    fn scene_data(&self) -> &SceneData { &self.scene_data }
-    #[inline(always)]
-    fn scene_data_mut(&mut self) -> &mut SceneData { &mut self.scene_data }
+    fn resize(&mut self, _width: u32, _height: u32) {}
+
+    fn is_animating(&self) -> bool { false }
+    fn toggle_animation(&mut self) {}
 }
 
 

@@ -42,11 +42,11 @@ lazy_static! {
     };
 }
 
-fn run<S: Scene>(recipe: String) -> GLResult<()> {
+fn run<S: Scene>(recipe: String, width: u32, height: u32) -> GLResult<()> {
 
     let title: String = String::from(TITLE_PREFIX) + &recipe;
 
-    let mut runner = SceneRunner::new(title, WINDOW_WIDTH, WINDOW_HEIGHT, IS_ENABLE_DEBUG, MULTISAMPLING)?;
+    let mut runner = SceneRunner::new(title, width, height, IS_ENABLE_DEBUG, MULTISAMPLING)?;
     let mut scene = S::new(runner.display_backend())?;
 
     runner.run(&mut scene)
@@ -57,12 +57,12 @@ fn main() -> GLResult<()> {
     let (recipe, title) = SceneRunner::parse_command_line_args(&HASHMAP)?;
 
     match recipe.as_ref() {
-        | "phong"      => run::<ScenePhong>(title),
-        | "diffuse"    => run::<SceneDiffuse>(title),
-        | "discard"    => run::<SceneDiscard>(title),
-        | "flat"       => run::<SceneFlat>(title),
-        | "subroutine" => run::<SceneSubroutine>(title),
-        | "two-side"   => run::<SceneTwoside>(title),
+        | "phong"      => run::<ScenePhong>(title, WINDOW_WIDTH, WINDOW_HEIGHT),
+        | "diffuse"    => run::<SceneDiffuse>(title, WINDOW_WIDTH, WINDOW_HEIGHT),
+        | "discard"    => run::<SceneDiscard>(title, 550, 500),
+        | "flat"       => run::<SceneFlat>(title, WINDOW_WIDTH, WINDOW_HEIGHT),
+        | "subroutine" => run::<SceneSubroutine>(title, 800, 400),
+        | "two-side"   => run::<SceneTwoside>(title, WINDOW_WIDTH, WINDOW_HEIGHT),
         | _ => unreachable!(),
     }
 }

@@ -1,5 +1,5 @@
 
-use cookbook::scene::{Scene, SceneData};
+use cookbook::scene::Scene;
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::Torus;
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
@@ -13,12 +13,16 @@ use glium::{Surface, uniform, implement_uniform_block};
 
 #[derive(Debug)]
 pub struct ScenePhong {
-    scene_data: SceneData,
+
     program: glium::Program,
 
     torus: Torus,
     materials: UniformBuffer<MaterialInfo>,
     lights   : UniformBuffer<LightInfo>,
+
+    view       : Mat4F,
+    model      : Mat4F,
+    projection : Mat4F,
 }
 
 #[allow(non_snake_case)]
@@ -91,9 +95,7 @@ impl Scene for ScenePhong {
         // ----------------------------------------------------------------------------
 
 
-        let scene_data = SceneData::new_detail(false, projection, view, model);
-
-        let scene = ScenePhong { scene_data, program, torus, materials, lights };
+        let scene = ScenePhong { program, torus, materials, lights, view, model, projection };
         Ok(scene)
     }
 
@@ -104,7 +106,6 @@ impl Scene for ScenePhong {
     fn render(&self, frame: &mut glium::Frame) -> GLResult<()> {
 
         let draw_params = glium::draw_parameters::DrawParameters {
-            viewport: Some(self.scene_data.viewport()),
             depth: glium::Depth {
                 test: glium::DepthTest::IfLess,
                 write: true,
@@ -113,13 +114,13 @@ impl Scene for ScenePhong {
             ..Default::default()
         };
 
-        let mv: Mat4F = self.scene_data.view * self.scene_data.model;
+        let mv: Mat4F = self.view * self.model;
         let uniforms = uniform! {
             LightInfo: &self.lights,
             MaterialInfo: &self.materials,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
-            MVP: (self.scene_data.projection * mv).into_col_arrays(),
+            MVP: (self.projection * mv).into_col_arrays(),
         };
 
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
@@ -130,14 +131,11 @@ impl Scene for ScenePhong {
 
     fn resize(&mut self, width: u32, height: u32) {
 
-        self.scene_data.set_dimension(width, height);
-        self.scene_data.projection = Mat4F::perspective_rh_zo(70.0_f32.to_radians(), self.scene_data.sceen_aspect_ratio(), 0.3, 100.0);
+        self.projection = Mat4F::perspective_rh_zo(70.0_f32.to_radians(), width as f32 / height as f32, 0.3, 100.0);
     }
 
-    #[inline(always)]
-    fn scene_data(&self) -> &SceneData { &self.scene_data }
-    #[inline(always)]
-    fn scene_data_mut(&mut self) -> &mut SceneData { &mut self.scene_data }
+    fn is_animating(&self) -> bool { false }
+    fn toggle_animation(&mut self) {}
 }
 
 
