@@ -1,1 +1,6 @@
-*.glsl linguist-detectable=true
+
+*.vert.glsl linguist-language=GLSL
+*.frag.glsl linguist-language=GLSL
+*.geom.glsl linguist-language=GLSL
+*.tesc.glsl linguist-language=GLSL
+*.tese.glsl linguist-language=GLSL
