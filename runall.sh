@@ -16,6 +16,7 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter03 discard
 
     cargo r --release --example chapter04 directional
+    cargo r --release --example chapter04 per-frag
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -32,4 +33,5 @@ else
     cargo r --example chapter03 discard
 
     cargo r --example chapter04 directional
+    cargo r --example chapter04 per-frag
 fi

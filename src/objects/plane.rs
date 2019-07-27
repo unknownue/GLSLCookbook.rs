@@ -77,7 +77,7 @@ impl Plane {
 
     fn generate_indices(x_divs: usize, z_divs: usize) -> Vec<u32> {
 
-        let mut indices = Vec::with_capacity(x_divs * z_divs);
+        let mut indices = Vec::with_capacity(x_divs * z_divs * 6);
 
         for i in 0..z_divs {
             let row_start = i * (x_divs + 1);
@@ -96,7 +96,7 @@ impl Plane {
             }
         }
 
-        debug_assert_eq!(indices.len(), x_divs * z_divs);
+        debug_assert_eq!(indices.len(), x_divs * z_divs * 6);
 
         indices
     }

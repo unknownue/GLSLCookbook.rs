@@ -2,8 +2,10 @@
 extern crate glsl_cookbook_rs as cookbook;
 
 mod scenedirectional;
+mod sceneperfragment;
 
 use scenedirectional::SceneDirectional;
+use sceneperfragment::ScenePerfragment;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -32,11 +34,11 @@ lazy_static! {
     };
 }
 
-fn run<S: Scene>(recipe: String) -> GLResult<()> {
+fn run<S: Scene>(recipe: String, width: u32, height: u32) -> GLResult<()> {
 
     let title: String = String::from(TITLE_PREFIX) + &recipe;
 
-    let mut runner = SceneRunner::new(title, WINDOW_WIDTH, WINDOW_HEIGHT, IS_ENABLE_DEBUG, MULTISAMPLING)?;
+    let mut runner = SceneRunner::new(title, width, height, IS_ENABLE_DEBUG, MULTISAMPLING)?;
     let mut scene = S::new(runner.display_backend())?;
 
     runner.run(&mut scene)
@@ -47,10 +49,10 @@ fn main() -> GLResult<()> {
     let (recipe, title) = SceneRunner::parse_command_line_args(&HASHMAP)?;
 
     match recipe.as_ref() {
-        | "directional" => run::<SceneDirectional>(title),
+        | "directional" => run::<SceneDirectional>(title, WINDOW_WIDTH, WINDOW_HEIGHT),
         | "fog"         => unimplemented!(),
         | "multi-light" => unimplemented!(),
-        | "per-frag"    => unimplemented!(),
+        | "per-frag"    => run::<ScenePerfragment>(title, 800, 600),
         | "spot"        => unimplemented!(),
         | "toon"        => unimplemented!(),
         | "pbr"         => unimplemented!(),
