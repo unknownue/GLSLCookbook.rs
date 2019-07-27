@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$1" = "release" ]; then
-    echo "Running example in Release mode"
+    echo "Running examples in Release mode"
     cargo r --release --example chapter01 basic
 
     cargo r --release --example chapter02 basic-attrib
@@ -17,7 +17,7 @@ if [ "$1" = "release" ]; then
 
     cargo r --release --example chapter04 directional
 else
-    echo "Running example in Debug mode"
+    echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
 
     cargo r --example chapter02 basic-attrib

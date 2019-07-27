@@ -65,7 +65,6 @@ impl<'a> GLSourceCode<'a> {
     }
 
     pub fn with_srgb_output(mut self, is_enable: bool) -> GLSourceCode<'a> {
-
         if let program::ProgramCreationInput::SourceCode { ref mut outputs_srgb, .. } = &mut self.input {
             *outputs_srgb = is_enable;
         }
@@ -73,12 +72,10 @@ impl<'a> GLSourceCode<'a> {
     }
 
     pub fn with_point_size_enable(mut self, is_enable: bool) -> GLSourceCode<'a> {
-
         if let program::ProgramCreationInput::SourceCode { ref mut uses_point_size, .. } = &mut self.input {
             *uses_point_size = is_enable;
         }
         self
-
     }
 }
 
