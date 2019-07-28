@@ -20,7 +20,7 @@ uniform MaterialInfo {
 layout(location = 0) out vec4 FragColor;
 
 
-vec3 phongModel(vec3 position, vec3 n) {
+vec3 blinnPhong(vec3 position, vec3 n) {
 
     vec3 ambient = La * Ka;
 
@@ -41,5 +41,5 @@ vec3 phongModel(vec3 position, vec3 n) {
 
 void main() {
 
-    FragColor = vec4(phongModel(Position, normalize(Normal)), 1.0);
+    FragColor = vec4(blinnPhong(Position, normalize(Normal)), 1.0);
 }
