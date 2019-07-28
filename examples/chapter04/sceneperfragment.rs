@@ -177,6 +177,9 @@ impl ScenePerfragment {
         let vertex_shader_code   = include_str!("shaders/perfrag.vert.glsl");
         let fragment_shader_code = include_str!("shaders/perfrag.frag.glsl");
 
+        // let vertex_shader_code   = include_str!("shaders/blinnphong.vert.glsl");
+        // let fragment_shader_code = include_str!("shaders/blinnphong.frag.glsl");
+
         let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
             .with_srgb_output(true);
         glium::Program::new(display, sources)
