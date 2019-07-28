@@ -65,8 +65,8 @@ impl Scene for ScenePhong {
 
         // Initialize MVP -------------------------------------------------------------
         let model = Mat4F::identity()
-            .rotated_x(-35.0_f32.to_radians())
-            .rotated_y( 35.0_f32.to_radians());
+            .rotated_y( 35.0_f32.to_radians())
+            .rotated_x(-35.0_f32.to_radians());
         let view = Mat4F::look_at_rh(Vec3F::new(0.0, 0.0, 2.0), Vec3F::zero(), Vec3F::unit_y());
         let projection = Mat4F::identity();
         // ----------------------------------------------------------------------------

@@ -62,9 +62,8 @@ impl Scene for SceneDiscard {
 
 
         // Initialize MVP -------------------------------------------------------------
-        let model = Mat4F::identity()
-            .translated_3d(Vec3F::new(0.0, 0.0, -1.5))
-            .rotated_x(-90.0_f32.to_radians());
+        let model = Mat4F::rotation_x(-90.0_f32.to_radians())
+            .translated_3d(Vec3F::new(0.0, -1.5, 0.0));
         let view = Mat4F::look_at_rh(Vec3F::new(0.0, 0.0, 7.0), Vec3F::zero(), Vec3F::unit_y());
         let projection = Mat4F::identity();
         // ----------------------------------------------------------------------------

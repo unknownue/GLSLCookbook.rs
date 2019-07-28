@@ -63,7 +63,7 @@ impl Scene for SceneSubroutine {
 
         // Initialize MVP -------------------------------------------------------------
         let model = Mat4F::identity();
-        let view = Mat4F::look_at_rh(Vec3F::new(0.0, 3.5, 9.0), Vec3F::zero(), Vec3F::unit_y());
+        let view = Mat4F::look_at_rh(Vec3F::new(0.0, 0.0, 11.0), Vec3F::zero(), Vec3F::unit_y());
         let projection = Mat4F::identity();
         // ----------------------------------------------------------------------------
 
@@ -111,8 +111,8 @@ impl Scene for SceneSubroutine {
 
 
         // Render teapot with Phong shading. --------------------------
-        let model = Mat4F::translation_3d(Vec3F::new(-3.0, -1.5, 0.0))
-            .rotated_x(-90.0_f32.to_radians());
+        let model = Mat4F::rotation_x(-90.0_f32.to_radians())
+            .translated_3d(Vec3F::new(-3.0, -1.5, 0.0));
         let mv: Mat4F = self.view * model;
 
         let uniforms = uniform! {
@@ -130,8 +130,8 @@ impl Scene for SceneSubroutine {
 
 
         // Render teapot with Diffuse shading. --------------------------
-        let model = Mat4F::translation_3d(Vec3F::new(3.0, -1.5, 0.0))
-            .rotated_x(-90.0_f32.to_radians());
+        let model = Mat4F::rotation_x(-90.0_f32.to_radians())
+            .translated_3d(Vec3F::new(3.0, -1.5, 0.0));
         let mv: Mat4F = self.view * model;
 
         let uniforms = uniform! {

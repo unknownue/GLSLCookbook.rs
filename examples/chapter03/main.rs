@@ -61,7 +61,7 @@ fn main() -> GLResult<()> {
         | "diffuse"    => run::<SceneDiffuse>(title, WINDOW_WIDTH, WINDOW_HEIGHT),
         | "discard"    => run::<SceneDiscard>(title, 550, 500),
         | "flat"       => run::<SceneFlat>(title, WINDOW_WIDTH, WINDOW_HEIGHT),
-        | "subroutine" => run::<SceneSubroutine>(title, 800, 400),
+        | "subroutine" => run::<SceneSubroutine>(title, 800, 600),
         | "two-side"   => run::<SceneTwoside>(title, WINDOW_WIDTH, WINDOW_HEIGHT),
         | _ => unreachable!(),
     }
