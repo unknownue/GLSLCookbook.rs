@@ -4,10 +4,12 @@ extern crate glsl_cookbook_rs as cookbook;
 mod scenedirectional;
 mod sceneperfragment;
 mod scenespot;
+mod scenetoon;
 
 use scenedirectional::SceneDirectional;
 use sceneperfragment::ScenePerfragment;
 use scenespot::SceneSpot;
+use scenetoon::SceneToon;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -57,7 +59,7 @@ fn main() -> GLResult<()> {
         | "multi-light" => unimplemented!(),
         | "per-frag"    => run::<ScenePerfragment>(title),
         | "spot"        => run::<SceneSpot>(title),
-        | "toon"        => unimplemented!(),
+        | "toon"        => run::<SceneToon>(title),
         | "pbr"         => unimplemented!(),
         | _ => unreachable!(),
     }
