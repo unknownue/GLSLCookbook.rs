@@ -117,7 +117,7 @@ impl Scene for SceneFog {
             program,
             teapot, teapot_material, plane, plane_material,
             material_buffer, light_buffer, fog_buffer,
-            view, projection, angle, is_animate
+            view, projection, angle, is_animate,
         };
         Ok(scene)
     }

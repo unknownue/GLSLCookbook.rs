@@ -17,8 +17,8 @@ pub struct SceneTwoside {
     program: glium::Program,
 
     teapot: Teapot,
-    materials: UniformBuffer<MaterialInfo>,
-    lights   : UniformBuffer<LightInfo>,
+    material_buffer: UniformBuffer<MaterialInfo>,
+    light_buffer   : UniformBuffer<LightInfo>,
 
     view       : Mat4F,
     model      : Mat4F,
@@ -64,18 +64,18 @@ impl Scene for SceneTwoside {
         // Initialize MVP -------------------------------------------------------------
         let model = Mat4F::rotation_x(-90.0_f32.to_radians())
             .translated_3d(Vec3F::new(0.0, -1.0, 0.0));
-        let view = Mat4F::look_at_rh(Vec3F::new(3.0, 6.0, 3.0), Vec3F::zero(), Vec3F::unit_y());
+        let view = Mat4F::look_at_rh(Vec3F::new(2.5, 5.0, 2.5), Vec3F::zero(), Vec3F::unit_y());
         let projection = Mat4F::identity();
         // ----------------------------------------------------------------------------
 
 
         // Initialize Uniforms --------------------------------------------------------
         glium::implement_uniform_block!(LightInfo, LightPosition, La, Ld, Ls);
-        let lights = UniformBuffer::empty_dynamic(display)
+        let light_buffer = UniformBuffer::empty_dynamic(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
 
         glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess);
-        let materials = UniformBuffer::immutable(display, MaterialInfo {
+        let material_buffer = UniformBuffer::immutable(display, MaterialInfo {
             Ka: [0.9_f32, 0.5, 0.3],
             Kd: [0.9_f32, 0.5, 0.3],
             Ks: [0.8_f32, 0.8, 0.8],
@@ -84,7 +84,12 @@ impl Scene for SceneTwoside {
         // ----------------------------------------------------------------------------
 
 
-        let scene = SceneTwoside { program, teapot, materials, lights, view, model, projection };
+        let scene = SceneTwoside {
+            program,
+            teapot,
+            material_buffer, light_buffer,
+            view, model, projection,
+        };
         Ok(scene)
     }
 
@@ -105,7 +110,7 @@ impl Scene for SceneTwoside {
 
         let world_light = Vec4F::new(2.0, 4.0, 2.0, 1.0);
 
-        self.lights.write(&LightInfo {
+        self.light_buffer.write(&LightInfo {
             LightPosition: (self.view * world_light).into_array(),
             La: [0.4_f32, 0.4, 0.4],
             Ld: [1.0_f32, 1.0, 1.0],
@@ -114,8 +119,8 @@ impl Scene for SceneTwoside {
 
         let mv: Mat4F = self.view * self.model;
         let uniforms = uniform! {
-            LightInfo: &self.lights,
-            MaterialInfo: &self.materials,
+            LightInfo: &self.light_buffer,
+            MaterialInfo: &self.material_buffer,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),

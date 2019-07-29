@@ -21,8 +21,8 @@ pub struct ScenePerfragment {
     plane: Plane,
     plane_material: MaterialInfo,
 
-    materials: UniformBuffer<MaterialInfo>,
-    lights   : UniformBuffer<LightInfo>,
+    material_buffer: UniformBuffer<MaterialInfo>,
+    light_buffer   : UniformBuffer<LightInfo>,
 
     view       : Mat4F,
     projection : Mat4F,
@@ -89,16 +89,21 @@ impl Scene for ScenePerfragment {
 
         // Initialize Uniforms --------------------------------------------------------
         glium::implement_uniform_block!(LightInfo, LightPosition, La, L);
-        let lights = UniformBuffer::empty_dynamic(display)
+        let light_buffer = UniformBuffer::empty_dynamic(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
 
         glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess);
-        let materials = UniformBuffer::empty_dynamic(display)
+        let material_buffer = UniformBuffer::empty_dynamic(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
         // ----------------------------------------------------------------------------
 
 
-        let scene = ScenePerfragment { program, teapot, teapot_material, plane, plane_material, materials, lights, view, projection, angle, is_animate };
+        let scene = ScenePerfragment {
+            program,
+            teapot, teapot_material, plane, plane_material,
+            material_buffer, light_buffer,
+            view, projection, angle, is_animate,
+        };
         Ok(scene)
     }
 
@@ -125,20 +130,20 @@ impl Scene for ScenePerfragment {
             ..Default::default()
         };
 
-        self.lights.write(&LightInfo {
+        self.light_buffer.write(&LightInfo {
             LightPosition: (self.view * Vec4F::new(10.0 * self.angle.cos(), 3.0, 10.0 * self.angle.sin(), 1.0)).into_array(),
             La: [0.1, 0.1, 0.1],
             L: [0.9, 0.9, 0.9], ..Default::default()
         });
 
         // Render Teapot ----------------------------------------------------------
-        self.materials.write(&self.teapot_material);
+        self.material_buffer.write(&self.teapot_material);
 
         let model = Mat4F::rotation_x(-90.0_f32.to_radians());
         let mv: Mat4F = self.view * model;
         let uniforms = uniform! {
-            LightInfo: &self.lights,
-            MaterialInfo: &self.materials,
+            LightInfo: &self.light_buffer,
+            MaterialInfo: &self.material_buffer,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -148,13 +153,13 @@ impl Scene for ScenePerfragment {
         // -------------------------------------------------------------------------
 
         // Render Plane ----------------------------------------------------------
-        self.materials.write(&self.plane_material);
+        self.material_buffer.write(&self.plane_material);
 
         let model = Mat4F::translation_3d(Vec3F::new(0.0, -0.45, 0.0));
         let mv: Mat4F = self.view * model;
         let uniforms = uniform! {
-            LightInfo: &self.lights,
-            MaterialInfo: &self.materials,
+            LightInfo: &self.light_buffer,
+            MaterialInfo: &self.material_buffer,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),

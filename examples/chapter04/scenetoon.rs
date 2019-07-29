@@ -22,8 +22,8 @@ pub struct SceneToon {
     plane: Plane,
     plane_material: MaterialInfo,
 
-    material: UniformBuffer<MaterialInfo>,
-    light   : UniformBuffer<LightInfo>,
+    material_buffer: UniformBuffer<MaterialInfo>,
+    light_buffer   : UniformBuffer<LightInfo>,
 
     view       : Mat4F,
     projection : Mat4F,
@@ -85,16 +85,20 @@ impl Scene for SceneToon {
 
         // Initialize Uniforms --------------------------------------------------------
         glium::implement_uniform_block!(LightInfo, LightPosition, La, L);
-        let light = UniformBuffer::empty_dynamic(display)
+        let light_buffer = UniformBuffer::empty_dynamic(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
 
         glium::implement_uniform_block!(MaterialInfo, Ka, Kd);
-        let material = UniformBuffer::empty_dynamic(display)
+        let material_buffer = UniformBuffer::empty_dynamic(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
         // ----------------------------------------------------------------------------
 
-
-        let scene = SceneToon { program, teapot, torus, teapot_material, plane, plane_material, material, light, view, projection, angle, is_animate };
+        let scene = SceneToon {
+            program,
+            teapot, torus, teapot_material, plane, plane_material,
+            material_buffer, light_buffer,
+            view, projection, angle, is_animate,
+        };
         Ok(scene)
     }
 
@@ -122,22 +126,22 @@ impl Scene for SceneToon {
         };
 
         let light_pos = Vec4F::new(10.0 * self.angle.cos(), 10.0, 10.0 * self.angle.sin(), 1.0);
-        self.light.write(&LightInfo {
+        self.light_buffer.write(&LightInfo {
             LightPosition: (self.view * light_pos).into_array(),
             La: [0.2, 0.2, 0.2],
             L : [0.9, 0.9, 0.9], ..Default::default()
         });
 
         // Render Teapot ----------------------------------------------------------
-        self.material.write(&self.teapot_material);
+        self.material_buffer.write(&self.teapot_material);
 
         let model = Mat4F::rotation_x(-90.0_f32.to_radians())
             .rotated_y(45.0_f32.to_radians())
             .translated_3d(Vec3F::new(0.0, 0.0, -2.0));
         let mv: Mat4F = self.view * model;
         let uniforms = uniform! {
-            LightInfo: &self.light,
-            MaterialInfo: &self.material,
+            LightInfo: &self.light_buffer,
+            MaterialInfo: &self.material_buffer,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -151,8 +155,8 @@ impl Scene for SceneToon {
             .translated_3d(Vec3F::new(-1.0, 0.75, 3.0));
         let mv: Mat4F = self.view * model;
         let uniforms = uniform! {
-            LightInfo: &self.light,
-            MaterialInfo: &self.material, // torus share the same material with teapot
+            LightInfo: &self.light_buffer,
+            MaterialInfo: &self.material_buffer, // torus share the same material_buffer with teapot
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -162,13 +166,13 @@ impl Scene for SceneToon {
         // -------------------------------------------------------------------------
 
         // Render Plane ------------------------------------------------------------
-        self.material.write(&self.plane_material);
+        self.material_buffer.write(&self.plane_material);
 
         let model = Mat4F::identity();
         let mv: Mat4F = self.view * model;
         let uniforms = uniform! {
-            SpotLightInfo: &self.light,
-            MaterialInfo: &self.material,
+            SpotLightInfo: &self.light_buffer,
+            MaterialInfo: &self.material_buffer,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
