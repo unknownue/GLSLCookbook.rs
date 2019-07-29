@@ -5,11 +5,13 @@ mod scenedirectional;
 mod sceneperfragment;
 mod scenespot;
 mod scenetoon;
+mod scenefog;
 
 use scenedirectional::SceneDirectional;
 use sceneperfragment::ScenePerfragment;
 use scenespot::SceneSpot;
 use scenetoon::SceneToon;
+use scenefog::SceneFog;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -55,7 +57,7 @@ fn main() -> GLResult<()> {
 
     match recipe.as_ref() {
         | "directional" => run::<SceneDirectional>(title),
-        | "fog"         => unimplemented!(),
+        | "fog"         => run::<SceneFog>(title),
         | "multi-light" => unimplemented!(),
         | "per-frag"    => run::<ScenePerfragment>(title),
         | "spot"        => run::<SceneSpot>(title),

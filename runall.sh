@@ -19,6 +19,7 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter04 per-frag
     cargo r --release --example chapter04 spot
     cargo r --release --example chapter04 toon
+    cargo r --release --example chapter04 fog
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -38,4 +39,5 @@ else
     cargo r --example chapter04 per-frag
     cargo r --example chapter04 spot
     cargo r --example chapter04 toon
+    cargo r --example chapter04 fog
 fi
