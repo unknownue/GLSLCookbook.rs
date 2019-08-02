@@ -47,8 +47,7 @@ void main() {
 
     float dist = abs(Position.z);
 
-    float fogFactor = (MaxDist - dist) / (MaxDist - MinDist);
-    fogFactor = clamp(fogFactor, 0.0, 1.0);
+    float fogFactor = clamp((MaxDist - dist) / (MaxDist - MinDist), 0.0, 1.0);
 
     vec3 shadeColor = blinnPhong(Position, normalize(Normal));
     vec3 color = mix(FogColor, shadeColor, fogFactor);

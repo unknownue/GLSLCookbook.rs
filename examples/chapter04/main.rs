@@ -1,12 +1,14 @@
 
 extern crate glsl_cookbook_rs as cookbook;
 
+mod scenemultilight;
 mod scenedirectional;
 mod sceneperfragment;
 mod scenespot;
 mod scenetoon;
 mod scenefog;
 
+use scenemultilight::SceneMultilight;
 use scenedirectional::SceneDirectional;
 use sceneperfragment::ScenePerfragment;
 use scenespot::SceneSpot;
@@ -58,7 +60,7 @@ fn main() -> GLResult<()> {
     match recipe.as_ref() {
         | "directional" => run::<SceneDirectional>(title),
         | "fog"         => run::<SceneFog>(title),
-        | "multi-light" => unimplemented!(),
+        | "multi-light" => run::<SceneMultilight>(title),
         | "per-frag"    => run::<ScenePerfragment>(title),
         | "spot"        => run::<SceneSpot>(title),
         | "toon"        => run::<SceneToon>(title),
