@@ -15,11 +15,13 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter03 subroutine
     cargo r --release --example chapter03 discard
 
+    cargo r --release --example chapter04 multi-light
     cargo r --release --example chapter04 directional
     cargo r --release --example chapter04 per-frag
     cargo r --release --example chapter04 spot
     cargo r --release --example chapter04 toon
     cargo r --release --example chapter04 fog
+    cargo r --release --example chapter04 pbr
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -35,9 +37,11 @@ else
     cargo r --example chapter03 subroutine
     cargo r --example chapter03 discard
 
+    cargo r --example chapter04 multi-light
     cargo r --example chapter04 directional
     cargo r --example chapter04 per-frag
     cargo r --example chapter04 spot
     cargo r --example chapter04 toon
     cargo r --example chapter04 fog
+    cargo r --example chapter04 pbr
 fi

@@ -7,6 +7,7 @@ mod sceneperfragment;
 mod scenespot;
 mod scenetoon;
 mod scenefog;
+mod scenepbr;
 
 use scenemultilight::SceneMultilight;
 use scenedirectional::SceneDirectional;
@@ -14,6 +15,7 @@ use sceneperfragment::ScenePerfragment;
 use scenespot::SceneSpot;
 use scenetoon::SceneToon;
 use scenefog::SceneFog;
+use scenepbr::ScenePbr;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -64,7 +66,7 @@ fn main() -> GLResult<()> {
         | "per-frag"    => run::<ScenePerfragment>(title),
         | "spot"        => run::<SceneSpot>(title),
         | "toon"        => run::<SceneToon>(title),
-        | "pbr"         => unimplemented!(),
+        | "pbr"         => run::<ScenePbr>(title),
         | _ => unreachable!(),
     }
 }
