@@ -135,7 +135,12 @@ fn print_uniform_block_layout(layout: &glium::program::BlockLayout, indent: usiz
         },
         | BlockLayout::BasicType { ty, offset_in_buffer } => {
             (1..indent).for_each(|_| print!("\t"));
-            println!("\tType: {:?}  Offset in block: {}", ty, offset_in_buffer);
+            println!("\tType: {:?},  Offset in block: {}", ty, offset_in_buffer);
+        },
+        | BlockLayout::Array { content, length } => {
+            (1..indent).for_each(|_| print!("\t"));
+            println!("\tType: Array, Length: {}", length);
+            print_uniform_block_layout(&content, indent);
         },
         | _ => unimplemented!(),
     }

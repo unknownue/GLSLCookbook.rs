@@ -25,6 +25,8 @@ pub struct SceneMultilight {
     material_buffer: UniformBuffer<MaterialInfo>,
     light_buffer   : UniformBuffer<LightsWrapper>,
 
+    light_data: LightsWrapper,
+
     view       : Mat4F,
     projection : Mat4F,
 }
@@ -96,8 +98,6 @@ impl Scene for SceneMultilight {
 
 
         // Initialize Uniforms --------------------------------------------------------
-        glium::implement_uniform_block!(LightInfo, Position, La, L);
-        glium::implement_uniform_block!(LightsWrapper, lights);
         let mut lights: LightsWrapper = Default::default();
         for i in 0..5 {
             const TWO_PI: f32 = std::f32::consts::PI * 2.0;
@@ -123,7 +123,9 @@ impl Scene for SceneMultilight {
         lights.lights[3].La = [0.0, 0.2, 0.0];
         lights.lights[4].La = [0.2, 0.2, 0.2];
 
-        let light_buffer = UniformBuffer::immutable(display, lights)
+        glium::implement_uniform_block!(LightInfo, Position, La, L);
+        glium::implement_uniform_block!(LightsWrapper, lights);
+        let light_buffer = UniformBuffer::empty_immutable(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
 
         glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess);
@@ -137,7 +139,7 @@ impl Scene for SceneMultilight {
         let scene = SceneMultilight {
             program,
             plane, mesh, plane_material, mesh_material,
-            material_buffer, light_buffer,
+            material_buffer, light_buffer, light_data: lights,
             view, projection,
         };
         Ok(scene)
@@ -164,6 +166,7 @@ impl Scene for SceneMultilight {
 
         // Render Mesh -------------------------------------------------------------
         self.material_buffer.write(&self.mesh_material);
+        self.light_buffer.write(&self.light_data);
 
         let model = Mat4F::rotation_y(90.0_f32.to_radians());
         let mv: Mat4F = self.view * model;
@@ -180,6 +183,7 @@ impl Scene for SceneMultilight {
 
         // Render Plane ----------------------------------------------------------
         self.material_buffer.write(&self.plane_material);
+        self.light_buffer.write(&self.light_data);
 
         let model = Mat4F::translation_3d(Vec3F::new(0.0, -0.45, 0.0));
         let mv: Mat4F = self.view * model;
