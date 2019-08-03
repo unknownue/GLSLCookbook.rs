@@ -94,11 +94,11 @@ impl Scene for SceneSpot {
 
         // Initialize Uniforms --------------------------------------------------------
         glium::implement_uniform_block!(SpotLightInfo, SpotPosition, L, La, SpotDirection, Exponent, Cutoff);
-        let light_buffer = UniformBuffer::empty_dynamic(display)
+        let light_buffer = UniformBuffer::empty_immutable(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
 
         glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess);
-        let material_buffer = UniformBuffer::empty_dynamic(display)
+        let material_buffer = UniformBuffer::empty_immutable(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
         // ----------------------------------------------------------------------------
 
