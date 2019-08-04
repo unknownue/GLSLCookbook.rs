@@ -22,6 +22,8 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter04 toon
     cargo r --release --example chapter04 fog
     cargo r --release --example chapter04 pbr
+
+    cargo r --release --example chapter05 texture
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -44,4 +46,6 @@ else
     cargo r --example chapter04 toon
     cargo r --example chapter04 fog
     cargo r --example chapter04 pbr
+
+    cargo r --example chapter05 texture
 fi
