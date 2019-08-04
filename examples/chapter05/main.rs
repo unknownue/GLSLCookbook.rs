@@ -2,8 +2,10 @@
 extern crate glsl_cookbook_rs as cookbook;
 
 mod scenetexture;
+mod scenemultitex;
 
 use scenetexture::SceneTexture;
+use scenemultitex::SceneMultiTex;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -13,17 +15,18 @@ use std::collections::HashMap;
 use lazy_static::lazy_static;
 
 const TITLE_PREFIX: &'static str = "Chapter 5 - ";
-const WINDOW_WIDTH : u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
+const WINDOW_WIDTH : u32 = 1024;
+const WINDOW_HEIGHT: u32 = 678;
 const IS_ENABLE_DEBUG: bool = true;
-const MULTISAMPLING: u16 = 0;
+const MULTISAMPLING: u16 = 4;
 
 
 lazy_static! {
     static ref HASHMAP: HashMap<String, String> = {
         let mut m = HashMap::new();
         m.insert("alpha-test".into(), "Discard fragments based on an alpha test".into());
-		m.insert("multi-tex".into(), "Normal map".into());
+		m.insert("multi-tex".into(), "Multiple textures".into());
+		m.insert("normal-map".into(), "Normal map".into());
 		m.insert("proj-tex".into(), "Projected texture".into());
 		m.insert("reflect-cube".into(), "Reflection with a cube mapg".into());
 		m.insert("refract-cube".into(), "Refraction with a cube map".into());
@@ -51,7 +54,8 @@ fn main() -> GLResult<()> {
     let (recipe, title) = SceneRunner::parse_command_line_args(&HASHMAP)?;
 
     match recipe.as_ref() {
-        | "multi-tex"     => unimplemented!(),
+        | "alpha-test"    => unimplemented!(),
+        | "multi-tex"     => run::<SceneMultiTex>(title),
         | "normal-map"    => unimplemented!(),
         | "proj-tex"      => unimplemented!(),
         | "reflect-cube"  => unimplemented!(),

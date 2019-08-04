@@ -24,6 +24,7 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter04 pbr
 
     cargo r --release --example chapter05 texture
+    cargo r --release --example chapter05 multi-tex
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -48,4 +49,5 @@ else
     cargo r --example chapter04 pbr
 
     cargo r --example chapter05 texture
+    cargo r --example chapter05 multi-tex
 fi
