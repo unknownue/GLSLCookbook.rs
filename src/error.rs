@@ -96,6 +96,9 @@ pub enum GLErrorKind {
     /// An error occurred while creating buffers in OpenGL.
     #[fail(display = "Failed to create buffer: {:?}", _0)]
     CreateBuffer(BufferCreationErrorKind),
+    /// An error occurred while creating texture in OpenGL.
+    #[fail(display = "Failed to create texture: {:?}", _0)]
+    CreateTexture(glium::texture::TextureCreationError),
     /// An error occurred draw commands.
     #[fail(display = "Error occurred when drawing: {:?}", _0)]
     DrawError(glium::DrawError),

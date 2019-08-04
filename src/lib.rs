@@ -3,6 +3,7 @@ pub mod scene;
 pub mod scenerunner;
 pub mod error;
 pub mod utils;
+pub mod texture;
 
 pub mod objects;
 pub mod aabb;
