@@ -3,9 +3,11 @@ extern crate glsl_cookbook_rs as cookbook;
 
 mod scenetexture;
 mod scenemultitex;
+mod scenealphatest;
 
 use scenetexture::SceneTexture;
 use scenemultitex::SceneMultiTex;
+use scenealphatest::SceneAlphaTest;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -15,8 +17,8 @@ use std::collections::HashMap;
 use lazy_static::lazy_static;
 
 const TITLE_PREFIX: &'static str = "Chapter 5 - ";
-const WINDOW_WIDTH : u32 = 1024;
-const WINDOW_HEIGHT: u32 = 678;
+const WINDOW_WIDTH : u32 = 800;
+const WINDOW_HEIGHT: u32 = 600;
 const IS_ENABLE_DEBUG: bool = true;
 const MULTISAMPLING: u16 = 4;
 
@@ -54,7 +56,7 @@ fn main() -> GLResult<()> {
     let (recipe, title) = SceneRunner::parse_command_line_args(&HASHMAP)?;
 
     match recipe.as_ref() {
-        | "alpha-test"    => unimplemented!(),
+        | "alpha-test"    => run::<SceneAlphaTest>(title),
         | "multi-tex"     => run::<SceneMultiTex>(title),
         | "normal-map"    => unimplemented!(),
         | "proj-tex"      => unimplemented!(),
