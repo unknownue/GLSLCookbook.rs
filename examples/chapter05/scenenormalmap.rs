@@ -1,9 +1,9 @@
 
 use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
-use cookbook::objects::Teapot;
+use cookbook::objects::{ObjMesh, ObjMeshConfiguration};
 use cookbook::texture::load_texture;
-use cookbook::{Mat4F, Mat3F, Vec3F};
+use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
 use cookbook::Drawable;
 
 use glium::backend::Facade;
@@ -14,17 +14,18 @@ use glium::{Surface, uniform, implement_uniform_block};
 
 
 #[derive(Debug)]
-pub struct SceneAlphaTest {
+pub struct SceneNormalMap {
 
     program: glium::Program,
 
-    teapot: Teapot,
-    cement: Texture2d,
-    moss: Texture2d,
+    ogre: ObjMesh,
+    diffuse_tex: Texture2d,
+    normal_tex: Texture2d,
 
     material_buffer: UniformBuffer<MaterialInfo>,
     light_buffer   : UniformBuffer<LightInfo>,
 
+    view: Mat4F,
     projection : Mat4F,
 
     angle: f32,
@@ -49,52 +50,55 @@ struct MaterialInfo {
 }
 
 
-impl Scene for SceneAlphaTest {
+impl Scene for SceneNormalMap {
 
-    fn new(display: &impl Facade) -> GLResult<SceneAlphaTest> {
+    fn new(display: &impl Facade) -> GLResult<SceneNormalMap> {
 
         // Shader Program ------------------------------------------------------------
-        let program = SceneAlphaTest::compile_shader_program(display)
+        let program = SceneNormalMap::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
         // ----------------------------------------------------------------------------
 
 
         // Initialize Mesh ------------------------------------------------------------
-        let teapot = Teapot::new(display, 14, Mat4F::identity())?;
+        let ogre = ObjMesh::load(display, "media/bs_ears.obj", ObjMeshConfiguration {
+            is_with_adjacency: false,
+            is_gen_tangents: true,
+            is_center: false,
+            is_print_load_message: true,
+        })?;
         // ----------------------------------------------------------------------------
 
         // Initialize Textures --------------------------------------------------------
-        let cement = load_texture(display, "media/texture/cement.png")?;
-        let moss   = load_texture(display, "media/texture/moss.png")?;
+        let diffuse_tex = load_texture(display, "media/texture/ogre_diffuse.png")?;
+        let normal_tex  = load_texture(display, "media/texture/ogre_normalmap.png")?;
         // ----------------------------------------------------------------------------
 
         // Initialize MVP -------------------------------------------------------------
+        let view = Mat4F::look_at_rh(Vec3F::new(-1.0, 0.25, 2.0), Vec3F::zero(), Vec3F::unit_y());
         let projection = Mat4F::identity();
-        let angle = 0.0;
+        let angle = 100.0_f32.to_radians();
         let is_animate = true;
         // ----------------------------------------------------------------------------
 
 
         // Initialize Uniforms --------------------------------------------------------
         glium::implement_uniform_block!(LightInfo, LightPosition, L, La);
-        let light_buffer = UniformBuffer::immutable(display, LightInfo {
-            LightPosition: [0.0_f32, 0.0, 0.0, 1.0],
-            L: [1.0_f32, 1.0, 1.0],
-            La: [0.2_f32, 0.2, 0.2], ..Default::default()
-        }).map_err(BufferCreationErrorKind::UniformBlock)?;
+        let light_buffer = UniformBuffer::empty_immutable(display)
+            .map_err(BufferCreationErrorKind::UniformBlock)?;
 
         glium::implement_uniform_block!(MaterialInfo, Ks, Shininess);
         let material_buffer = UniformBuffer::immutable(display, MaterialInfo {
-            Ks: [0.00, 0.00, 0.00],
+            Ks: [0.2, 0.2, 0.2],
             Shininess: 1.0,
         }).map_err(BufferCreationErrorKind::UniformBlock)?;
         // ----------------------------------------------------------------------------
 
-        let scene = SceneAlphaTest {
+        let scene = SceneNormalMap {
             program,
-            teapot, cement, moss,
+            ogre, diffuse_tex, normal_tex,
             material_buffer, light_buffer,
-            projection, angle, is_animate,
+            view, projection, angle, is_animate,
         };
         Ok(scene)
     }
@@ -124,19 +128,22 @@ impl Scene for SceneAlphaTest {
         };
 
         // Render teapot ----------------------------------------------------------
-        let camera_pos = Vec3F::new(6.0 * self.angle.cos(), 0.25, 6.0 * self.angle.sin());
-        let view = Mat4F::look_at_rh(camera_pos, Vec3F::zero(), Vec3F::unit_y());
-        let model = Mat4F::rotation_x(-90.0_f32.to_radians())
-            .translated_3d(Vec3F::new(0.0, -1.5, 0.0));
-        let mv: Mat4F = view * model;
+        let light_pos = self.view * Vec4F::new(10.0 * self.angle.cos(), 1.0, 10.0 * self.angle.sin(), 1.0);
+        self.light_buffer.write(& LightInfo {
+            LightPosition: light_pos.into_array(),
+            L: [1.0_f32, 1.0, 1.0],
+            La: [0.2_f32, 0.2, 0.2], ..Default::default()
+        });
+        let model = Mat4F::identity();
+        let mv: Mat4F = self.view * model;
 
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            BaseTex: self.cement.sampled()
+            ColorTex: self.diffuse_tex.sampled()
                 .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                 .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear),
-            AlphaTex: self.moss.sampled()
+            NormalMapTex: self.normal_tex.sampled()
                 .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                 .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear),
             ModelViewMatrix: mv.clone().into_col_arrays(),
@@ -144,13 +151,17 @@ impl Scene for SceneAlphaTest {
             MVP: (self.projection * mv).into_col_arrays(),
         };
 
-        self.teapot.render(frame, &self.program, &draw_params, &uniforms)
+        self.ogre.render(frame, &self.program, &draw_params, &uniforms)
         // -------------------------------------------------------------------------
     }
 
-    fn resize(&mut self, width: u32, height: u32) {
-
-        self.projection = Mat4F::perspective_rh_zo(60.0_f32.to_radians(), width as f32 / height as f32, 0.3, 100.0);
+    fn resize(&mut self, _width: u32, _height: u32) {
+        
+        const C: f32 = 2.0;
+        self.projection = Mat4F::orthographic_rh_zo(vek::FrustumPlanes {
+            left: -0.4 * C, right: 0.4 * C, bottom: -0.3 * C, top: 0.3 * C,
+            near: 0.1, far: 100.0,
+        });
     }
 
     fn is_animating(&self) -> bool {
@@ -162,12 +173,12 @@ impl Scene for SceneAlphaTest {
 }
 
 
-impl SceneAlphaTest {
+impl SceneNormalMap {
 
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/alphatest.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/alphatest.frag.glsl");
+        let vertex_shader_code   = include_str!("shaders/normalmap.vert.glsl");
+        let fragment_shader_code = include_str!("shaders/normalmap.frag.glsl");
 
         let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
             .with_srgb_output(true);

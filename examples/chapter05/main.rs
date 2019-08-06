@@ -4,10 +4,12 @@ extern crate glsl_cookbook_rs as cookbook;
 mod scenetexture;
 mod scenemultitex;
 mod scenealphatest;
+mod scenenormalmap;
 
 use scenetexture::SceneTexture;
 use scenemultitex::SceneMultiTex;
 use scenealphatest::SceneAlphaTest;
+use scenenormalmap::SceneNormalMap;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -58,7 +60,7 @@ fn main() -> GLResult<()> {
     match recipe.as_ref() {
         | "alpha-test"    => run::<SceneAlphaTest>(title),
         | "multi-tex"     => run::<SceneMultiTex>(title),
-        | "normal-map"    => unimplemented!(),
+        | "normal-map"    => run::<SceneNormalMap>(title),
         | "proj-tex"      => unimplemented!(),
         | "reflect-cube"  => unimplemented!(),
         | "refract-cube"  => unimplemented!(),
