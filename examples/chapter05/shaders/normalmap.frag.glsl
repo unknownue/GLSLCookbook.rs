@@ -46,6 +46,14 @@ void main() {
     // FragColor = vec4( blinnPhong(normal), 1.0 );
 
     vec3 norm = texture(NormalMapTex, TexCoord).xyz;
+
+    // Textures store values that range in [0, 1].
+    // Normal vectors have components that range in [-1, 1], so we need to re-scale the value.
+    //
+    // For some normal maps, the zcoordinate is never negative because in tangent space that would correspond to a normal that points into the surface
+    // Here we assume that z ranges in [0, 1], and use the the full resolution of the channel for that range.
+    // There is no standard convention for z coordinate.
     norm.xy = 2.0 * norm.xy - 1.0;
+
     FragColor = vec4(blinnPhong(norm), 1.0);
 }

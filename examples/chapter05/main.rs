@@ -5,11 +5,13 @@ mod scenetexture;
 mod scenemultitex;
 mod scenealphatest;
 mod scenenormalmap;
+mod sceneparallax;
 
 use scenetexture::SceneTexture;
 use scenemultitex::SceneMultiTex;
 use scenealphatest::SceneAlphaTest;
 use scenenormalmap::SceneNormalMap;
+use sceneparallax::SceneParallax;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -32,7 +34,7 @@ lazy_static! {
 		m.insert("multi-tex".into(), "Multiple textures".into());
 		m.insert("normal-map".into(), "Normal map".into());
 		m.insert("proj-tex".into(), "Projected texture".into());
-		m.insert("reflect-cube".into(), "Reflection with a cube mapg".into());
+		m.insert("reflect-cube".into(), "Reflection with a cube map".into());
 		m.insert("refract-cube".into(), "Refraction with a cube map".into());
 		m.insert("render-to-tex".into(), "Render to a texture using framebuffer objects".into());
 		m.insert("sampler-obj".into(), "Sampler objects".into());
@@ -68,7 +70,7 @@ fn main() -> GLResult<()> {
         | "sampler-obj"   => unimplemented!(),
         | "texture"       => run::<SceneTexture>(title),
         | "diff-ibl"      => unimplemented!(),
-        | "parallax"      => unimplemented!(),
+        | "parallax"      => run::<SceneParallax>(title),
         | _ => unreachable!(),
     }
 }
