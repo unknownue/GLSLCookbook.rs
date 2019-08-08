@@ -10,8 +10,8 @@ use crate::Vec3F;
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TorusVertex {
-    VertexPosition: [f32; 3],
-    VertexNormal  : [f32; 3],
+    VertexPosition: [f32; 3], _padding1: f32,
+    VertexNormal  : [f32; 3], _padding2: f32,
     VertexTexCoord: [f32; 2],
 }
 
@@ -70,6 +70,7 @@ impl Torus {
                     VertexNormal: Vec3F::new(cos_v * cos_u * r, cos_v * sin_u * r, sin_v * r)
                         .normalized().into_array(),
                     VertexTexCoord: [u / TWO_PI, v / TWO_PI],
+                    ..Default::default()
                 };
                 vertices.push(vertex);
             }

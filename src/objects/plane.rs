@@ -9,10 +9,10 @@ use crate::error::{GLResult, BufferCreationErrorKind};
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct PlaneVertex {
-    VertexPosition: [f32; 3],
-    VertexNormal  : [f32; 3],
-    VertexTexCoord: [f32; 2],
-    VectexTangent : [f32; 4],
+    VertexPosition: [f32; 3], _padding1: f32,
+    VertexNormal  : [f32; 3], _padding2: f32,
+    VertexTexCoord: [f32; 2], _padding3: [f32; 2],
+    VertexTangent : [f32; 4],
 }
 
 #[derive(Debug)]
@@ -27,7 +27,7 @@ impl Plane {
 
     pub fn new(display: &impl Facade, x_size: f32, z_size: f32, x_divs: usize, z_divs: usize, s_max: f32, t_max: f32) -> GLResult<Plane> {
 
-        glium::implement_vertex!(PlaneVertex, VertexPosition, VertexNormal, VertexTexCoord, VectexTangent);
+        glium::implement_vertex!(PlaneVertex, VertexPosition, VertexNormal, VertexTexCoord, VertexTangent);
 
         let vertices = Plane::generate_vertices(x_size, z_size, x_divs, z_divs, s_max, t_max);
         let indices  = Plane::generate_indices(x_divs, z_divs);
@@ -64,7 +64,8 @@ impl Plane {
                     VertexPosition: [x, 0.0, z],
                     VertexNormal  : [0.0, 1.0, 0.0],
                     VertexTexCoord: [j as f32 * tex_i, (z_divs - i) as f32 * tex_j],
-                    VectexTangent : [1.0, 0.0, 0.0, 1.0],
+                    VertexTangent : [1.0, 0.0, 0.0, 1.0],
+                    ..Default::default()
                 };
                 vertices.push(vertex);
             }

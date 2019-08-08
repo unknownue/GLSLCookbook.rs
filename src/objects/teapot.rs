@@ -10,8 +10,8 @@ use crate::{Vec3F, Vec4F, Mat3F, Mat4F};
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TeapotVertex {
-    VertexPosition: [f32; 3],
-    VertexNormal  : [f32; 3],
+    VertexPosition: [f32; 3], _padding1: f32,
+    VertexNormal  : [f32; 3], _padding2: f32,
     VertexTexCoord: [f32; 2],
 }
 
@@ -192,6 +192,7 @@ impl Teapot {
                     VertexPosition: pt.into_array(),
                     VertexNormal  : norm.into_array(),
                     VertexTexCoord: [i as f32 * tc_factor, j as f32 * tc_factor],
+                    ..Default::default()
                 };
                 vertices.push(vertex);
             }
