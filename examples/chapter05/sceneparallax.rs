@@ -8,10 +8,9 @@ use cookbook::Drawable;
 
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
-use glium::uniforms::UniformBuffer;
+use glium::uniforms::{UniformBuffer, MagnifySamplerFilter, MinifySamplerFilter};
 use glium::texture::texture2d::Texture2d;
 use glium::{Surface, uniform, implement_uniform_block};
-use glium::uniforms::{MagnifySamplerFilter, MinifySamplerFilter};
 
 
 #[derive(Debug)]
@@ -166,9 +165,12 @@ impl SceneParallax {
 
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/parallax.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/parallax.frag.glsl");
+        // let vertex_shader_code   = include_str!("shaders/parallax.vert.glsl");
+        // let fragment_shader_code = include_str!("shaders/parallax.frag.glsl");
 
+        let vertex_shader_code   = include_str!("shaders/steep-parallax.vert.glsl");
+        let fragment_shader_code = include_str!("shaders/steep-parallax.frag.glsl");
+        
         let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
             .with_srgb_output(true);
         glium::Program::new(display, sources)

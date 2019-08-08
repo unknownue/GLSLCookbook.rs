@@ -23,7 +23,7 @@ uniform MaterialInfo {
 layout (location = 0) out vec4 FragColor;
 
 
-vec3 blinnPhong() {
+vec3 ParallaxMapping() {
 
     // After interpolation, the input attributes are probably not normalized.
     vec3 v = normalize(ViewDir);
@@ -32,6 +32,7 @@ vec3 blinnPhong() {
     const float bumpFactor = 0.009;
     float height = 1 - texture(HeightMapTex, TexCoord).r;
     vec2 delta = vec2(v.x, v.y) * height * bumpFactor / v.z;
+    // TODO: Why subtract
     vec2 tc = TexCoord.xy - delta;
     //tc = TexCoord.xy;
 
@@ -55,7 +56,7 @@ vec3 blinnPhong() {
 
 void main() {
 
-    vec3 c = blinnPhong();
+    vec3 c = ParallaxMapping();
     c = pow(c, vec3(1.0 / 2.2));
     FragColor = vec4(c, 1.0);
 }
