@@ -47,9 +47,10 @@ bool isOccluded(float height, vec2 tc, vec3 s) {
 
     // Shadow ray cast
     int nShadowSteps = int(mix(60, 10, abs(s.z)));
-    
+
     float htStep = 1.0 / nShadowSteps;
     vec2 deltaT = (s.xy * bumpScale) / (nShadowSteps * s.z);
+    // Avoid shadow acne effect
     float ht = height + htStep * 0.1;
 
     while(height < ht && ht < 1.0) {
@@ -61,7 +62,7 @@ bool isOccluded(float height, vec2 tc, vec3 s) {
     return ht < 1.0;
 }
 
-vec3 blinnPhong( ) {
+vec3 blinnPhong() {
 
     vec3 v = normalize(ViewDir);
     vec3 s = normalize(LightDir);
@@ -81,7 +82,7 @@ vec3 blinnPhong( ) {
 
     if(sDotN > 0.0 && !isOccluded(height, tc, s)) {
         diffuse = texColor * sDotN;
-        vec3 h = normalize( v + s );
+        vec3 h = normalize(v + s);
         spec = Ks * pow(max(dot(h, n), 0.0), Shininess);
     }
 
