@@ -142,6 +142,7 @@ pub enum BufferCreationErrorKind {
     Vertex(glium::vertex::BufferCreationError),
     Index(glium::index::BufferCreationError),
     UniformBlock(glium::buffer::BufferCreationError),
+    FrameBuffer(glium::framebuffer::ValidationError),
 }
 
 impl From<BufferCreationErrorKind> for GLError {
