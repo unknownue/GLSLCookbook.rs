@@ -42,39 +42,39 @@ impl Cube {
 
     fn generate_vertices(size: f32) -> [CubeVertex; 24] {
 
-        let size2 = size / 2.0;
+        let radius = size / 2.0;
 
         [
             // Front
-            CubeVertex { VertexPosition: [-size2, -size2,  size2], VertexNormal: [0.0, 0.0, 1.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [ size2, -size2,  size2], VertexNormal: [0.0, 0.0, 1.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [ size2,  size2,  size2], VertexNormal: [0.0, 0.0, 1.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
-            CubeVertex { VertexPosition: [-size2,  size2,  size2], VertexNormal: [0.0, 0.0, 1.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius, -radius,  radius], VertexNormal: [0.0, 0.0, 1.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius, -radius,  radius], VertexNormal: [0.0, 0.0, 1.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius,  radius,  radius], VertexNormal: [0.0, 0.0, 1.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius,  radius,  radius], VertexNormal: [0.0, 0.0, 1.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
             // Right
-            CubeVertex { VertexPosition: [ size2, -size2,  size2], VertexNormal: [1.0, 0.0, 0.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [ size2, -size2, -size2], VertexNormal: [1.0, 0.0, 0.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [ size2,  size2, -size2], VertexNormal: [1.0, 0.0, 0.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
-            CubeVertex { VertexPosition: [ size2,  size2,  size2], VertexNormal: [1.0, 0.0, 0.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius, -radius,  radius], VertexNormal: [1.0, 0.0, 0.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius, -radius, -radius], VertexNormal: [1.0, 0.0, 0.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius,  radius, -radius], VertexNormal: [1.0, 0.0, 0.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius,  radius,  radius], VertexNormal: [1.0, 0.0, 0.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
             // Back
-            CubeVertex { VertexPosition: [-size2, -size2, -size2], VertexNormal: [0.0, 0.0, -1.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [-size2,  size2, -size2], VertexNormal: [0.0, 0.0, -1.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [ size2,  size2, -size2], VertexNormal: [0.0, 0.0, -1.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
-            CubeVertex { VertexPosition: [ size2, -size2, -size2], VertexNormal: [0.0, 0.0, -1.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius, -radius, -radius], VertexNormal: [0.0, 0.0, -1.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius,  radius, -radius], VertexNormal: [0.0, 0.0, -1.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius,  radius, -radius], VertexNormal: [0.0, 0.0, -1.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius, -radius, -radius], VertexNormal: [0.0, 0.0, -1.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
             // Left
-            CubeVertex { VertexPosition: [-size2, -size2,  size2], VertexNormal: [-1.0, 0.0, 0.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [-size2,  size2,  size2], VertexNormal: [-1.0, 0.0, 0.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [-size2,  size2, -size2], VertexNormal: [-1.0, 0.0, 0.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
-            CubeVertex { VertexPosition: [-size2, -size2, -size2], VertexNormal: [-1.0, 0.0, 0.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius, -radius,  radius], VertexNormal: [-1.0, 0.0, 0.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius,  radius,  radius], VertexNormal: [-1.0, 0.0, 0.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius,  radius, -radius], VertexNormal: [-1.0, 0.0, 0.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius, -radius, -radius], VertexNormal: [-1.0, 0.0, 0.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
             // Bottom
-            CubeVertex { VertexPosition: [-size2, -size2,  size2], VertexNormal: [0.0, -1.0, 0.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [-size2, -size2, -size2], VertexNormal: [0.0, -1.0, 0.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [ size2, -size2, -size2], VertexNormal: [0.0, -1.0, 0.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
-            CubeVertex { VertexPosition: [ size2, -size2,  size2], VertexNormal: [0.0, -1.0, 0.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius, -radius,  radius], VertexNormal: [0.0, -1.0, 0.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius, -radius, -radius], VertexNormal: [0.0, -1.0, 0.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius, -radius, -radius], VertexNormal: [0.0, -1.0, 0.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius, -radius,  radius], VertexNormal: [0.0, -1.0, 0.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
             // Top
-            CubeVertex { VertexPosition: [-size2,  size2,  size2], VertexNormal: [0.0, 1.0, 0.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [ size2,  size2,  size2], VertexNormal: [0.0, 1.0, 0.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
-            CubeVertex { VertexPosition: [ size2,  size2, -size2], VertexNormal: [0.0, 1.0, 0.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
-            CubeVertex { VertexPosition: [-size2,  size2, -size2], VertexNormal: [0.0, 1.0, 0.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius,  radius,  radius], VertexNormal: [0.0, 1.0, 0.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius,  radius,  radius], VertexNormal: [0.0, 1.0, 0.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
+            CubeVertex { VertexPosition: [ radius,  radius, -radius], VertexNormal: [0.0, 1.0, 0.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
+            CubeVertex { VertexPosition: [-radius,  radius, -radius], VertexNormal: [0.0, 1.0, 0.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
         ]
     }
 

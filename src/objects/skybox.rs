@@ -40,39 +40,39 @@ impl SkyBox {
 
     fn generate_vertices(size: f32) -> [SkyBoxVertex; 24] {
 
-        let size2 = size / 2.0;
+        let radius = size / 2.0;
 
         [
             // Front
-            SkyBoxVertex { VertexPosition: [-size2, -size2,  size2] },
-            SkyBoxVertex { VertexPosition: [ size2, -size2,  size2] },
-            SkyBoxVertex { VertexPosition: [ size2,  size2,  size2] },
-            SkyBoxVertex { VertexPosition: [-size2,  size2,  size2] },
+            SkyBoxVertex { VertexPosition: [-radius, -radius,  radius] },
+            SkyBoxVertex { VertexPosition: [ radius, -radius,  radius] },
+            SkyBoxVertex { VertexPosition: [ radius,  radius,  radius] },
+            SkyBoxVertex { VertexPosition: [-radius,  radius,  radius] },
             // Right
-            SkyBoxVertex { VertexPosition: [ size2, -size2,  size2] },
-            SkyBoxVertex { VertexPosition: [ size2, -size2, -size2] },
-            SkyBoxVertex { VertexPosition: [ size2,  size2, -size2] },
-            SkyBoxVertex { VertexPosition: [ size2,  size2,  size2] },
+            SkyBoxVertex { VertexPosition: [ radius, -radius,  radius] },
+            SkyBoxVertex { VertexPosition: [ radius, -radius, -radius] },
+            SkyBoxVertex { VertexPosition: [ radius,  radius, -radius] },
+            SkyBoxVertex { VertexPosition: [ radius,  radius,  radius] },
             // Back
-            SkyBoxVertex { VertexPosition: [-size2, -size2, -size2] },
-            SkyBoxVertex { VertexPosition: [-size2,  size2, -size2] },
-            SkyBoxVertex { VertexPosition: [ size2,  size2, -size2] },
-            SkyBoxVertex { VertexPosition: [ size2, -size2, -size2] },
+            SkyBoxVertex { VertexPosition: [-radius, -radius, -radius] },
+            SkyBoxVertex { VertexPosition: [-radius,  radius, -radius] },
+            SkyBoxVertex { VertexPosition: [ radius,  radius, -radius] },
+            SkyBoxVertex { VertexPosition: [ radius, -radius, -radius] },
             // Left
-            SkyBoxVertex { VertexPosition: [-size2, -size2,  size2] },
-            SkyBoxVertex { VertexPosition: [-size2,  size2,  size2] },
-            SkyBoxVertex { VertexPosition: [-size2,  size2, -size2] },
-            SkyBoxVertex { VertexPosition: [-size2, -size2, -size2] },
+            SkyBoxVertex { VertexPosition: [-radius, -radius,  radius] },
+            SkyBoxVertex { VertexPosition: [-radius,  radius,  radius] },
+            SkyBoxVertex { VertexPosition: [-radius,  radius, -radius] },
+            SkyBoxVertex { VertexPosition: [-radius, -radius, -radius] },
             // Bottom
-            SkyBoxVertex { VertexPosition: [-size2, -size2,  size2] },
-            SkyBoxVertex { VertexPosition: [-size2, -size2, -size2] },
-            SkyBoxVertex { VertexPosition: [ size2, -size2, -size2] },
-            SkyBoxVertex { VertexPosition: [ size2, -size2,  size2] },
+            SkyBoxVertex { VertexPosition: [-radius, -radius,  radius] },
+            SkyBoxVertex { VertexPosition: [-radius, -radius, -radius] },
+            SkyBoxVertex { VertexPosition: [ radius, -radius, -radius] },
+            SkyBoxVertex { VertexPosition: [ radius, -radius,  radius] },
             // Top
-            SkyBoxVertex { VertexPosition: [-size2,  size2,  size2] },
-            SkyBoxVertex { VertexPosition: [ size2,  size2,  size2] },
-            SkyBoxVertex { VertexPosition: [ size2,  size2, -size2] },
-            SkyBoxVertex { VertexPosition: [-size2,  size2, -size2] },
+            SkyBoxVertex { VertexPosition: [-radius,  radius,  radius] },
+            SkyBoxVertex { VertexPosition: [ radius,  radius,  radius] },
+            SkyBoxVertex { VertexPosition: [ radius,  radius, -radius] },
+            SkyBoxVertex { VertexPosition: [-radius,  radius, -radius] },
         ]
     }
 
