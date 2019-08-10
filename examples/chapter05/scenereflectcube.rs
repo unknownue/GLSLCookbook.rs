@@ -35,8 +35,8 @@ pub struct SceneReflectCube {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 struct MaterialInfo {
-    Eta: f32,              // Index of refraction
-    ReflectionFactor: f32, // Percentage of reflected light
+    MaterialColor: [f32; 4],
+    ReflectFactor: f32,
 }
 
 
@@ -49,6 +49,7 @@ impl Scene for SceneReflectCube {
             .map_err(GLErrorKind::CreateProgram)?;
         let sky_prog = SceneReflectCube::compile_sky_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
+        cookbook::utils::print_active_uniform_blocks(&program);
         // ----------------------------------------------------------------------------
 
 
@@ -67,12 +68,11 @@ impl Scene for SceneReflectCube {
         let is_animate = true;
         // ----------------------------------------------------------------------------
 
-
         // Initialize Uniforms --------------------------------------------------------
-        glium::implement_uniform_block!(MaterialInfo, Eta, ReflectionFactor);
+        glium::implement_uniform_block!(MaterialInfo, MaterialColor, ReflectFactor);
         let material_buffer = UniformBuffer::immutable(display, MaterialInfo {
-            Eta: 0.0,
-            ReflectionFactor: 0.85,
+            MaterialColor: [0.5, 0.5, 0.5, 1.0],
+            ReflectFactor: 0.85,
         }).map_err(BufferCreationErrorKind::UniformBlock)?;
         // ----------------------------------------------------------------------------
 
