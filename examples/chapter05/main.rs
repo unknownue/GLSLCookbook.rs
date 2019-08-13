@@ -8,6 +8,7 @@ mod scenenormalmap;
 mod sceneparallax;
 mod scenereflectcube;
 mod scenerefractcube;
+mod sceneprojtex;
 
 use scenetexture::SceneTexture;
 use scenemultitex::SceneMultiTex;
@@ -16,6 +17,7 @@ use scenenormalmap::SceneNormalMap;
 use sceneparallax::SceneParallax;
 use scenereflectcube::SceneReflectCube;
 use scenerefractcube::SceneRefractCube;
+use sceneprojtex::SceneProjTex;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -67,7 +69,7 @@ fn main() -> GLResult<()> {
         | "alpha-test"    => run::<SceneAlphaTest>(title),
         | "multi-tex"     => run::<SceneMultiTex>(title),
         | "normal-map"    => run::<SceneNormalMap>(title),
-        | "proj-tex"      => unimplemented!(),
+        | "proj-tex"      => run::<SceneProjTex>(title),
         | "reflect-cube"  => run::<SceneReflectCube>(title),
         | "refract-cube"  => run::<SceneRefractCube>(title),
         | "render-to-tex" => unimplemented!(),

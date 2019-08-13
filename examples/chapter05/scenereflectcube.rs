@@ -49,7 +49,7 @@ impl Scene for SceneReflectCube {
             .map_err(GLErrorKind::CreateProgram)?;
         let sky_prog = SceneReflectCube::compile_sky_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
-        cookbook::utils::print_active_uniform_blocks(&program);
+        // cookbook::utils::print_active_uniform_blocks(&program);
         // ----------------------------------------------------------------------------
 
 
