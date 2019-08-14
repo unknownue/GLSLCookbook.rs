@@ -161,10 +161,13 @@ impl SceneRunner {
     pub fn print_help_info(program_name: &str, candidate_scenes: &HashMap<String, String>) {
         println!("-------------------------------------------------------------");
         println!("Usage: {} recipe-name", program_name);
-        print!("Candidate recipe names: ");
+        println!("Candidate recipe names: ");
+
+        let max_recipe_length: usize = candidate_scenes.iter()
+            .map(|s| s.0.len()).max().unwrap_or(10);
 
         for scene in candidate_scenes {
-            print!(" {}", scene.0);
+            println!("\t{:width$}: {}", scene.0, scene.1, width = max_recipe_length + 1);
         }
         println!("\n-------------------------------------------------------------");
     }

@@ -1,21 +1,21 @@
 
-#version 430
+#version 410
 
 layout (location = 0) in vec2 TexCoord;
 
 layout (location = 0) out vec4 FragColor;
 
-layout (binding = 1) uniform BlobSettings {
+uniform BlobSettings {
     vec4 InnerColor;
     vec4 OuterColor;
     float RadiusInner;
     float RadiusOuter;
-} Blob;
+};
 
 void main() {
 
     float dx = TexCoord.x - 0.5;
     float dy = TexCoord.y - 0.5;
     float dist = sqrt(dx * dx + dy * dy);
-    FragColor = mix(Blob.InnerColor, Blob.OuterColor, smoothstep(Blob.RadiusInner, Blob.RadiusOuter, dist));
+    FragColor = mix(InnerColor, OuterColor, smoothstep(RadiusInner, RadiusOuter, dist));
 }

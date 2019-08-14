@@ -107,21 +107,10 @@ impl Scene for SceneBasicUniformBlock {
 
 impl SceneBasicUniformBlock {
 
-    // TODO: The following code has not been test yet!
-    #[cfg(not(target_os = "macos"))]
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
 
         let vertex_shader_code   = include_str!("shaders/basic_uniformblock.vert.glsl");
         let fragment_shader_code = include_str!("shaders/basic_uniformblock.frag.glsl");
-
-        glium::Program::from_source(display, vertex_shader_code, fragment_shader_code, None)
-    }
-
-    #[cfg(target_os = "macos")]
-    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
-
-        let vertex_shader_code   = include_str!("shaders/basic_uniformblock_v41.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/basic_uniformblock_v41.frag.glsl");
 
         let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
             .with_srgb_output(true);

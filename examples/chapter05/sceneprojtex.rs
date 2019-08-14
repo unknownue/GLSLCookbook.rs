@@ -13,6 +13,7 @@ use glium::texture::texture2d::Texture2d;
 use glium::{Surface, uniform, implement_uniform_block};
 
 
+
 #[derive(Debug)]
 pub struct SceneProjTex {
 
@@ -152,7 +153,11 @@ impl Scene for SceneProjTex {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
             ProjectorTex: self.flower_tex.sampled()
+                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                // Due to limit of glium, currently there is no support for SamplerWrapFunction::Border
+                // See https://github.com/glium/glium/issues/1772 for detail.
                 .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
+                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                 .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear),
             ProjectorMatrix: self.project_matrix.into_col_arrays(),
