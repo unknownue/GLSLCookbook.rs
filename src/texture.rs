@@ -200,8 +200,8 @@ impl ImageRawPixels<u8> for PngContent {
 
     fn build_raw_image<'a>(self) -> RawImage2d<'a, u8> {
         match self.color_type {
-            | png::ColorType::RGB  => RawImage2d::from_raw_rgb (self.buffer, (self.width, self.height)),
-            | png::ColorType::RGBA => RawImage2d::from_raw_rgba(self.buffer, (self.width, self.height)),
+            | png::ColorType::RGB  => RawImage2d::from_raw_rgb_reversed (&self.buffer, (self.width, self.height)),
+            | png::ColorType::RGBA => RawImage2d::from_raw_rgba_reversed(&self.buffer, (self.width, self.height)),
             | _ => unreachable!()
         }
     }
@@ -215,6 +215,6 @@ impl ImageRawPixels<f32> for hdrldr::Image {
 
     fn build_raw_image<'a>(self) -> RawImage2d<'a, f32> {
         let pixels = flatten_hdr_pixels(self.data);
-        RawImage2d::from_raw_rgb(pixels, (self.width as u32, self.height as u32))
+        RawImage2d::from_raw_rgb_reversed(&pixels, (self.width as u32, self.height as u32))
     }
 }
