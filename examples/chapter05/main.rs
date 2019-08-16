@@ -11,6 +11,7 @@ mod scenereflectcube;
 mod scenerefractcube;
 mod sceneprojtex;
 mod scenerendertotex;
+mod scenesamplerobj;
 
 use scenetexture::SceneTexture;
 use scenemultitex::SceneMultiTex;
@@ -21,6 +22,7 @@ use scenereflectcube::SceneReflectCube;
 use scenerefractcube::SceneRefractCube;
 use sceneprojtex::SceneProjTex;
 use scenerendertotex::SceneRenderToTex;
+use scenesamplerobj::SceneSamplerObj;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -76,7 +78,7 @@ fn main() -> GLResult<()> {
         | "reflect-cube"  => run::<SceneReflectCube>(title),
         | "refract-cube"  => run::<SceneRefractCube>(title),
         | "render-to-tex" => run::<SceneRenderToTex>(title),
-        | "sampler-obj"   => unimplemented!(),
+        | "sampler-obj"   => run::<SceneSamplerObj>(title),
         | "texture"       => run::<SceneTexture>(title),
         | "diff-ibl"      => unimplemented!(),
         | "parallax"      => run::<SceneParallax>(title),
