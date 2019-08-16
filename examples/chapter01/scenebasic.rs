@@ -74,7 +74,7 @@ impl Scene for SceneBasic {
     }
 
     /// Draw your scene.
-    fn render(&self, frame: &mut glium::Frame) -> GLResult<()> {
+    fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
 
         // For simplicity, we do not use index buffer.
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);

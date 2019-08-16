@@ -108,7 +108,7 @@ impl Scene for ScenePhong {
         // nothing to do, just keep it empty
     }
 
-    fn render(&self, frame: &mut glium::Frame) -> GLResult<()> {
+    fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
 
         let draw_params = glium::draw_parameters::DrawParameters {
             depth: glium::Depth {

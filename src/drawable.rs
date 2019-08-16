@@ -1,5 +1,5 @@
 
-use glium::{Surface, Frame, Program, DrawParameters};
+use glium::{Surface, Program, DrawParameters};
 use glium::index::Index;
 use glium::uniforms::Uniforms;
 
@@ -7,7 +7,7 @@ use crate::error::{GLResult, GLErrorKind};
 
 
 pub trait Drawable {
-    fn render(&self, frame: &mut Frame, program: &Program, params: &DrawParameters, uniform: &impl Uniforms) -> GLResult<()>;
+    fn render(&self, surface: &mut impl Surface, program: &Program, params: &DrawParameters, uniform: &impl Uniforms) -> GLResult<()>;
 }
 
 pub trait TriangleMesh {
@@ -23,9 +23,9 @@ impl<T, V, I> Drawable for T
         V: Copy,
         I: Index {
 
-    fn render(&self, frame: &mut Frame, program: &Program, params: &DrawParameters, uniform: &impl Uniforms) -> GLResult<()> {
+    fn render(&self, surface: &mut impl Surface, program: &Program, params: &DrawParameters, uniform: &impl Uniforms) -> GLResult<()> {
         let (vertices, indices) = self.buffers();
-        frame.draw(vertices, indices, program, uniform, params)
+        surface.draw(vertices, indices, program, uniform, params)
             .map_err(GLErrorKind::DrawError)?;
         Ok(())
     }

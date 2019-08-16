@@ -52,7 +52,7 @@ impl Scene for SceneBasicAttrib {
         // nothing to do, just keep it empty
     }
 
-    fn render(&self, frame: &mut glium::Frame) -> GLResult<()> {
+    fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
 
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 

@@ -149,7 +149,7 @@ impl Scene for SceneMultilight {
         // nothing to do, just keep it empty
     }
 
-    fn render(&self, frame: &mut glium::Frame) -> GLResult<()> {
+    fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
 
         frame.clear_color_srgb(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);

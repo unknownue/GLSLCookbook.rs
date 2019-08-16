@@ -140,7 +140,7 @@ impl Scene for ScenePbr {
         self.light_data.Light[0].Position = (self.view * self.light_pos).into_array();
     }
 
-    fn render(&self, frame: &mut glium::Frame) -> GLResult<()> {
+    fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
 
         frame.clear_color_srgb(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
