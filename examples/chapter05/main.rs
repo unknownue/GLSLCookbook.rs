@@ -1,4 +1,5 @@
 
+#[macro_use] extern crate rental;
 extern crate glsl_cookbook_rs as cookbook;
 
 mod scenetexture;
@@ -9,6 +10,7 @@ mod sceneparallax;
 mod scenereflectcube;
 mod scenerefractcube;
 mod sceneprojtex;
+mod scenerendertotex;
 
 use scenetexture::SceneTexture;
 use scenemultitex::SceneMultiTex;
@@ -18,6 +20,7 @@ use sceneparallax::SceneParallax;
 use scenereflectcube::SceneReflectCube;
 use scenerefractcube::SceneRefractCube;
 use sceneprojtex::SceneProjTex;
+use scenerendertotex::SceneRenderToTex;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -72,7 +75,7 @@ fn main() -> GLResult<()> {
         | "proj-tex"      => run::<SceneProjTex>(title),
         | "reflect-cube"  => run::<SceneReflectCube>(title),
         | "refract-cube"  => run::<SceneRefractCube>(title),
-        | "render-to-tex" => unimplemented!(),
+        | "render-to-tex" => run::<SceneRenderToTex>(title),
         | "sampler-obj"   => unimplemented!(),
         | "texture"       => run::<SceneTexture>(title),
         | "diff-ibl"      => unimplemented!(),
