@@ -66,9 +66,9 @@ impl SceneRunner {
     }
 
     #[cfg(not(target_os = "macos"))]
-    fn with_context_gl_request(builder: glium::ContextBuilder) -> glutin::ContextBuilder {
+    fn with_context_gl_request(builder: glutin::ContextBuilder) -> glutin::ContextBuilder {
         // Select OpenGL 4.6 on Windows and Linux.
-        builder.with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl), (4, 6))
+        builder.with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (4, 6)))
     }
 
     #[cfg(target_os = "macos")]

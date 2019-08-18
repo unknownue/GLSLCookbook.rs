@@ -88,7 +88,7 @@ pub fn debug_callback(source: Source, message_type: MessageType, severity: Sever
         Severity::Notification => "NOTIFY",
     };
 
-    print!("{}:{}[{}]({}):{}", source_str, type_str, severity_str, identifier, message);
+    println!("{}:{}[{}]({}):{}", source_str, type_str, severity_str, identifier, message);
 }
 
 
