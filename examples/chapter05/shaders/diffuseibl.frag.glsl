@@ -37,7 +37,7 @@ void main() {
     color = pow(color, vec3(gamma));
 
     // Uncomment to add an Fresnel approximation
-    //color = light * color * (1.0 - schlickFresnel(dot(n, v)));
+    // color = light * color * (1.0 - schlickFresnel(dot(n, v)));
     color *= light;
 
     // Gamma

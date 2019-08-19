@@ -27,6 +27,14 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter05 multi-tex
     cargo r --release --example chapter05 nomrla-map
     cargo r --release --example chapter05 parallax
+    cargo r --release --example chapter05 reflect-cube
+    cargo r --release --example chapter05 refract-cube
+    cargo r --release --example chapter05 proj-tex
+    cargo r --release --example chapter05 render-to-tex
+    cargo r --release --example chapter05 sampler-obj
+    cargo r --release --example chapter05 diff-ibl
+
+    cargo r --release --example chapter06 edge
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -54,4 +62,12 @@ else
     cargo r --example chapter05 multi-tex
     cargo r --example chapter05 normal-map
     cargo r --example chapter05 parallax
+    cargo r --example chapter05 reflect-cube
+    cargo r --example chapter05 refract-cube
+    cargo r --example chapter05 proj-tex
+    cargo r --example chapter05 render-to-tex
+    cargo r --example chapter05 sampler-obj
+    cargo r --example chapter05 diff-ibl
+
+    cargo r --example chapter06 edge
 fi

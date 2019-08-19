@@ -106,9 +106,9 @@ impl Scene for SceneDiffIbl {
         if self.is_animating() {
             self.camera_angle = (self.camera_angle + delta_time * ROTATE_SPEED) % TWO_PI;
             self.camera_pos = Vec3F::new(self.camera_angle.cos() * 4.0, 0.0, self.camera_angle.sin() * 4.0);
+            self.view = Mat4F::look_at_rh(self.camera_pos, Vec3F::zero(), Vec3F::unit_y());
         }
 
-        self.view = Mat4F::look_at_rh(self.camera_pos, Vec3F::zero(), Vec3F::unit_y());
     }
 
     fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
@@ -138,7 +138,7 @@ impl Scene for SceneDiffIbl {
         self.skybox.render(frame, &self.sky_prog, &draw_params, &uniforms)?;
         // -------------------------------------------------------------------------
 
-        // Render scene ------------------------------------------------------------
+        // Render spot -------------------------------------------------------------
         let model = Mat4F::rotation_y(180.0_f32.to_radians());
         let mv: Mat4F = self.view * model;
 
