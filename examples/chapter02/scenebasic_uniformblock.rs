@@ -98,7 +98,7 @@ impl Scene for SceneBasicUniformBlock {
         Ok(())
     }
 
-    fn resize(&mut self, _width: u32, _height: u32) {}
+    fn resize(&mut self, _display: &impl Facade, _width: u32, _height: u32) {}
 
     fn is_animating(&self) -> bool { false }
     fn toggle_animation(&mut self) {}

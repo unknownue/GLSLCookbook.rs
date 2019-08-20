@@ -16,7 +16,7 @@ pub trait Scene: Sized {
     fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()>;
 
     /// Called when screen is resized.
-    fn resize(&mut self, width: u32, height: u32);
+    fn resize(&mut self, display: &impl Facade, width: u32, height: u32);
 
     fn is_animating(&self) -> bool;
     fn toggle_animation(&mut self);

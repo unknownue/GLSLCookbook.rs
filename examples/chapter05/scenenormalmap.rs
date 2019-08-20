@@ -155,7 +155,7 @@ impl Scene for SceneNormalMap {
         // -------------------------------------------------------------------------
     }
 
-    fn resize(&mut self, _width: u32, _height: u32) {
+    fn resize(&mut self, _display: &impl Facade, _width: u32, _height: u32) {
 
         const C: f32 = 2.0;
         self.projection = Mat4F::orthographic_rh_zo(vek::FrustumPlanes {

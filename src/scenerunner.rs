@@ -79,7 +79,7 @@ impl SceneRunner {
 
     pub fn run(&mut self, scene: &mut impl Scene) -> GLResult<()> {
 
-        scene.resize(self.fb_width, self.fb_height);
+        scene.resize(&self.display, self.fb_width, self.fb_height);
 
         // Enter the main loop
         self.main_loop(scene)?;
@@ -155,7 +155,7 @@ impl SceneRunner {
         let (new_width, new_height) = self.display.get_framebuffer_dimensions();
         self.fb_width  = new_width;
         self.fb_height = new_height;
-        scene.resize(self.fb_width, self.fb_height);
+        scene.resize(&self.display, self.fb_width, self.fb_height);
     }
 
     pub fn print_help_info(program_name: &str, candidate_scenes: &HashMap<String, String>) {

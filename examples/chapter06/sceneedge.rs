@@ -131,12 +131,23 @@ impl Scene for SceneEdge {
     }
 
     fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
-        self.pass1()?;
-        self.pass2(frame)
+
+        let draw_params = glium::draw_parameters::DrawParameters {
+            depth: glium::Depth {
+                test: glium::DepthTest::IfLess,
+                write: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        self.pass1(&draw_params)?;
+        self.pass2(frame, &draw_params)
     }
 
-    fn resize(&mut self, width: u32, height: u32) {
+    fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
         self.aspect_ratio = width as f32 / height as f32;
+        self.fbo = SceneEdge::setup_frame_buffer_object(display, width, height).unwrap();
     }
 
     fn is_animating(&self) -> bool {
@@ -179,23 +190,13 @@ impl SceneEdge {
         Ok(fbo)
     }
 
-    fn pass1(&mut self) -> GLResult<()> {
+    fn pass1(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
 
-        let draw_params = glium::draw_parameters::DrawParameters {
-            depth: glium::Depth {
-                test: glium::DepthTest::IfLess,
-                write: true,
-                ..Default::default()
-            },
-            ..Default::default()
-        };
+        let program = &self.program;
 
         let view = Mat4F::look_at_rh(Vec3F::new(7.0 * self.angle.cos(), 4.0, 7.0 * self.angle.sin()), Vec3F::zero(), Vec3F::unit_y());
         let projection = Mat4F::perspective_rh_zo(60.0_f32.to_radians(), self.aspect_ratio, 0.3, 100.0);
 
-        let program = &self.program;
-        
-       
 
         // Render teapot ---------------------------------------------------------
         self.material_buffer.write(&MaterialInfo {
@@ -223,7 +224,7 @@ impl SceneEdge {
             framebuffer.clear_color(1.0, 0.0, 0.0, 1.0);
             framebuffer.clear_depth(1.0);
             // TODO: handle unwrap()
-            teapot.render(framebuffer, program, &draw_params, &uniforms).unwrap();
+            teapot.render(framebuffer, program, draw_params, &uniforms).unwrap();
         });
         // ------------------------------------------------------------------------- 
 
@@ -250,7 +251,7 @@ impl SceneEdge {
         let plane = &self.plane;
         self.fbo.rent_mut(|(framebuffer, _)| {
             // TODO: handle unwrap()
-            plane.render(framebuffer, program, &draw_params, &uniforms).unwrap();
+            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
         });
         // ------------------------------------------------------------------------- 
 
@@ -278,25 +279,16 @@ impl SceneEdge {
         let torus = &self.torus;
         self.fbo.rent_mut(|(framebuffer, _)| {
             // TODO: handle unwrap()
-            torus.render(framebuffer, program, &draw_params, &uniforms).unwrap();
+            torus.render(framebuffer, program, draw_params, &uniforms).unwrap();
         });
         // ------------------------------------------------------------------------- 
         Ok(())
     }
 
-    fn pass2(&self, frame: &mut glium::Frame) -> GLResult<()> {
+    fn pass2(&self, frame: &mut glium::Frame, draw_params: &glium::DrawParameters) -> GLResult<()> {
 
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
-
-        let draw_params = glium::draw_parameters::DrawParameters {
-            depth: glium::Depth {
-                test: glium::DepthTest::IfLess,
-                write: true,
-                ..Default::default()
-            },
-            ..Default::default()
-        };
 
         let model = Mat4F::identity();
         let view  = Mat4F::identity();
@@ -317,7 +309,7 @@ impl SceneEdge {
             };
 
             // TODO: handle unwrap()
-            self.fs_quad.render(frame, &self.program, &draw_params, &uniforms).unwrap();
+            self.fs_quad.render(frame, &self.program, draw_params, &uniforms).unwrap();
         });
 
         Ok(())

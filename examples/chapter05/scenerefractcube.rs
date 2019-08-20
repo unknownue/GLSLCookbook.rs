@@ -145,7 +145,7 @@ impl Scene for SceneRefractCube {
         // -------------------------------------------------------------------------
     }
 
-    fn resize(&mut self, width: u32, height: u32) {
+    fn resize(&mut self, _display: &impl Facade, width: u32, height: u32) {
 
         self.projection = Mat4F::perspective_rh_zo(50.0_f32.to_radians(), width as f32 / height as f32, 0.3, 100.0);
     }
