@@ -3,8 +3,10 @@
 extern crate glsl_cookbook_rs as cookbook;
 
 mod sceneedge;
+mod sceneblur;
 
 use sceneedge::SceneEdge;
+use sceneblur::SceneBlur;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -51,7 +53,7 @@ fn main() -> GLResult<()> {
     let (recipe, title) = SceneRunner::parse_command_line_args(&HASHMAP)?;
 
     match recipe.as_ref() {
-        | "blur"      => unimplemented!(),
+        | "blur"      => run::<SceneBlur>(title),
         | "deferred"  => unimplemented!(),
         | "edge"      => run::<SceneEdge>(title),
         | "gamma"     => unimplemented!(),

@@ -13,7 +13,7 @@ use glium::framebuffer::{SimpleFrameBuffer, DepthRenderBuffer};
 use glium::{Surface, uniform, implement_uniform_block};
 
 
-pub struct SceneEdge {
+pub struct SceneBlur {
 
     program: glium::Program,
 
@@ -22,7 +22,12 @@ pub struct SceneEdge {
     torus: Torus,
     fs_quad: Quad,
 
-    fbo: fbo_rentals::FBORental,
+    render_fbo      : fbo_rentals::FBOColorDepthRental,
+    intermediate_fbo: fbo_rentals::FBOColorRental,
+
+    weights: WeightWrapper,
+
+    weight_buffer: UniformBuffer<WeightWrapper>,
     material_buffer: UniformBuffer<MaterialInfo>,
     light_buffer: UniformBuffer<LightInfo>,
 
@@ -31,18 +36,32 @@ pub struct SceneEdge {
     is_animate: bool,
 }
 
-pub struct FBOResource {
-    render_tex: Texture2d,
-    depth_buffer: DepthRenderBuffer,
+
+#[allow(non_snake_case)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+struct WeightWrapper {
+    Weight: [f32; 5],
+}
+
+pub struct FBOColorDepth {
+    color: Texture2d,
+    depth: DepthRenderBuffer,
 }
 
 rental! {
     mod fbo_rentals {
 
         #[rental]
-        pub struct FBORental {
-            res: Box<super::FBOResource>,
-            framebuffer: (glium::framebuffer::SimpleFrameBuffer<'res>, &'res super::FBOResource),
+        pub struct FBOColorDepthRental {
+            res: Box<super::FBOColorDepth>,
+            framebuffer: (glium::framebuffer::SimpleFrameBuffer<'res>, &'res super::FBOColorDepth),
+        }
+
+        #[rental]
+        pub struct FBOColorRental {
+            res: Box<super::Texture2d>,
+            framebuffer: (glium::framebuffer::SimpleFrameBuffer<'res>, &'res super::Texture2d),
         }
     }
 }
@@ -67,18 +86,37 @@ struct MaterialInfo {
 }
 
 
-impl Scene for SceneEdge {
+impl Scene for SceneBlur {
 
-    fn new(display: &impl Facade) -> GLResult<SceneEdge> {
+    fn new(display: &impl Facade) -> GLResult<SceneBlur> {
 
         let (screen_width, screen_height) = display.get_context().get_framebuffer_dimensions();
         let aspect_ratio = (screen_width as f32) / (screen_height as f32);
 
         // Shader Program ------------------------------------------------------------
-        let program = SceneEdge::compile_shader_program(display)
+        let program = SceneBlur::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
         // ----------------------------------------------------------------------------
 
+
+        // Compute and sum the weights ------------------------------------------------
+        let mut weights: [f32; 5] = Default::default();
+        let sigma2 = 8.0;
+
+        weights[0] = gauss(0.0, sigma2);
+        let mut sum = weights[0];
+
+        for i in 1..5 {
+            weights[i] = gauss(i as f32, sigma2);
+            sum += 2.0 * weights[i];
+        }
+
+        // Normalize the weights and set the uniform
+        for i in 0..5 {
+            weights[i] = weights[i] / sum;
+        }
+        let weights = WeightWrapper { Weight: weights };
+        // ----------------------------------------------------------------------------
 
         // Initialize Mesh ------------------------------------------------------------
         let teapot = Teapot::new(display, 14, Mat4F::identity())?;
@@ -97,24 +135,25 @@ impl Scene for SceneEdge {
 
 
         // Initialize Uniforms --------------------------------------------------------
-        let fbo = SceneEdge::setup_frame_buffer_object(display, screen_width, screen_height)?;
+        let render_fbo = SceneBlur::setup_color_depth_frame_buffer(display, screen_width, screen_height)?;
+        let intermediate_fbo = SceneBlur::setup_color_frame_buffer(display, screen_width, screen_height)?;
 
         glium::implement_uniform_block!(LightInfo, LightPosition, L, La);
-        let light_buffer = UniformBuffer::immutable(display, LightInfo {
-            LightPosition: [0.0_f32, 0.0, 0.0, 1.0],
-            L: [1.0_f32, 1.0, 1.0],
-            La: [0.2_f32, 0.2, 0.2], ..Default::default()
-        }).map_err(BufferCreationErrorKind::UniformBlock)?;
-
+        let light_buffer = UniformBuffer::empty_immutable(display)
+            .map_err(BufferCreationErrorKind::UniformBlock)?;
         glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess);
         let material_buffer = UniformBuffer::empty_immutable(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
+
+        glium::implement_uniform_block!(WeightWrapper, Weight);
+        let weight_buffer = UniformBuffer::empty_immutable(display)
+            .map_err(BufferCreationErrorKind::UniformBlock)?;
         // ----------------------------------------------------------------------------
 
-        let scene = SceneEdge {
-            program, fbo,
-            teapot, torus, plane, fs_quad, 
-            material_buffer, light_buffer,
+        let scene = SceneBlur {
+            program, render_fbo, intermediate_fbo,
+            teapot, torus, plane, fs_quad, weights,
+            weight_buffer, material_buffer, light_buffer,
             aspect_ratio, angle, is_animate,
         };
         Ok(scene)
@@ -142,12 +181,14 @@ impl Scene for SceneEdge {
         };
 
         self.pass1(&draw_params)?;
-        self.pass2(frame, &draw_params)
+        self.pass2()?;
+        self.pass3(frame, &draw_params)
     }
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
         self.aspect_ratio = width as f32 / height as f32;
-        self.fbo = SceneEdge::setup_frame_buffer_object(display, width, height).unwrap();
+        self.render_fbo = SceneBlur::setup_color_depth_frame_buffer(display, width, height).unwrap();
+        self.intermediate_fbo = SceneBlur::setup_color_frame_buffer(display, width, height).unwrap();
     }
 
     fn is_animating(&self) -> bool {
@@ -159,31 +200,48 @@ impl Scene for SceneEdge {
 }
 
 
-impl SceneEdge {
+impl SceneBlur {
 
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/edge.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/edge.frag.glsl");
+        let vertex_shader_code   = include_str!("shaders/blur.vert.glsl");
+        let fragment_shader_code = include_str!("shaders/blur.frag.glsl");
 
         let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
             .with_srgb_output(true);
         glium::Program::new(display, sources)
     }
 
-    fn setup_frame_buffer_object(display: &impl Facade, width: u32, height: u32) -> GLResult<fbo_rentals::FBORental> {
+    fn setup_color_depth_frame_buffer(display: &impl Facade, width: u32, height: u32) -> GLResult<fbo_rentals::FBOColorDepthRental> {
 
-        let render_tex = Texture2d::empty(display, width, height)
+        let color_compoenent = Texture2d::empty(display, width, height)
             .map_err(GLErrorKind::CreateTexture)?;
-        let depth_buffer = DepthRenderBuffer::new(display, glium::texture::DepthFormat::F32, width, height)
+        let depth_component = DepthRenderBuffer::new(display, glium::texture::DepthFormat::F32, width, height)
             .map_err(BufferCreationErrorKind::RenderBuffer)?;
 
         // Build the self-referential struct using rental crate.
-        let fbo = fbo_rentals::FBORental::new(
-            Box::new(FBOResource { render_tex, depth_buffer }),
+        let fbo = fbo_rentals::FBOColorDepthRental::new(
+            Box::new(FBOColorDepth { color: color_compoenent, depth: depth_component }),
             // TODO: handle unwrap()
             |res| { 
-                let framebuffer = SimpleFrameBuffer::with_depth_buffer(display, &res.render_tex, &res.depth_buffer).unwrap();
+                let framebuffer = SimpleFrameBuffer::with_depth_buffer(display, &res.color, &res.depth).unwrap();
+                (framebuffer, &res)
+            }
+        );
+        Ok(fbo)
+    }
+
+    fn setup_color_frame_buffer(display: &impl Facade, width: u32, height: u32) -> GLResult<fbo_rentals::FBOColorRental> {
+
+        let color_compoenent = Texture2d::empty(display, width, height)
+            .map_err(GLErrorKind::CreateTexture)?;
+
+        // Build the self-referential struct using rental crate.
+        let fbo = fbo_rentals::FBOColorRental::new(
+            Box::new(color_compoenent),
+            // TODO: handle unwrap()
+            |res| { 
+                let framebuffer = SimpleFrameBuffer::new(display, res).unwrap();
                 (framebuffer, &res)
             }
         );
@@ -205,6 +263,11 @@ impl SceneEdge {
             Ks: [0.95, 0.95, 0.95],
             Shininess: 100.0, ..Default::default()
         });
+        self.light_buffer.write(&LightInfo {
+            LightPosition: [0.0_f32, 0.0, 0.0, 1.0],
+            L: [1.0_f32, 1.0, 1.0],
+            La: [0.2_f32, 0.2, 0.2], ..Default::default()
+        });
 
         let model = Mat4F::rotation_x(-90.0_f32.to_radians());
         let mv: Mat4F = view * model;
@@ -219,9 +282,9 @@ impl SceneEdge {
         };
 
         let teapot = &self.teapot;
-        self.fbo.rent_mut(|(framebuffer, _)| {
+        self.render_fbo.rent_mut(|(framebuffer, _)| {
 
-            framebuffer.clear_color(1.0, 0.0, 0.0, 1.0);
+            framebuffer.clear_color(0.0, 0.0, 0.0, 1.0);
             framebuffer.clear_depth(1.0);
             // TODO: handle unwrap()
             teapot.render(framebuffer, program, draw_params, &uniforms).unwrap();
@@ -234,6 +297,11 @@ impl SceneEdge {
             Kd: [0.4, 0.4, 0.4],
             Ks: [0.0, 0.0, 0.0],
             Shininess: 1.0, ..Default::default()
+        });
+        self.light_buffer.write(&LightInfo {
+            LightPosition: [0.0_f32, 0.0, 0.0, 1.0],
+            L: [1.0_f32, 1.0, 1.0],
+            La: [0.2_f32, 0.2, 0.2], ..Default::default()
         });
 
         let model = Mat4F::translation_3d(Vec3F::new(0.0, -0.75, 0.0));
@@ -249,7 +317,7 @@ impl SceneEdge {
         };
 
         let plane = &self.plane;
-        self.fbo.rent_mut(|(framebuffer, _)| {
+        self.render_fbo.rent_mut(|(framebuffer, _)| {
             // TODO: handle unwrap()
             plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
         });
@@ -261,6 +329,11 @@ impl SceneEdge {
             Kd: [0.9, 0.5, 0.2],
             Ks: [0.95, 0.95, 0.95],
             Shininess: 100.0, ..Default::default()
+        });
+        self.light_buffer.write(&LightInfo {
+            LightPosition: [0.0_f32, 0.0, 0.0, 1.0],
+            L: [1.0_f32, 1.0, 1.0],
+            La: [0.2_f32, 0.2, 0.2], ..Default::default()
         });
 
         let model = Mat4F::rotation_x(90.0_f32.to_radians())
@@ -277,7 +350,7 @@ impl SceneEdge {
         };
 
         let torus = &self.torus;
-        self.fbo.rent_mut(|(framebuffer, _)| {
+        self.render_fbo.rent_mut(|(framebuffer, _)| {
             // TODO: handle unwrap()
             torus.render(framebuffer, program, draw_params, &uniforms).unwrap();
         });
@@ -285,17 +358,53 @@ impl SceneEdge {
         Ok(())
     }
 
-    fn pass2(&self, frame: &mut glium::Frame, draw_params: &glium::DrawParameters) -> GLResult<()> {
+    fn pass2(&mut self) -> GLResult<()> {
 
-        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        let render_fbo = &self.render_fbo;
+        let fs_quad = &self.fs_quad;
+        let program = &self.program;
+
+        self.weight_buffer.write(&self.weights);
+        let weight_buffer = &self.weight_buffer;
+
+        self.intermediate_fbo.rent_mut(|(framebuffer, _)| {
+
+            framebuffer.clear_color(0.0, 0.0, 0.0, 1.0);
+
+            render_fbo.rent(|(_, res)| {
+
+                let uniforms = uniform! {
+                    Pass: 2_i32,
+                    WeightWrapper: weight_buffer,
+                    Texture0: res.color.sampled()
+                        .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+                        .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                    ModelViewMatrix: Mat4F::identity().into_col_arrays(),
+                    NormalMatrix: Mat3F::identity().into_col_arrays(),
+                    MVP: Mat4F::identity().into_col_arrays(),
+                };
+
+                // Disable depth test
+                fs_quad.render(framebuffer, program, &Default::default(), &uniforms).unwrap();
+            });
+        });
+
+        Ok(())
+    }
+
+    fn pass3(&self, frame: &mut glium::Frame, draw_params: &glium::DrawParameters) -> GLResult<()> {
+
+        frame.clear_color(0.0, 0.0, 0.0, 1.0);
         frame.clear_depth(1.0);
 
-        self.fbo.rent(|(_, res)| {
+        self.weight_buffer.write(&self.weights);
+
+        self.intermediate_fbo.rent(|(_, res)| {
 
             let uniforms = uniform! {
-                Pass: 2_i32,
-                EdgeThreshold: 0.05_f32,
-                RenderTex: res.render_tex.sampled()
+                Pass: 3_i32,
+                WeightWrapper: &self.weight_buffer,
+                Texture0: res.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                 ModelViewMatrix: Mat4F::identity().into_col_arrays(),
@@ -309,4 +418,15 @@ impl SceneEdge {
 
         Ok(())
     }
+}
+
+fn gauss(x: f32, sigma2: f32) -> f32 {
+    const TWO_PI: f64 = std::f64::consts::PI * 2.0;
+    let sigma2 = sigma2 as f64;
+    let x = x as f64;
+
+	let coeff: f64 = 1.0 / (TWO_PI * sigma2);
+    let expon: f64 = -(x * x) / (2.0 * sigma2);
+
+    (coeff * expon.exp()) as f32
 }
