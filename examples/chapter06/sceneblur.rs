@@ -202,10 +202,25 @@ impl Scene for SceneBlur {
 
 impl SceneBlur {
 
+    #[cfg(not(target_os = "macos"))]
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
 
         let vertex_shader_code   = include_str!("shaders/blur.vert.glsl");
         let fragment_shader_code = include_str!("shaders/blur.frag.glsl");
+
+        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
+            .with_srgb_output(true);
+        glium::Program::new(display, sources)
+    }
+
+    // There is a issue when transfering the weights to shader on macOS.
+    // See https://github.com/unknownue/GLSLCookbook.rs/issues/5 for detail.
+    // Here we use a shader that pre-calcualtes the weights in it.
+    #[cfg(target_os = "macos")]
+    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+
+        let vertex_shader_code   = include_str!("shaders/blur.vert.glsl");
+        let fragment_shader_code = include_str!("shaders/blur_macOS.frag.glsl");
 
         let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
             .with_srgb_output(true);
