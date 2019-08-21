@@ -3,13 +3,12 @@ use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::{Teapot, Plane, Torus, Quad};
 use cookbook::{Mat4F, Mat3F, Vec3F};
+use cookbook::framebuffer::ColorDepthFBO;
 use cookbook::Drawable;
 
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
 use glium::uniforms::UniformBuffer;
-use glium::texture::texture2d::Texture2d;
-use glium::framebuffer::{SimpleFrameBuffer, DepthRenderBuffer};
 use glium::{Surface, uniform, implement_uniform_block};
 
 
@@ -22,29 +21,13 @@ pub struct SceneEdge {
     torus: Torus,
     fs_quad: Quad,
 
-    fbo: fbo_rentals::FBORental,
+    fbo: ColorDepthFBO,
     material_buffer: UniformBuffer<MaterialInfo>,
     light_buffer: UniformBuffer<LightInfo>,
 
     aspect_ratio: f32,
     angle: f32,
     is_animate: bool,
-}
-
-pub struct FBOResource {
-    render_tex: Texture2d,
-    depth_buffer: DepthRenderBuffer,
-}
-
-rental! {
-    mod fbo_rentals {
-
-        #[rental]
-        pub struct FBORental {
-            res: Box<super::FBOResource>,
-            framebuffer: (glium::framebuffer::SimpleFrameBuffer<'res>, &'res super::FBOResource),
-        }
-    }
 }
 
 #[allow(non_snake_case)]
@@ -97,7 +80,7 @@ impl Scene for SceneEdge {
 
 
         // Initialize Uniforms --------------------------------------------------------
-        let fbo = SceneEdge::setup_frame_buffer_object(display, screen_width, screen_height)?;
+        let fbo = ColorDepthFBO::setup(display, screen_width, screen_height)?;
 
         glium::implement_uniform_block!(LightInfo, LightPosition, L, La);
         let light_buffer = UniformBuffer::immutable(display, LightInfo {
@@ -147,7 +130,7 @@ impl Scene for SceneEdge {
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
         self.aspect_ratio = width as f32 / height as f32;
-        self.fbo = SceneEdge::setup_frame_buffer_object(display, width, height).unwrap();
+        self.fbo = ColorDepthFBO::setup(display, width, height).unwrap();
     }
 
     fn is_animating(&self) -> bool {
@@ -169,25 +152,6 @@ impl SceneEdge {
         let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
             .with_srgb_output(true);
         glium::Program::new(display, sources)
-    }
-
-    fn setup_frame_buffer_object(display: &impl Facade, width: u32, height: u32) -> GLResult<fbo_rentals::FBORental> {
-
-        let render_tex = Texture2d::empty(display, width, height)
-            .map_err(GLErrorKind::CreateTexture)?;
-        let depth_buffer = DepthRenderBuffer::new(display, glium::texture::DepthFormat::F32, width, height)
-            .map_err(BufferCreationErrorKind::RenderBuffer)?;
-
-        // Build the self-referential struct using rental crate.
-        let fbo = fbo_rentals::FBORental::new(
-            Box::new(FBOResource { render_tex, depth_buffer }),
-            // TODO: handle unwrap()
-            |res| { 
-                let framebuffer = SimpleFrameBuffer::with_depth_buffer(display, &res.render_tex, &res.depth_buffer).unwrap();
-                (framebuffer, &res)
-            }
-        );
-        Ok(fbo)
     }
 
     fn pass1(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
@@ -290,12 +254,12 @@ impl SceneEdge {
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
 
-        self.fbo.rent(|(_, res)| {
+        self.fbo.rent(|(_, attachment)| {
 
             let uniforms = uniform! {
                 Pass: 2_i32,
                 EdgeThreshold: 0.05_f32,
-                RenderTex: res.render_tex.sampled()
+                RenderTex: attachment.color.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                 ModelViewMatrix: Mat4F::identity().into_col_arrays(),

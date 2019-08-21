@@ -3,6 +3,7 @@ use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::{Cube, ObjMesh, ObjMeshConfiguration};
 use cookbook::texture::load_texture;
+use cookbook::framebuffer::ColorDepthFBO;
 use cookbook::{Mat4F, Mat3F, Vec3F};
 use cookbook::Drawable;
 
@@ -10,13 +11,8 @@ use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
 use glium::uniforms::UniformBuffer;
 use glium::texture::texture2d::Texture2d;
-use glium::framebuffer::{SimpleFrameBuffer, DepthRenderBuffer};
 use glium::{Surface, uniform, implement_uniform_block};
 
-// Note: Since glium::framebuffer::SimpleFrameBuffer is need for Texture Rendering, but contains referential member,
-//     there rental crate is used to avoid the self-reference conflit in Rust.
-//     It makes the code more uglier, but it works.
-// See https://github.com/glium/glium/blob/master/examples/deferred.rs for an example of this use case.
 
 
 pub struct SceneRenderToTex {
@@ -28,7 +24,7 @@ pub struct SceneRenderToTex {
 
     spot_texture: Texture2d,
 
-    fbo: fbo_rentals::FBORental,
+    fbo: ColorDepthFBO,
 
     material_buffer: UniformBuffer<MaterialInfo>,
     light_buffer   : UniformBuffer<LightInfo>,
@@ -37,22 +33,6 @@ pub struct SceneRenderToTex {
 
     angle: f32,
     is_animate: bool
-}
-
-pub struct FBOResource {
-    render_tex: Texture2d,
-    depth_buffer: DepthRenderBuffer,
-}
-
-rental! {
-    mod fbo_rentals {
-
-        #[rental]
-        pub struct FBORental {
-            res: Box<super::FBOResource>,
-            framebuffer: (glium::framebuffer::SimpleFrameBuffer<'res>, &'res super::FBOResource),
-        }
-    }
 }
 
 #[allow(non_snake_case)]
@@ -98,7 +78,7 @@ impl Scene for SceneRenderToTex {
         // ----------------------------------------------------------------------------
 
         // Initialize FrameBuffer Objects ---------------------------------------------
-        let fbo = SceneRenderToTex::setup_frame_buffer_object(display)?;
+        let fbo = ColorDepthFBO::setup(display, 512, 512)?;
         // ----------------------------------------------------------------------------
 
         // Initialize MVP -------------------------------------------------------------
@@ -146,8 +126,9 @@ impl Scene for SceneRenderToTex {
         self.render_scene(frame)
     }
 
-    fn resize(&mut self, _display: &impl Facade, width: u32, height: u32) {
+    fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
 
+        self.fbo = ColorDepthFBO::setup(display, 512, 512).unwrap();
         self.projection = Mat4F::perspective_rh_zo(45.0_f32.to_radians(), width as f32 / height as f32, 0.3, 100.0);
     }
 
@@ -171,25 +152,6 @@ impl SceneRenderToTex {
         let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
             .with_srgb_output(true);
         glium::Program::new(display, sources)
-    }
-
-    fn setup_frame_buffer_object(display: &impl Facade) -> GLResult<fbo_rentals::FBORental> {
-
-        let render_tex = Texture2d::empty(display, 512, 512)
-            .map_err(GLErrorKind::CreateTexture)?;
-        let depth_buffer = DepthRenderBuffer::new(display, glium::texture::DepthFormat::F32, 512, 512)
-            .map_err(BufferCreationErrorKind::RenderBuffer)?;
-
-        // Build the self-referential struct using rental crate.
-        let fbo = fbo_rentals::FBORental::new(
-            Box::new(FBOResource { render_tex, depth_buffer }),
-            // TODO: handle unwrap()
-            |res| { 
-                let framebuffer = SimpleFrameBuffer::with_depth_buffer(display, &res.render_tex, &res.depth_buffer).unwrap();
-                (framebuffer, &res)
-            }
-        );
-        Ok(fbo)
     }
 
     fn render_to_texture(&mut self) -> GLResult<()> {
@@ -267,12 +229,12 @@ impl SceneRenderToTex {
         let model = Mat4F::identity();
         let mv: Mat4F = view * model;
 
-        self.fbo.rent(|(_, res)| {
+        self.fbo.rent(|(_, attachment)| {
 
             let uniforms = uniform! {
                 LightInfo: &self.light_buffer,
                 MaterialInfo: &self.material_buffer,
-                RenderTex: res.render_tex.sampled()
+                RenderTex: attachment.color.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear),
                 ModelViewMatrix: mv.clone().into_col_arrays(),

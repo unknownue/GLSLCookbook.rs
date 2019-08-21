@@ -3,13 +3,12 @@ use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::{Teapot, Plane, Torus, Quad};
 use cookbook::{Mat4F, Mat3F, Vec3F};
+use cookbook::framebuffer::{ColorDepthFBO, ColorFBO};
 use cookbook::Drawable;
 
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
 use glium::uniforms::UniformBuffer;
-use glium::texture::texture2d::Texture2d;
-use glium::framebuffer::{SimpleFrameBuffer, DepthRenderBuffer};
 use glium::{Surface, uniform, implement_uniform_block};
 
 
@@ -22,8 +21,8 @@ pub struct SceneBlur {
     torus: Torus,
     fs_quad: Quad,
 
-    render_fbo      : fbo_rentals::FBOColorDepthRental,
-    intermediate_fbo: fbo_rentals::FBOColorRental,
+    render_fbo      : ColorDepthFBO,
+    intermediate_fbo: ColorFBO,
 
     weights: WeightWrapper,
 
@@ -44,27 +43,6 @@ struct WeightWrapper {
     Weight: [f32; 5],
 }
 
-pub struct FBOColorDepth {
-    color: Texture2d,
-    depth: DepthRenderBuffer,
-}
-
-rental! {
-    mod fbo_rentals {
-
-        #[rental]
-        pub struct FBOColorDepthRental {
-            res: Box<super::FBOColorDepth>,
-            framebuffer: (glium::framebuffer::SimpleFrameBuffer<'res>, &'res super::FBOColorDepth),
-        }
-
-        #[rental]
-        pub struct FBOColorRental {
-            res: Box<super::Texture2d>,
-            framebuffer: (glium::framebuffer::SimpleFrameBuffer<'res>, &'res super::Texture2d),
-        }
-    }
-}
 
 #[allow(non_snake_case)]
 #[repr(C)]
@@ -135,12 +113,15 @@ impl Scene for SceneBlur {
 
 
         // Initialize Uniforms --------------------------------------------------------
-        let render_fbo = SceneBlur::setup_color_depth_frame_buffer(display, screen_width, screen_height)?;
-        let intermediate_fbo = SceneBlur::setup_color_frame_buffer(display, screen_width, screen_height)?;
+        let render_fbo = ColorDepthFBO::setup(display, screen_width, screen_height)?;
+        let intermediate_fbo = ColorFBO::setup(display, screen_width, screen_height)?;
 
         glium::implement_uniform_block!(LightInfo, LightPosition, L, La);
-        let light_buffer = UniformBuffer::empty_immutable(display)
-            .map_err(BufferCreationErrorKind::UniformBlock)?;
+        let light_buffer = UniformBuffer::immutable(display, LightInfo {
+            LightPosition: [0.0_f32, 0.0, 0.0, 1.0],
+            L: [1.0_f32, 1.0, 1.0],
+            La: [0.2_f32, 0.2, 0.2], ..Default::default()
+        }).map_err(BufferCreationErrorKind::UniformBlock)?;
         glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess);
         let material_buffer = UniformBuffer::empty_immutable(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
@@ -187,8 +168,8 @@ impl Scene for SceneBlur {
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
         self.aspect_ratio = width as f32 / height as f32;
-        self.render_fbo = SceneBlur::setup_color_depth_frame_buffer(display, width, height).unwrap();
-        self.intermediate_fbo = SceneBlur::setup_color_frame_buffer(display, width, height).unwrap();
+        self.render_fbo = ColorDepthFBO::setup(display, width, height).unwrap();
+        self.intermediate_fbo = ColorFBO::setup(display, width, height).unwrap();
     }
 
     fn is_animating(&self) -> bool {
@@ -227,42 +208,6 @@ impl SceneBlur {
         glium::Program::new(display, sources)
     }
 
-    fn setup_color_depth_frame_buffer(display: &impl Facade, width: u32, height: u32) -> GLResult<fbo_rentals::FBOColorDepthRental> {
-
-        let color_compoenent = Texture2d::empty(display, width, height)
-            .map_err(GLErrorKind::CreateTexture)?;
-        let depth_component = DepthRenderBuffer::new(display, glium::texture::DepthFormat::F32, width, height)
-            .map_err(BufferCreationErrorKind::RenderBuffer)?;
-
-        // Build the self-referential struct using rental crate.
-        let fbo = fbo_rentals::FBOColorDepthRental::new(
-            Box::new(FBOColorDepth { color: color_compoenent, depth: depth_component }),
-            // TODO: handle unwrap()
-            |res| { 
-                let framebuffer = SimpleFrameBuffer::with_depth_buffer(display, &res.color, &res.depth).unwrap();
-                (framebuffer, &res)
-            }
-        );
-        Ok(fbo)
-    }
-
-    fn setup_color_frame_buffer(display: &impl Facade, width: u32, height: u32) -> GLResult<fbo_rentals::FBOColorRental> {
-
-        let color_compoenent = Texture2d::empty(display, width, height)
-            .map_err(GLErrorKind::CreateTexture)?;
-
-        // Build the self-referential struct using rental crate.
-        let fbo = fbo_rentals::FBOColorRental::new(
-            Box::new(color_compoenent),
-            // TODO: handle unwrap()
-            |res| { 
-                let framebuffer = SimpleFrameBuffer::new(display, res).unwrap();
-                (framebuffer, &res)
-            }
-        );
-        Ok(fbo)
-    }
-
     fn pass1(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
 
         let program = &self.program;
@@ -277,11 +222,6 @@ impl SceneBlur {
             Kd: [0.9, 0.9, 0.9],
             Ks: [0.95, 0.95, 0.95],
             Shininess: 100.0, ..Default::default()
-        });
-        self.light_buffer.write(&LightInfo {
-            LightPosition: [0.0_f32, 0.0, 0.0, 1.0],
-            L: [1.0_f32, 1.0, 1.0],
-            La: [0.2_f32, 0.2, 0.2], ..Default::default()
         });
 
         let model = Mat4F::rotation_x(-90.0_f32.to_radians());
@@ -313,11 +253,6 @@ impl SceneBlur {
             Ks: [0.0, 0.0, 0.0],
             Shininess: 1.0, ..Default::default()
         });
-        self.light_buffer.write(&LightInfo {
-            LightPosition: [0.0_f32, 0.0, 0.0, 1.0],
-            L: [1.0_f32, 1.0, 1.0],
-            La: [0.2_f32, 0.2, 0.2], ..Default::default()
-        });
 
         let model = Mat4F::translation_3d(Vec3F::new(0.0, -0.75, 0.0));
         let mv: Mat4F = view * model;
@@ -344,11 +279,6 @@ impl SceneBlur {
             Kd: [0.9, 0.5, 0.2],
             Ks: [0.95, 0.95, 0.95],
             Shininess: 100.0, ..Default::default()
-        });
-        self.light_buffer.write(&LightInfo {
-            LightPosition: [0.0_f32, 0.0, 0.0, 1.0],
-            L: [1.0_f32, 1.0, 1.0],
-            La: [0.2_f32, 0.2, 0.2], ..Default::default()
         });
 
         let model = Mat4F::rotation_x(90.0_f32.to_radians())
@@ -386,12 +316,12 @@ impl SceneBlur {
 
             framebuffer.clear_color(0.0, 0.0, 0.0, 1.0);
 
-            render_fbo.rent(|(_, res)| {
+            render_fbo.rent(|(_, attachment)| {
 
                 let uniforms = uniform! {
                     Pass: 2_i32,
                     WeightWrapper: weight_buffer,
-                    Texture0: res.color.sampled()
+                    Texture0: attachment.color.sampled()
                         .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                     ModelViewMatrix: Mat4F::identity().into_col_arrays(),
@@ -414,12 +344,12 @@ impl SceneBlur {
 
         self.weight_buffer.write(&self.weights);
 
-        self.intermediate_fbo.rent(|(_, res)| {
+        self.intermediate_fbo.rent(|(_, attachment)| {
 
             let uniforms = uniform! {
                 Pass: 3_i32,
                 WeightWrapper: &self.weight_buffer,
-                Texture0: res.sampled()
+                Texture0: attachment.color.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                 ModelViewMatrix: Mat4F::identity().into_col_arrays(),

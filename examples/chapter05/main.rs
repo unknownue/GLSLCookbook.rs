@@ -1,5 +1,4 @@
 
-#[macro_use] extern crate rental;
 extern crate glsl_cookbook_rs as cookbook;
 
 mod scenetexture;
