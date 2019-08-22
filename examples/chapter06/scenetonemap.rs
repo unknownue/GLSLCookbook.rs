@@ -27,6 +27,9 @@ pub struct SceneToneMap {
     light_buffer: UniformBuffer<LightsWrapper>,
 
     ave_lum: f32,
+    screen_width : u32,
+    screen_height: u32,
+
     aspect_ratio: f32,
     view: Mat4F,
     projection: Mat4F,
@@ -107,6 +110,7 @@ impl Scene for SceneToneMap {
             program, hdr_fbo,
             teapot, sphere, plane, quad,
             material_buffer, light_buffer,
+            screen_width, screen_height,
             aspect_ratio, view, projection, ave_lum,
         };
         Ok(scene)
@@ -136,6 +140,8 @@ impl Scene for SceneToneMap {
         self.aspect_ratio = width as f32 / height as f32;
         self.hdr_fbo = GLFrameBuffer::setup(display, width, height).unwrap();
         self.projection = Mat4F::perspective_rh_zo(60.0_f32.to_radians(), self.aspect_ratio, 0.3, 100.0);
+        self.screen_width  = width;
+        self.screen_height = height;
     }
 
     fn is_animating(&self) -> bool { false }
@@ -308,13 +314,29 @@ impl SceneToneMap {
 
     fn compute_log_ave_luminance(&mut self) {
 
-        // TODO: Implement read data from texture and calculate `ave_lum`.
-        // Original implementation https://github.com/PacktPublishing/OpenGL-4-Shading-Language-Cookbook-Third-Edition/blob/805471f2fa03f6ab18172e707b203c71c1973fd3/chapter06/scenetonemap.cpp#L137.
-        
-        // glium does not suppot read format `UncompressedFloatFormat::F32F32F32F32` from texture.
-        // See https://github.com/glium/glium/issues/1502 for detail.
-        // So here we hard code the value.
+        // For accurate estimation, we must calculate from `hdr_texture` every frame. -----------------
+        // This process is very very slow on CPU.
+        // let mut sum = 0.0;
+
+        // self.hdr_fbo.rent(|(_, attachment)| {
+        //     unsafe {
+        //         let pixels: glium::texture::pixel_buffer::PixelBuffer<(f32, f32, f32, f32)> = attachment.color.unchecked_read_to_pixel_buffer();
+        //         let pixels: Vec<(f32, f32, f32, f32)> = pixels.read_as_texture_1d()
+        //             .expect("Failed to read as texture 1d");
+
+        //         for pixel in pixels {
+        //             let lum = pixel.0 * 0.2126 + pixel.1 * 0.7152 + pixel.2 * 0.0722;
+        //             sum += (lum + 0.00001).ln();
+        //         }
+        //     }
+        // });
+
+        // self.ave_lum = (sum / (self.screen_width as f32 * self.screen_height as f32)).exp();
+        // ------------------------------------------------------------------------------------------
+
+        // For static scene. Just hard code this value may reduce the above heavy computation. ------
         self.ave_lum = 0.581015;
+        // ------------------------------------------------------------------------------------------
     }
 
     fn pass2(&self, frame: &mut glium::Frame, draw_params: &glium::DrawParameters) -> GLResult<()> {
