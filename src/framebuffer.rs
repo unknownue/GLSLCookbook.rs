@@ -5,7 +5,7 @@ use glium::texture::texture2d::Texture2d;
 use glium::framebuffer::{DepthRenderBuffer, SimpleFrameBuffer};
 use glium::backend::Facade;
 
-pub use fbo_rentals::{ColorDepthFBO, ColorFBO};
+pub use fbo_rentals::GLFrameBuffer;
 
 // Note: Since glium::framebuffer::SimpleFrameBuffer is need for Texture Rendering, but contains referential member,
 //     there rental crate is used to avoid the self-reference conflit in Rust.
@@ -21,65 +21,73 @@ pub struct ColorAttachment {
     pub color: Texture2d,
 }
 
-rental! {
-    mod fbo_rentals {
+pub trait GLAttachment: Sized {
+    fn new_attachment(display: &impl Facade, width: u32, height: u32) -> GLResult<Self>;
+    fn new_framebuffer<'a>(display: &impl Facade, attachment: &'a Self) -> GLResult<SimpleFrameBuffer<'a>>;
+}
 
-        #[rental]
-        pub struct ColorDepthFBO {
-            attachment: Box<super::ColorDepthAttachment>,
-            framebuffer: (
-                glium::framebuffer::SimpleFrameBuffer<'attachment>,
-                &'attachment super::ColorDepthAttachment
-            ),
-        }
+impl GLAttachment for ColorAttachment {
 
-        #[rental]
-        pub struct ColorFBO {
-            attachment: Box<super::ColorAttachment>,
-            framebuffer: (
-                glium::framebuffer::SimpleFrameBuffer<'attachment>,
-                &'attachment super::ColorAttachment
-            ),
-        }
+    fn new_attachment(display: &impl Facade, width: u32, height: u32) -> GLResult<ColorAttachment> {
+
+        let color_compoenent = Texture2d::empty(display, width, height)
+            .map_err(GLErrorKind::CreateTexture)?;
+        let attachment = ColorAttachment { color: color_compoenent };
+        Ok(attachment)
+    }
+
+    fn new_framebuffer<'a>(display: &impl Facade, attachment: &'a ColorAttachment) -> GLResult<SimpleFrameBuffer<'a>> {
+        let framebuffer = SimpleFrameBuffer::new(display, &attachment.color)
+            .map_err(BufferCreationErrorKind::FrameBuffer)?;
+        Ok(framebuffer)
     }
 }
 
-impl ColorDepthFBO {
+impl GLAttachment for ColorDepthAttachment {
 
-    pub fn setup(display: &impl Facade, width: u32, height: u32) -> GLResult<ColorDepthFBO> {
+    fn new_attachment(display: &impl Facade, width: u32, height: u32) -> GLResult<ColorDepthAttachment> {
 
         let color_compoenent = Texture2d::empty(display, width, height)
             .map_err(GLErrorKind::CreateTexture)?;
         let depth_component = DepthRenderBuffer::new(display, glium::texture::DepthFormat::F32, width, height)
             .map_err(BufferCreationErrorKind::RenderBuffer)?;
+        let attachment = ColorDepthAttachment { color: color_compoenent, depth: depth_component };
+        Ok(attachment)
+    }
 
-        // Build the self-referential struct using rental crate.
-        let fbo = fbo_rentals::ColorDepthFBO::new(
-            Box::new(ColorDepthAttachment { color: color_compoenent, depth: depth_component }),
-            // TODO: handle unwrap()
-            |attachment| { 
-                let framebuffer = SimpleFrameBuffer::with_depth_buffer(display, &attachment.color, &attachment.depth).unwrap();
-                (framebuffer, &attachment)
-            }
-        );
-
-        Ok(fbo)
+    fn new_framebuffer<'a>(display: &impl Facade, attachment: &'a ColorDepthAttachment) -> GLResult<SimpleFrameBuffer<'a>> {
+        let framebuffer = SimpleFrameBuffer::with_depth_buffer(display, &attachment.color, &attachment.depth)
+            .map_err(BufferCreationErrorKind::FrameBuffer)?;
+        Ok(framebuffer)
     }
 }
 
-impl ColorFBO {
+rental! {
+    mod fbo_rentals {
 
-    pub fn setup(display: &impl Facade, width: u32, height: u32) -> GLResult<ColorFBO> {
+        #[rental]
+        pub struct GLFrameBuffer<A: 'static> {
+            attachment: Box<A>,
+            framebuffer: (
+                glium::framebuffer::SimpleFrameBuffer<'attachment>,
+                &'attachment A,
+            ),
+        }
+    }
+}
 
-        let color_compoenent = Texture2d::empty(display, width, height)
-            .map_err(GLErrorKind::CreateTexture)?;
+impl<A> GLFrameBuffer<A>
+    where
+        A: 'static + GLAttachment {
+
+    pub fn setup(display: &impl Facade, width: u32, height: u32) -> GLResult<GLFrameBuffer<A>> {
 
         // Build the self-referential struct using rental crate.
-        let fbo = fbo_rentals::ColorFBO::new(
-            Box::new(ColorAttachment { color: color_compoenent }),
+        let fbo = fbo_rentals::GLFrameBuffer::new(
+            Box::new(A::new_attachment(display, width, height)?),
             |attachment| { 
                 // TODO: handle unwrap()
-                let framebuffer = SimpleFrameBuffer::new(display, &attachment.color).unwrap();
+                let framebuffer = A::new_framebuffer(display, &attachment).unwrap();
                 (framebuffer, &attachment)
             }
         );

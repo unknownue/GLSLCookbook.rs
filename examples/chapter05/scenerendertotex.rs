@@ -3,7 +3,7 @@ use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::{Cube, ObjMesh, ObjMeshConfiguration};
 use cookbook::texture::load_texture;
-use cookbook::framebuffer::ColorDepthFBO;
+use cookbook::framebuffer::{ColorDepthAttachment, GLFrameBuffer};
 use cookbook::{Mat4F, Mat3F, Vec3F};
 use cookbook::Drawable;
 
@@ -24,7 +24,7 @@ pub struct SceneRenderToTex {
 
     spot_texture: Texture2d,
 
-    fbo: ColorDepthFBO,
+    fbo: GLFrameBuffer<ColorDepthAttachment>,
 
     material_buffer: UniformBuffer<MaterialInfo>,
     light_buffer   : UniformBuffer<LightInfo>,
@@ -78,7 +78,7 @@ impl Scene for SceneRenderToTex {
         // ----------------------------------------------------------------------------
 
         // Initialize FrameBuffer Objects ---------------------------------------------
-        let fbo = ColorDepthFBO::setup(display, 512, 512)?;
+        let fbo = GLFrameBuffer::setup(display, 512, 512)?;
         // ----------------------------------------------------------------------------
 
         // Initialize MVP -------------------------------------------------------------
@@ -128,7 +128,7 @@ impl Scene for SceneRenderToTex {
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
 
-        self.fbo = ColorDepthFBO::setup(display, 512, 512).unwrap();
+        self.fbo = GLFrameBuffer::setup(display, 512, 512).unwrap();
         self.projection = Mat4F::perspective_rh_zo(45.0_f32.to_radians(), width as f32 / height as f32, 0.3, 100.0);
     }
 

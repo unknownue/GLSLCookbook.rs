@@ -3,7 +3,7 @@ use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::{Teapot, Plane, Torus, Quad};
 use cookbook::{Mat4F, Mat3F, Vec3F};
-use cookbook::framebuffer::ColorDepthFBO;
+use cookbook::framebuffer::{ColorDepthAttachment, GLFrameBuffer};
 use cookbook::Drawable;
 
 use glium::backend::Facade;
@@ -21,7 +21,7 @@ pub struct SceneEdge {
     torus: Torus,
     fs_quad: Quad,
 
-    fbo: ColorDepthFBO,
+    fbo: GLFrameBuffer<ColorDepthAttachment>,
     material_buffer: UniformBuffer<MaterialInfo>,
     light_buffer: UniformBuffer<LightInfo>,
 
@@ -80,7 +80,7 @@ impl Scene for SceneEdge {
 
 
         // Initialize Uniforms --------------------------------------------------------
-        let fbo = ColorDepthFBO::setup(display, screen_width, screen_height)?;
+        let fbo = GLFrameBuffer::setup(display, screen_width, screen_height)?;
 
         glium::implement_uniform_block!(LightInfo, LightPosition, L, La);
         let light_buffer = UniformBuffer::immutable(display, LightInfo {
@@ -130,7 +130,7 @@ impl Scene for SceneEdge {
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
         self.aspect_ratio = width as f32 / height as f32;
-        self.fbo = ColorDepthFBO::setup(display, width, height).unwrap();
+        self.fbo = GLFrameBuffer::setup(display, width, height).unwrap();
     }
 
     fn is_animating(&self) -> bool {

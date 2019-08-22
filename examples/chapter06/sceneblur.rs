@@ -3,7 +3,7 @@ use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::{Teapot, Plane, Torus, Quad};
 use cookbook::{Mat4F, Mat3F, Vec3F};
-use cookbook::framebuffer::{ColorDepthFBO, ColorFBO};
+use cookbook::framebuffer::{ColorDepthAttachment, ColorAttachment, GLFrameBuffer};
 use cookbook::Drawable;
 
 use glium::backend::Facade;
@@ -21,8 +21,8 @@ pub struct SceneBlur {
     torus: Torus,
     fs_quad: Quad,
 
-    render_fbo      : ColorDepthFBO,
-    intermediate_fbo: ColorFBO,
+    render_fbo      : GLFrameBuffer<ColorDepthAttachment>,
+    intermediate_fbo: GLFrameBuffer<ColorAttachment>,
 
     weights: WeightWrapper,
 
@@ -113,8 +113,8 @@ impl Scene for SceneBlur {
 
 
         // Initialize Uniforms --------------------------------------------------------
-        let render_fbo = ColorDepthFBO::setup(display, screen_width, screen_height)?;
-        let intermediate_fbo = ColorFBO::setup(display, screen_width, screen_height)?;
+        let render_fbo = GLFrameBuffer::setup(display, screen_width, screen_height)?;
+        let intermediate_fbo = GLFrameBuffer::setup(display, screen_width, screen_height)?;
 
         glium::implement_uniform_block!(LightInfo, LightPosition, L, La);
         let light_buffer = UniformBuffer::immutable(display, LightInfo {
@@ -168,8 +168,8 @@ impl Scene for SceneBlur {
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
         self.aspect_ratio = width as f32 / height as f32;
-        self.render_fbo = ColorDepthFBO::setup(display, width, height).unwrap();
-        self.intermediate_fbo = ColorFBO::setup(display, width, height).unwrap();
+        self.render_fbo = GLFrameBuffer::setup(display, width, height).unwrap();
+        self.intermediate_fbo = GLFrameBuffer::setup(display, width, height).unwrap();
     }
 
     fn is_animating(&self) -> bool {
