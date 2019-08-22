@@ -3,6 +3,7 @@ use crate::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 
 use glium::texture::texture2d::Texture2d;
 use glium::framebuffer::{DepthRenderBuffer, SimpleFrameBuffer};
+use glium::texture::{MipmapsOption, UncompressedFloatFormat};
 use glium::backend::Facade;
 
 pub use fbo_rentals::GLFrameBuffer;
@@ -19,6 +20,11 @@ pub struct ColorDepthAttachment {
 
 pub struct ColorAttachment {
     pub color: Texture2d,
+}
+
+pub struct HdrColorDepthAttachment {
+    pub color: Texture2d,
+    pub depth: DepthRenderBuffer,
 }
 
 pub trait GLAttachment: Sized {
@@ -56,6 +62,25 @@ impl GLAttachment for ColorDepthAttachment {
     }
 
     fn new_framebuffer<'a>(display: &impl Facade, attachment: &'a ColorDepthAttachment) -> GLResult<SimpleFrameBuffer<'a>> {
+        let framebuffer = SimpleFrameBuffer::with_depth_buffer(display, &attachment.color, &attachment.depth)
+            .map_err(BufferCreationErrorKind::FrameBuffer)?;
+        Ok(framebuffer)
+    }
+}
+
+impl GLAttachment for HdrColorDepthAttachment {
+
+    fn new_attachment(display: &impl Facade, width: u32, height: u32) -> GLResult<HdrColorDepthAttachment> {
+
+        let color_compoenent = Texture2d::empty_with_format(display, UncompressedFloatFormat::F32F32F32F32, MipmapsOption::NoMipmap, width, height)
+            .map_err(GLErrorKind::CreateTexture)?;
+        let depth_component = DepthRenderBuffer::new(display, glium::texture::DepthFormat::F32, width, height)
+            .map_err(BufferCreationErrorKind::RenderBuffer)?;
+        let attachment = HdrColorDepthAttachment { color: color_compoenent, depth: depth_component };
+        Ok(attachment)
+    }
+
+    fn new_framebuffer<'a>(display: &impl Facade, attachment: &'a HdrColorDepthAttachment) -> GLResult<SimpleFrameBuffer<'a>> {
         let framebuffer = SimpleFrameBuffer::with_depth_buffer(display, &attachment.color, &attachment.depth)
             .map_err(BufferCreationErrorKind::FrameBuffer)?;
         Ok(framebuffer)
