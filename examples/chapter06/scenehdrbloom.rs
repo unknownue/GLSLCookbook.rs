@@ -1,0 +1,534 @@
+
+use cookbook::scene::{Scene, GLSourceCode};
+use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
+use cookbook::objects::{Teapot, Plane, Sphere, Quad};
+use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
+use cookbook::framebuffer::{HdrColorDepthAttachment, HdrColorAttachment, GLFrameBuffer};
+use cookbook::Drawable;
+
+use glium::backend::Facade;
+use glium::program::{Program, ProgramCreationError};
+use glium::uniforms::UniformBuffer;
+use glium::{Surface, uniform, implement_uniform_block};
+
+
+pub struct SceneHdrBloom {
+
+    program: glium::Program,
+
+    teapot  : Teapot,
+    plane   : Plane,
+    sphere  : Sphere,
+    fs_quad : Quad,
+
+    hdr_fbo   : GLFrameBuffer::<HdrColorDepthAttachment>,
+    blur_fbo1 : GLFrameBuffer::<HdrColorAttachment>,
+    blur_fbo2 : GLFrameBuffer::<HdrColorAttachment>,
+
+    material_buffer : UniformBuffer<MaterialInfo>,
+    light_buffer    : UniformBuffer<LightsWrapper>,
+    weight_buffer   : UniformBuffer<[f32; 10]>,
+
+    weights: [f32; 10],
+    ave_lum: f32,
+    screen_width : u32,
+    screen_height: u32,
+
+    aspect_ratio: f32,
+    view: Mat4F,
+    projection: Mat4F,
+}
+
+
+#[allow(non_snake_case)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+struct LightsWrapper {
+    Lights: [LightInfo; 5],
+}
+
+#[allow(non_snake_case)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+struct LightInfo {
+    Position: [f32; 4],
+    L : [f32; 3], _padding1: f32,
+    La: [f32; 3], _padding2: f32,
+}
+
+#[allow(non_snake_case)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+struct MaterialInfo {
+    Ka: [f32; 3], _padding1: f32,
+    Kd: [f32; 3], _padding2: f32,
+    Ks: [f32; 3],
+    Shininess: f32,
+}
+
+
+impl Scene for SceneHdrBloom {
+
+    fn new(display: &impl Facade) -> GLResult<SceneHdrBloom> {
+
+        let (screen_width, screen_height) = display.get_context().get_framebuffer_dimensions();
+        let bloom_buffer_width  = screen_width / 8;
+        let bloom_buffer_height = screen_height / 8;
+        let aspect_ratio = (screen_width as f32) / (screen_height as f32);
+
+        // Shader Program ------------------------------------------------------------
+        let program = SceneHdrBloom::compile_shader_program(display)
+            .map_err(GLErrorKind::CreateProgram)?;
+        // ----------------------------------------------------------------------------
+
+
+        // Initialize Mesh ------------------------------------------------------------
+        let teapot = Teapot::new(display, 14, Mat4F::identity())?;
+        let plane = Plane::new(display, 20.0, 10.0, 1, 1, 1.0, 1.0)?;
+        let sphere = Sphere::new(display, 2.0, 50, 50)?;
+        let fs_quad = Quad::new(display)?;
+        // ----------------------------------------------------------------------------
+
+        // Initialize FrameBuffer Objects ---------------------------------------------
+        let hdr_fbo = GLFrameBuffer::setup(display, screen_width, screen_height)?;
+        // Create an FBO for the bright-pass filter and blur
+        let blur_fbo1 = GLFrameBuffer::setup(display, bloom_buffer_width, bloom_buffer_height)?;
+        let blur_fbo2 = GLFrameBuffer::setup(display, bloom_buffer_width, bloom_buffer_height)?;
+        // ----------------------------------------------------------------------------
+
+        // Compute and sum the weights ------------------------------------------------
+        let mut weights: [f32; 10] = Default::default();
+        let sigma2 = 25.0;
+
+        weights[0] = gauss(0.0, sigma2);
+        let mut sum = weights[0];
+
+        for i in 1..10 {
+            weights[i] = gauss(i as f32, sigma2);
+            sum += 2.0 * weights[i];
+        }
+
+        // Normalize the weights and set the uniform
+        for i in 0..10 {
+            weights[i] = weights[i] / sum;
+        }
+        // println!("{:?}", weights);
+        // ----------------------------------------------------------------------------
+
+        // Initialize MVP -------------------------------------------------------------
+        let view = Mat4F::look_at_rh(Vec3F::new(2.0, 0.0, 14.0), Vec3F::zero(), Vec3F::unit_y());
+        let projection = Mat4F::identity();
+        let ave_lum = 0.0;
+        // ----------------------------------------------------------------------------
+
+
+        // Initialize Uniforms --------------------------------------------------------
+        glium::implement_uniform_block!(LightInfo, Position, L, La);
+        glium::implement_uniform_block!(LightsWrapper, Lights);
+        let light_buffer = UniformBuffer::empty_immutable(display)
+            .map_err(BufferCreationErrorKind::UniformBlock)?;
+
+        glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess);
+        let material_buffer = UniformBuffer::empty_immutable(display)
+            .map_err(BufferCreationErrorKind::UniformBlock)?;
+
+        let weight_buffer = UniformBuffer::empty_immutable(display)
+            .map_err(BufferCreationErrorKind::UniformBlock)?;
+        // ----------------------------------------------------------------------------
+
+        let scene = SceneHdrBloom {
+            program, hdr_fbo, blur_fbo1, blur_fbo2,
+            teapot, sphere, plane, fs_quad,
+            material_buffer, light_buffer, weight_buffer,
+            screen_width, screen_height,
+            aspect_ratio, view, projection,
+            weights, ave_lum,
+        };
+        Ok(scene)
+    }
+
+    fn update(&mut self, _delta_time: f32) {
+        // Nothing to do, leave it empty...
+    }
+
+    fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
+
+        let draw_params = glium::draw_parameters::DrawParameters {
+            depth: glium::Depth {
+                test: glium::DepthTest::IfLess,
+                write: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        self.pass1(&draw_params)?;
+        self.compute_log_ave_luminance();
+        self.pass2()?;
+        self.pass3()?;
+        self.pass4()?;
+        self.pass5(frame, &draw_params)
+    }
+
+    fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
+        self.aspect_ratio = width as f32 / height as f32;
+        self.hdr_fbo      = GLFrameBuffer::setup(display, width, height).unwrap();
+        self.blur_fbo1    = GLFrameBuffer::setup(display, width / 8, height / 8).unwrap();
+        self.blur_fbo2    = GLFrameBuffer::setup(display, width / 8, height / 8).unwrap();
+        self.projection   = Mat4F::perspective_rh_zo(60.0_f32.to_radians(), self.aspect_ratio, 0.3, 100.0);
+        self.screen_width  = width;
+        self.screen_height = height;
+    }
+
+    fn is_animating(&self) -> bool { false }
+    fn toggle_animation(&mut self) {}
+}
+
+
+impl SceneHdrBloom {
+
+    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+
+        let vertex_shader_code   = include_str!("shaders/hdrbloom.vert.glsl");
+        let fragment_shader_code = include_str!("shaders/hdrbloom.frag.glsl");
+
+        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
+            .with_srgb_output(true);
+        glium::Program::new(display, sources)
+    }
+
+    fn pass1(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
+        self.draw_scene(draw_params)
+    }
+
+    fn compute_log_ave_luminance(&mut self) {
+
+        // For accurate estimation, we must calculate from `hdr_texture` every frame. -----------------
+        // This process is very very slow on CPU.
+        // let mut sum = 0.0;
+
+        // self.hdr_fbo.rent(|(_, attachment)| {
+        //     unsafe {
+        //         let pixels: glium::texture::pixel_buffer::PixelBuffer<(f32, f32, f32, f32)> = attachment.color.unchecked_read_to_pixel_buffer();
+        //         let pixels: Vec<(f32, f32, f32, f32)> = pixels.read_as_texture_1d()
+        //             .expect("Failed to read as texture 1d");
+
+        //         for pixel in pixels {
+        //             let lum = pixel.0 * 0.2126 + pixel.1 * 0.7152 + pixel.2 * 0.0722;
+        //             sum += (lum + 0.00001).ln();
+        //         }
+        //     }
+        // });
+
+        // self.ave_lum = (sum / (self.screen_width as f32 * self.screen_height as f32)).exp();
+        // println!("Ave lum: {}", self.ave_lum);
+        // ------------------------------------------------------------------------------------------
+
+        // For static scene. Just hard code this value may reduce the above heavy computation. ------
+        self.ave_lum = 0.581015;
+        // ------------------------------------------------------------------------------------------
+    }
+
+    fn pass2(&mut self) -> GLResult<()> {
+
+        let hdr_fbo = &self.hdr_fbo;
+        let program = &self.program;
+        let fs_quad = &self.fs_quad;
+
+        self.blur_fbo1.rent_mut(|(framebuffer, _)| {
+
+            framebuffer.clear_color(0.0, 0.0, 0.0, 0.0);
+
+            hdr_fbo.rent(|(_, attachment)| {
+
+                let uniforms = uniform! {
+                    Pass: 2_i32,
+                    LumThresh: 1.7_f32,
+                    HdrTex: attachment.color.sampled()
+                        .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+                        .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+                        .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
+                    ModelViewMatrix: Mat4F::identity().into_col_arrays(),
+                    NormalMatrix: Mat3F::identity().into_col_arrays(),
+                    MVP: Mat4F::identity().into_col_arrays(),
+                };
+
+                // Disable depth test
+                let draw_params: glium::DrawParameters = Default::default();
+
+                // TODO: handle unwrap()
+                fs_quad.render(framebuffer, program, &draw_params, &uniforms).unwrap();
+            });
+        });
+
+        Ok(())
+    }
+
+    fn pass3(&mut self) -> GLResult<()> {
+
+        self.weight_buffer.write(&self.weights);
+
+        let blur_fbo1 = &self.blur_fbo1;
+        let program = &self.program;
+        let fs_quad = &self.fs_quad;
+        let weight_buffer = &self.weight_buffer;
+
+        self.blur_fbo2.rent_mut(|(framebuffer, _)| {
+
+            blur_fbo1.rent(|(_, attachment)| {
+
+                let uniforms = uniform! {
+                    Pass: 3_i32,
+                    WeightBlock: weight_buffer,
+                    BlurTex1: attachment.color.sampled()
+                        .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+                        .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+                        .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
+                    ModelViewMatrix: Mat4F::identity().into_col_arrays(),
+                    NormalMatrix: Mat3F::identity().into_col_arrays(),
+                    MVP: Mat4F::identity().into_col_arrays(),
+                };
+
+                // Disable depth test
+                let draw_params: glium::DrawParameters = Default::default();
+
+                // TODO: handle unwrap()
+                fs_quad.render(framebuffer, program, &draw_params, &uniforms).unwrap();
+            });
+        });
+
+       Ok(())
+    }
+
+    fn pass4(&mut self) -> GLResult<()> {
+
+        self.weight_buffer.write(&self.weights);
+
+        let blur_fbo2 = &self.blur_fbo2;
+        let program = &self.program;
+        let fs_quad = &self.fs_quad;
+        let weight_buffer = &self.weight_buffer;
+
+        self.blur_fbo1.rent_mut(|(framebuffer, _)| {
+
+            blur_fbo2.rent(|(_, attachment)| {
+
+                let uniforms = uniform! {
+                    Pass: 4_i32,
+                    WeightBlock: weight_buffer,
+                    BlurTex2: attachment.color.sampled()
+                        .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+                        .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+                        .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
+                    ModelViewMatrix: Mat4F::identity().into_col_arrays(),
+                    NormalMatrix: Mat3F::identity().into_col_arrays(),
+                    MVP: Mat4F::identity().into_col_arrays(),
+                };
+
+                // Disable depth test
+                let draw_params: glium::DrawParameters = Default::default();
+
+                // TODO: handle unwrap()
+                fs_quad.render(framebuffer, program, &draw_params, &uniforms).unwrap();
+            });
+        });
+
+        Ok(())
+    }
+
+    fn pass5(&self, frame: &mut glium::Frame, draw_params: &glium::DrawParameters) -> GLResult<()> {
+
+        // In the pass, we're reading from blur_fbo1, and we want linear sampling to get an extra blur
+
+        frame.clear_color(0.5, 0.5, 0.5, 1.0);
+        frame.clear_depth(1.0);
+
+        self.hdr_fbo.rent(|(_, hdr_attachment)| {
+            self.blur_fbo1.rent(|(_, blur_attachment)| {
+
+                let uniforms = uniform! {
+                    Pass: 5_i32,
+                    AveLum: self.ave_lum,
+                    HdrTex: hdr_attachment.color.sampled()
+                        .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
+                        .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear)
+                        .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
+                    BlurTex1: blur_attachment.color.sampled()
+                        .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
+                        .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear)
+                        .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
+                    ModelViewMatrix: Mat4F::identity().into_col_arrays(),
+                    NormalMatrix: Mat3F::identity().into_col_arrays(),
+                    MVP: Mat4F::identity().into_col_arrays(),
+                };
+
+                // TODO: handle unwrap()
+                self.fs_quad.render(frame, &self.program, draw_params, &uniforms).unwrap();
+            });
+        });
+
+        Ok(())
+    }
+
+    fn draw_scene(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
+
+        let program = &self.program;
+
+        let light_data = [
+            LightInfo {
+                Position: (self.view * Vec4F::new(-7.0, 4.0, 2.5, 1.0)).into_array(),
+                L:  [1.0, 1.0, 1.0],
+                La: [0.2, 0.2, 0.2], ..Default::default()
+            },
+            LightInfo {
+                Position: (self.view * Vec4F::new(0.0, 4.0, 2.5, 1.0)).into_array(),
+                L:  [1.0, 1.0, 1.0],
+                La: [0.2, 0.2, 0.2], ..Default::default()
+            },
+            LightInfo {
+                Position: (self.view * Vec4F::new(7.0, 4.0, 2.5, 1.0)).into_array(),
+                L:  [1.0, 1.0, 1.0],
+                La: [0.2, 0.2, 0.2], ..Default::default()
+            },
+            LightInfo::default(),
+            LightInfo::default(),
+        ];
+        self.light_buffer.write(&LightsWrapper { Lights: light_data });
+
+        self.material_buffer.write(&MaterialInfo {
+            Ka: [0.2, 0.2, 0.2],
+            Kd: [0.9, 0.3, 0.2],
+            Ks: [1.0, 1.0, 1.0],
+            Shininess: 25.0, ..Default::default()
+        });
+
+        // Render backdrop plane ----------------------------------------------
+        let model = Mat4F::rotation_x(90.0_f32.to_radians());
+        let mv: Mat4F = self.view * model;
+
+        let uniforms = uniform! {
+            LightsWrapper: &self.light_buffer,
+            MaterialInfo: &self.material_buffer,
+            Pass: 1_i32,
+            ModelViewMatrix: mv.clone().into_col_arrays(),
+            NormalMatrix: Mat3F::from(mv).into_col_arrays(),
+            MVP: (self.projection * mv).into_col_arrays(),
+        };
+
+        let plane = &self.plane;
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
+
+            framebuffer.clear_color(0.5, 0.5, 0.5, 1.0);
+            framebuffer.clear_depth(1.0);
+            // TODO: handle unwrap()
+            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
+        });
+        // ------------------------------------------------------------------------- 
+
+        // Render bottom plane -----------------------------------------------------
+        let model = Mat4F::translation_3d(Vec3F::new(0.0, -5.0, 0.0));
+        let mv: Mat4F = self.view * model;
+
+        let uniforms = uniform! {
+            LightInfo: &self.light_buffer,
+            MaterialInfo: &self.material_buffer,
+            Pass: 1_i32,
+            ModelViewMatrix: mv.clone().into_col_arrays(),
+            NormalMatrix: Mat3F::from(mv).into_col_arrays(),
+            MVP: (self.projection * mv).into_col_arrays(),
+        };
+
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
+            // TODO: handle unwrap()
+            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
+        });
+        // ------------------------------------------------------------------------- 
+
+        // Render top plane --------------------------------------------------------
+        let model = Mat4F::rotation_x(180.0_f32.to_radians())
+            .translated_3d(Vec3F::new(0.0, 5.0, 0.0));
+        let mv: Mat4F = self.view * model;
+
+        let uniforms = uniform! {
+            LightInfo: &self.light_buffer,
+            MaterialInfo: &self.material_buffer,
+            Pass: 1_i32,
+            ModelViewMatrix: mv.clone().into_col_arrays(),
+            NormalMatrix: Mat3F::from(mv).into_col_arrays(),
+            MVP: (self.projection * mv).into_col_arrays(),
+        };
+
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
+            // TODO: handle unwrap()
+            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
+        });
+        // ------------------------------------------------------------------------- 
+
+        // Render sphere -----------------------------------------------------------
+        self.material_buffer.write(&MaterialInfo {
+            Ka: [0.2, 0.2, 0.2],
+            Kd: [0.4, 0.9, 0.4],
+            Ks: [1.0, 1.0, 1.0],
+            Shininess: 25.0, ..Default::default()
+        });
+
+        let model = Mat4F::translation_3d(Vec3F::new(-3.0, -3.0, 2.0));
+        let mv: Mat4F = self.view * model;
+
+        let uniforms = uniform! {
+            LightInfo: &self.light_buffer,
+            MaterialInfo: &self.material_buffer,
+            Pass: 1_i32,
+            ModelViewMatrix: mv.clone().into_col_arrays(),
+            NormalMatrix: Mat3F::from(mv).into_col_arrays(),
+            MVP: (self.projection * mv).into_col_arrays(),
+        };
+
+        let sphere = &self.sphere;
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
+            // TODO: handle unwrap()
+            sphere.render(framebuffer, program, draw_params, &uniforms).unwrap();
+        });
+        // -----------------------------------------------------------------------
+
+        // Render teapot ---------------------------------------------------------
+        self.material_buffer.write(&MaterialInfo {
+            Ka: [0.2, 0.2, 0.2],
+            Kd: [0.4, 0.4, 0.9],
+            Ks: [1.0, 1.0, 1.0],
+            Shininess: 25.0, ..Default::default()
+        });
+
+        let model = Mat4F::rotation_x(-90_f32.to_radians())
+            .translated_3d(Vec3F::new(4.0, -5.0, 1.5));
+        let mv: Mat4F = self.view * model;
+
+        let uniforms = uniform! {
+            LightInfo: &self.light_buffer,
+            MaterialInfo: &self.material_buffer,
+            Pass: 1_i32,
+            ModelViewMatrix: mv.clone().into_col_arrays(),
+            NormalMatrix: Mat3F::from(mv).into_col_arrays(),
+            MVP: (self.projection * mv).into_col_arrays(),
+        };
+
+        let teapot = &self.teapot;
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
+            // TODO: handle unwrap()
+            teapot.render(framebuffer, program, draw_params, &uniforms).unwrap();
+        });
+        // ------------------------------------------------------------------------- 
+        Ok(())
+    }
+}
+
+fn gauss(x: f32, sigma2: f32) -> f32 {
+    const TWO_PI: f64 = std::f64::consts::PI * 2.0;
+    let sigma2 = sigma2 as f64;
+    let x = x as f64;
+
+	let coeff: f64 = 1.0 / (TWO_PI * sigma2);
+    let expon: f64 = -(x * x) / (2.0 * sigma2);
+
+    (coeff * expon.exp()) as f32
+}

@@ -4,10 +4,12 @@ extern crate glsl_cookbook_rs as cookbook;
 mod sceneedge;
 mod sceneblur;
 mod scenetonemap;
+mod scenehdrbloom;
 
 use sceneedge::SceneEdge;
 use sceneblur::SceneBlur;
 use scenetonemap::SceneToneMap;
+use scenehdrbloom::SceneHdrBloom;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -60,7 +62,7 @@ fn main() -> GLResult<()> {
         | "gamma"     => unimplemented!(),
         | "msaa"      => unimplemented!(),
         | "tone-map"  => run::<SceneToneMap>(title),
-        | "hdr-bloom" => unimplemented!(),
+        | "hdr-bloom" => run::<SceneHdrBloom>(title),
         | "oit"       => unimplemented!(),
         | "ssao"      => unimplemented!(),
         | _ => unreachable!(),

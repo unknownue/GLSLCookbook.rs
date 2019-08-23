@@ -22,6 +22,10 @@ pub struct ColorAttachment {
     pub color: Texture2d,
 }
 
+pub struct HdrColorAttachment {
+    pub color: Texture2d,
+}
+
 pub struct HdrColorDepthAttachment {
     pub color: Texture2d,
     pub depth: DepthRenderBuffer,
@@ -63,6 +67,23 @@ impl GLAttachment for ColorDepthAttachment {
 
     fn new_framebuffer<'a>(display: &impl Facade, attachment: &'a ColorDepthAttachment) -> GLResult<SimpleFrameBuffer<'a>> {
         let framebuffer = SimpleFrameBuffer::with_depth_buffer(display, &attachment.color, &attachment.depth)
+            .map_err(BufferCreationErrorKind::FrameBuffer)?;
+        Ok(framebuffer)
+    }
+}
+
+impl GLAttachment for HdrColorAttachment {
+
+    fn new_attachment(display: &impl Facade, width: u32, height: u32) -> GLResult<HdrColorAttachment> {
+
+        let color_compoenent = Texture2d::empty_with_format(display, UncompressedFloatFormat::F32F32F32F32, MipmapsOption::NoMipmap, width, height)
+            .map_err(GLErrorKind::CreateTexture)?;
+        let attachment = HdrColorAttachment { color: color_compoenent };
+        Ok(attachment)
+    }
+
+    fn new_framebuffer<'a>(display: &impl Facade, attachment: &'a HdrColorAttachment) -> GLResult<SimpleFrameBuffer<'a>> {
+        let framebuffer = SimpleFrameBuffer::new(display, &attachment.color)
             .map_err(BufferCreationErrorKind::FrameBuffer)?;
         Ok(framebuffer)
     }

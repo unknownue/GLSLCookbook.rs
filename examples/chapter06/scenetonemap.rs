@@ -79,7 +79,7 @@ impl Scene for SceneToneMap {
 
         // Initialize Mesh ------------------------------------------------------------
         let teapot = Teapot::new(display, 14, Mat4F::identity())?;
-        let plane = Plane::new(display, 20.0, 20.0, 1, 1, 1.0, 1.0)?;
+        let plane = Plane::new(display, 20.0, 10.0, 1, 1, 1.0, 1.0)?;
         let sphere = Sphere::new(display, 2.0, 50, 50)?;
         let quad = Quad::new(display)?;
         // ----------------------------------------------------------------------------
