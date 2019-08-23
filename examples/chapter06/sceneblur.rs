@@ -24,9 +24,9 @@ pub struct SceneBlur {
     render_fbo      : GLFrameBuffer<ColorDepthAttachment>,
     intermediate_fbo: GLFrameBuffer<ColorAttachment>,
 
-    weights: WeightWrapper,
+    weights: [f32; 5],
 
-    weight_buffer: UniformBuffer<WeightWrapper>,
+    weight_buffer: UniformBuffer<[f32; 5]>,
     material_buffer: UniformBuffer<MaterialInfo>,
     light_buffer: UniformBuffer<LightInfo>,
 
@@ -34,15 +34,6 @@ pub struct SceneBlur {
     angle: f32,
     is_animate: bool,
 }
-
-
-#[allow(non_snake_case)]
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-struct WeightWrapper {
-    Weight: [f32; 5],
-}
-
 
 #[allow(non_snake_case)]
 #[repr(C)]
@@ -93,7 +84,6 @@ impl Scene for SceneBlur {
         for i in 0..5 {
             weights[i] = weights[i] / sum;
         }
-        let weights = WeightWrapper { Weight: weights };
         // ----------------------------------------------------------------------------
 
         // Initialize Mesh ------------------------------------------------------------
@@ -126,7 +116,6 @@ impl Scene for SceneBlur {
         let material_buffer = UniformBuffer::empty_immutable(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
 
-        glium::implement_uniform_block!(WeightWrapper, Weight);
         let weight_buffer = UniformBuffer::empty_immutable(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
         // ----------------------------------------------------------------------------
@@ -320,7 +309,7 @@ impl SceneBlur {
 
                 let uniforms = uniform! {
                     Pass: 2_i32,
-                    WeightWrapper: weight_buffer,
+                    WeightBlock: weight_buffer,
                     Texture0: attachment.color.sampled()
                         .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
@@ -342,13 +331,11 @@ impl SceneBlur {
         frame.clear_color(0.0, 0.0, 0.0, 1.0);
         frame.clear_depth(1.0);
 
-        self.weight_buffer.write(&self.weights);
-
         self.intermediate_fbo.rent(|(_, attachment)| {
 
             let uniforms = uniform! {
                 Pass: 3_i32,
-                WeightWrapper: &self.weight_buffer,
+                WeightBlock: &self.weight_buffer,
                 Texture0: attachment.color.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),

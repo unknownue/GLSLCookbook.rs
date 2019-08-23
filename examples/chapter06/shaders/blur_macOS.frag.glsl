@@ -8,7 +8,7 @@ uniform int Pass;
 uniform sampler2D Texture0;
 
 // The `Weight` failed to set on macOS.
-uniform WeightWrapper {
+uniform WeightBlock {
     float Weight[5];
 };
 

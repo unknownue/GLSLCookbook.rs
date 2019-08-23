@@ -14,7 +14,7 @@ struct LightInfo {
     vec3 L;         // D,S intensity
     vec3 La;        // Amb intensity
 };
-uniform LightsWrapper {
+uniform LightBlock {
     LightInfo Lights[5];
 };
 

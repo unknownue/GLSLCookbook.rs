@@ -26,10 +26,9 @@ pub struct SceneHdrBloom {
     blur_fbo2 : GLFrameBuffer::<HdrColorAttachment>,
 
     material_buffer : UniformBuffer<MaterialInfo>,
-    light_buffer    : UniformBuffer<LightsWrapper>,
+    light_buffer    : UniformBuffer<[LightInfo; 5]>,
     weight_buffer   : UniformBuffer<[f32; 10]>,
 
-    weights: [f32; 10],
     ave_lum: f32,
     screen_width : u32,
     screen_height: u32,
@@ -39,13 +38,6 @@ pub struct SceneHdrBloom {
     projection: Mat4F,
 }
 
-
-#[allow(non_snake_case)]
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-struct LightsWrapper {
-    Lights: [LightInfo; 5],
-}
 
 #[allow(non_snake_case)]
 #[repr(C)]
@@ -124,7 +116,6 @@ impl Scene for SceneHdrBloom {
 
         // Initialize Uniforms --------------------------------------------------------
         glium::implement_uniform_block!(LightInfo, Position, L, La);
-        glium::implement_uniform_block!(LightsWrapper, Lights);
         let light_buffer = UniformBuffer::empty_immutable(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
 
@@ -132,7 +123,7 @@ impl Scene for SceneHdrBloom {
         let material_buffer = UniformBuffer::empty_immutable(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
 
-        let weight_buffer = UniformBuffer::empty_immutable(display)
+        let weight_buffer = UniformBuffer::immutable(display, weights)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
         // ----------------------------------------------------------------------------
 
@@ -141,8 +132,7 @@ impl Scene for SceneHdrBloom {
             teapot, sphere, plane, fs_quad,
             material_buffer, light_buffer, weight_buffer,
             screen_width, screen_height,
-            aspect_ratio, view, projection,
-            weights, ave_lum,
+            aspect_ratio, view, projection, ave_lum,
         };
         Ok(scene)
     }
@@ -187,10 +177,22 @@ impl Scene for SceneHdrBloom {
 
 impl SceneHdrBloom {
 
+    #[cfg(not(target_os = "macos"))]
     fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
 
         let vertex_shader_code   = include_str!("shaders/hdrbloom.vert.glsl");
         let fragment_shader_code = include_str!("shaders/hdrbloom.frag.glsl");
+
+        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
+            .with_srgb_output(true);
+        glium::Program::new(display, sources)
+    }
+
+    #[cfg(target_os = "macos")]
+    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+
+        let vertex_shader_code   = include_str!("shaders/hdrbloom.vert.glsl");
+        let fragment_shader_code = include_str!("shaders/hdrbloom_macOS.frag.glsl");
 
         let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
             .with_srgb_output(true);
@@ -266,8 +268,6 @@ impl SceneHdrBloom {
 
     fn pass3(&mut self) -> GLResult<()> {
 
-        self.weight_buffer.write(&self.weights);
-
         let blur_fbo1 = &self.blur_fbo1;
         let program = &self.program;
         let fs_quad = &self.fs_quad;
@@ -301,8 +301,6 @@ impl SceneHdrBloom {
     }
 
     fn pass4(&mut self) -> GLResult<()> {
-
-        self.weight_buffer.write(&self.weights);
 
         let blur_fbo2 = &self.blur_fbo2;
         let program = &self.program;
@@ -393,7 +391,7 @@ impl SceneHdrBloom {
             LightInfo::default(),
             LightInfo::default(),
         ];
-        self.light_buffer.write(&LightsWrapper { Lights: light_data });
+        self.light_buffer.write(&light_data);
 
         self.material_buffer.write(&MaterialInfo {
             Ka: [0.2, 0.2, 0.2],
@@ -407,7 +405,7 @@ impl SceneHdrBloom {
         let mv: Mat4F = self.view * model;
 
         let uniforms = uniform! {
-            LightsWrapper: &self.light_buffer,
+            LightBlock: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
             Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),

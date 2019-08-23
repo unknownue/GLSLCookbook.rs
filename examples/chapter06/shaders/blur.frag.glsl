@@ -7,7 +7,7 @@ layout (location = 1) in vec3 Normal;
 uniform int Pass;
 uniform sampler2D Texture0;
 
-uniform WeightWrapper {
+uniform WeightBlock {
     float Weight[5];
 };
 

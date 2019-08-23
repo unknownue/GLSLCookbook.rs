@@ -24,7 +24,7 @@ pub struct SceneToneMap {
     hdr_fbo: GLFrameBuffer::<HdrColorDepthAttachment>,
 
     material_buffer: UniformBuffer<MaterialInfo>,
-    light_buffer: UniformBuffer<LightsWrapper>,
+    light_buffer: UniformBuffer<[LightInfo; 5]>,
 
     ave_lum: f32,
     screen_width : u32,
@@ -33,14 +33,6 @@ pub struct SceneToneMap {
     aspect_ratio: f32,
     view: Mat4F,
     projection: Mat4F,
-}
-
-
-#[allow(non_snake_case)]
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-struct LightsWrapper {
-    Lights: [LightInfo; 5],
 }
 
 
@@ -97,7 +89,6 @@ impl Scene for SceneToneMap {
 
         // Initialize Uniforms --------------------------------------------------------
         glium::implement_uniform_block!(LightInfo, Position, L, La);
-        glium::implement_uniform_block!(LightsWrapper, Lights);
         let light_buffer = UniformBuffer::empty_immutable(display)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
 
@@ -184,7 +175,7 @@ impl SceneToneMap {
             LightInfo::default(),
             LightInfo::default(),
         ];
-        self.light_buffer.write(&LightsWrapper { Lights: light_data });
+        self.light_buffer.write(&light_data);
 
         self.material_buffer.write(&MaterialInfo {
             Ka: [0.2, 0.2, 0.2],
@@ -198,7 +189,7 @@ impl SceneToneMap {
         let mv: Mat4F = self.view * model;
 
         let uniforms = uniform! {
-            LightsWrapper: &self.light_buffer,
+            LightBlock: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
             Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),

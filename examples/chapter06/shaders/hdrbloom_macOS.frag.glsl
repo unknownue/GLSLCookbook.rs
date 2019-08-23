@@ -33,7 +33,7 @@ uniform MaterialInfo {
 };
 
 uniform float PixOffset[10] = float[](0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
-// uniform float Weight[10] = float[](0.084612, 0.08293, 0.07810, 0.070674, 0.061441, 0.051320, 0.04118, 0.03175, 0.023525, 0.016744);
+uniform float Pre_Weight[10] = float[](0.084612, 0.08293, 0.07810, 0.070674, 0.061441, 0.051320, 0.04118, 0.03175, 0.023525, 0.016744);
 
 uniform WeightBlock {
     float Weight[10];
@@ -105,10 +105,10 @@ vec4 pass2() {
 vec4 pass3() {
     float dy = 1.0 / (textureSize(BlurTex1, 0)).y;
 
-    vec4 sum = texture(BlurTex1, TexCoord) * Weight[0];
+    vec4 sum = texture(BlurTex1, TexCoord) * Pre_Weight[0];
     for(int i = 1; i < 10; i++) {
-         sum += texture(BlurTex1, TexCoord + vec2(0.0, PixOffset[i]) * dy) * Weight[i];
-         sum += texture(BlurTex1, TexCoord - vec2(0.0, PixOffset[i]) * dy) * Weight[i];
+         sum += texture(BlurTex1, TexCoord + vec2(0.0, PixOffset[i]) * dy) * Pre_Weight[i];
+         sum += texture(BlurTex1, TexCoord - vec2(0.0, PixOffset[i]) * dy) * Pre_Weight[i];
     }
     return sum; 
 }
@@ -117,10 +117,10 @@ vec4 pass3() {
 vec4 pass4() {
     float dx = 1.0 / (textureSize(BlurTex2, 0)).x;
 
-    vec4 sum = texture(BlurTex2, TexCoord) * Weight[0];
+    vec4 sum = texture(BlurTex2, TexCoord) * Pre_Weight[0];
     for(int i = 1; i < 10; i++) {
-       sum += texture(BlurTex2, TexCoord + vec2(PixOffset[i], 0.0) * dx) * Weight[i];
-       sum += texture(BlurTex2, TexCoord - vec2(PixOffset[i], 0.0) * dx) * Weight[i];
+       sum += texture(BlurTex2, TexCoord + vec2(PixOffset[i], 0.0) * dx) * Pre_Weight[i];
+       sum += texture(BlurTex2, TexCoord - vec2(PixOffset[i], 0.0) * dx) * Pre_Weight[i];
     }
     return sum;
 }

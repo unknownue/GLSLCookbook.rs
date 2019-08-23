@@ -21,10 +21,12 @@ pub struct ScenePbr {
     plane: Plane,
 
     material_buffer: UniformBuffer<MaterialInfo>,
-    light_buffer   : UniformBuffer<LightsWrapper>,
+    // Due to glium::uniforms::UniformBlock is not implement for [T; 3], but implment for [T; 5],
+    // here just force its to 5 element, but actually 3 is used.
+    light_buffer   : UniformBuffer<[LightInfo; 5]>,
 
     light_pos: Vec4F,
-    light_data: LightsWrapper,
+    light_data: [LightInfo; 5],
 
     view       : Mat4F,
     projection : Mat4F,
@@ -34,15 +36,6 @@ pub struct ScenePbr {
     is_animate: bool,
 }
 
-
-#[allow(non_snake_case)]
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-struct LightsWrapper {
-    // Due to glium::uniforms::UniformBlock is not implement for [T; 3], but implment for [T; 5],
-    // here just force its to 5 element, but actually 3 is used.
-    Light: [LightInfo; 5],
-}
 
 #[allow(non_snake_case)]
 #[repr(C)]
@@ -93,19 +86,18 @@ impl Scene for ScenePbr {
 
 
         // Initialize Uniforms --------------------------------------------------------
-        let mut light_data: LightsWrapper = Default::default();
+        let mut light_data: [LightInfo; 5] = Default::default();
 
-        light_data.Light[0].L = [45.0, 45.0, 45.0];
-        light_data.Light[1].L = [ 0.3,  0.3,  0.3];
-        light_data.Light[2].L = [45.0, 45.0, 45.0];
+        light_data[0].L = [45.0, 45.0, 45.0];
+        light_data[1].L = [ 0.3,  0.3,  0.3];
+        light_data[2].L = [45.0, 45.0, 45.0];
 
-        light_data.Light[0].Position = (view * light_pos).into_array();
-        light_data.Light[1].Position = [0.0, 0.15, -1.0, 0.0];
-        light_data.Light[2].Position = (view * Vec4F::new(-7.0, 3.0, 7.0, 1.0)).into_array();
+        light_data[0].Position = (view * light_pos).into_array();
+        light_data[1].Position = [0.0, 0.15, -1.0, 0.0];
+        light_data[2].Position = (view * Vec4F::new(-7.0, 3.0, 7.0, 1.0)).into_array();
 
         glium::implement_uniform_block!(LightInfo, Position, L);
-        glium::implement_uniform_block!(LightsWrapper, Light);
-        let light_buffer = UniformBuffer::empty_immutable(display)
+        let light_buffer = UniformBuffer::immutable(display, light_data)
             .map_err(BufferCreationErrorKind::UniformBlock)?;
 
         glium::implement_uniform_block!(MaterialInfo, MaterialColor, MaterialRough, IsMetal);
@@ -137,7 +129,7 @@ impl Scene for ScenePbr {
             self.light_pos.z = self.light_angle.sin() * 7.0;
         }
 
-        self.light_data.Light[0].Position = (self.view * self.light_pos).into_array();
+        self.light_data[0].Position = (self.view * self.light_pos).into_array();
     }
 
     fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
@@ -221,7 +213,7 @@ impl ScenePbr {
         let model = Mat4F::translation_3d(Vec3F::new(0.0, -0.75, 0.0));
         let mv: Mat4F = self.view * model;
         let uniforms = uniform! {
-            LightsWrapper: &self.light_buffer,
+            LightsBlock: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
@@ -238,13 +230,12 @@ impl ScenePbr {
             MaterialRough: rough,
             IsMetal: is_metal,
         });
-        self.light_buffer.write(&self.light_data);
 
         let model = Mat4F::rotation_y(180.0_f32.to_radians())
             .translated_3d(pos);
         let mv: Mat4F = self.view * model;
         let uniforms = uniform! {
-            LightsWrapper: &self.light_buffer,
+            LightsBlock: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),

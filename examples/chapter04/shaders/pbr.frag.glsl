@@ -11,7 +11,7 @@ struct LightInfo {
     vec3 L;         // Intensity
 };
 
-uniform LightsWrapper {
+uniform LightsBlock {
     // Due to the limit of glium, 5 is specified here, but acutally 3 is used.
     LightInfo Light[5];
 };
