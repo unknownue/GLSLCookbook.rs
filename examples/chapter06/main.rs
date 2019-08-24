@@ -7,6 +7,7 @@ mod scenetonemap;
 mod scenehdrbloom;
 mod scenegamma;
 mod scenemsaa;
+mod scenedeferred;
 
 use sceneedge::SceneEdge;
 use sceneblur::SceneBlur;
@@ -14,6 +15,7 @@ use scenetonemap::SceneToneMap;
 use scenehdrbloom::SceneHdrBloom;
 use scenegamma::SceneGamma;
 use scenemsaa::SceneMsaa;
+use scenedeferred::SceneDeferred;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -61,7 +63,7 @@ fn main() -> GLResult<()> {
 
     match recipe.as_ref() {
         | "blur"      => run::<SceneBlur>(title),
-        | "deferred"  => unimplemented!(),
+        | "deferred"  => run::<SceneDeferred>(title),
         | "edge"      => run::<SceneEdge>(title),
         | "gamma"     => run::<SceneGamma>(title),
         | "msaa"      => run::<SceneMsaa>(title),

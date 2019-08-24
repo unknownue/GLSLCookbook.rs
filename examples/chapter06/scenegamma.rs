@@ -99,7 +99,7 @@ impl Scene for SceneGamma {
     fn update(&mut self, delta_time: f32) {
 
         const TWO_PI: f32 = std::f32::consts::PI * 2.0;
-        const ROTATE_SPEED: f32 = std::f32::consts::PI / 2.0;
+        const ROTATE_SPEED: f32 = std::f32::consts::PI / 8.0;
 
         if self.is_animating() {
             self.angle = (self.angle + delta_time * ROTATE_SPEED) % TWO_PI;
