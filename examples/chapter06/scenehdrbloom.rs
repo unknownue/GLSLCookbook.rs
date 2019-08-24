@@ -160,14 +160,15 @@ impl Scene for SceneHdrBloom {
         self.pass5(frame, &draw_params)
     }
 
-    fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
+    fn resize(&mut self, display: &impl Facade, width: u32, height: u32) -> GLResult<()> {
         self.aspect_ratio = width as f32 / height as f32;
-        self.hdr_fbo      = GLFrameBuffer::setup(display, width, height).unwrap();
-        self.blur_fbo1    = GLFrameBuffer::setup(display, width / 8, height / 8).unwrap();
-        self.blur_fbo2    = GLFrameBuffer::setup(display, width / 8, height / 8).unwrap();
+        self.hdr_fbo      = GLFrameBuffer::setup(display, width, height)?;
+        self.blur_fbo1    = GLFrameBuffer::setup(display, width / 8, height / 8)?;
+        self.blur_fbo2    = GLFrameBuffer::setup(display, width / 8, height / 8)?;
         self.projection   = Mat4F::perspective_rh_zo(60.0_f32.to_radians(), self.aspect_ratio, 0.3, 100.0);
         self.screen_width  = width;
         self.screen_height = height;
+        Ok(())
     }
 
     fn is_animating(&self) -> bool { false }

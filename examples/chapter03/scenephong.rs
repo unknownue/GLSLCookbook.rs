@@ -134,9 +134,10 @@ impl Scene for ScenePhong {
         self.torus.render(frame, &self.program, &draw_params, &uniforms)
     }
 
-    fn resize(&mut self, _display: &impl Facade, width: u32, height: u32) {
+    fn resize(&mut self, _display: &impl Facade, width: u32, height: u32) -> GLResult<()> {
 
         self.projection = Mat4F::perspective_rh_zo(70.0_f32.to_radians(), width as f32 / height as f32, 0.3, 100.0);
+        Ok(())
     }
 
     fn is_animating(&self) -> bool { false }

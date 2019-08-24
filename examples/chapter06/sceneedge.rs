@@ -128,9 +128,10 @@ impl Scene for SceneEdge {
         self.pass2(frame, &draw_params)
     }
 
-    fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
+    fn resize(&mut self, display: &impl Facade, width: u32, height: u32) -> GLResult<()> {
         self.aspect_ratio = width as f32 / height as f32;
-        self.fbo = GLFrameBuffer::setup(display, width, height).unwrap();
+        self.fbo = GLFrameBuffer::setup(display, width, height)?;
+        Ok(())
     }
 
     fn is_animating(&self) -> bool {

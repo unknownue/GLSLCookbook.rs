@@ -155,10 +155,11 @@ impl Scene for SceneBlur {
         self.pass3(frame, &draw_params)
     }
 
-    fn resize(&mut self, display: &impl Facade, width: u32, height: u32) {
+    fn resize(&mut self, display: &impl Facade, width: u32, height: u32) -> GLResult<()> {
         self.aspect_ratio = width as f32 / height as f32;
-        self.render_fbo = GLFrameBuffer::setup(display, width, height).unwrap();
-        self.intermediate_fbo = GLFrameBuffer::setup(display, width, height).unwrap();
+        self.render_fbo = GLFrameBuffer::setup(display, width, height)?;
+        self.intermediate_fbo = GLFrameBuffer::setup(display, width, height)?;
+        Ok(())
     }
 
     fn is_animating(&self) -> bool {

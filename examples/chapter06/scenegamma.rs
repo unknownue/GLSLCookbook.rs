@@ -141,13 +141,14 @@ impl Scene for SceneGamma {
         self.ogre.render(frame, &self.program, &draw_params, &uniforms)
     }
 
-    fn resize(&mut self, _display: &impl Facade, _width: u32, _height: u32) {
+    fn resize(&mut self, _display: &impl Facade, _width: u32, _height: u32) -> GLResult<()> {
 
         const C: f32 = 2.5;
         self.projection = Mat4F::orthographic_rh_zo(vek::FrustumPlanes {
             left: -0.4 * C, right: 0.4 * C, bottom: -0.3 * C, top: 0.3 * C,
             near: 0.1, far: 100.0,
         });;
+        Ok(())
     }
 
     fn is_animating(&self) -> bool {
