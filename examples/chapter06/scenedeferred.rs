@@ -14,8 +14,7 @@ use glium::{Surface, uniform, implement_uniform_block};
 
 pub struct SceneDeferred {
 
-    program_pass1: glium::Program,
-    program_pass2: glium::Program,
+    programs: [glium::Program; 2],
 
     teapot  : Teapot,
     plane   : Plane,
@@ -56,9 +55,7 @@ impl Scene for SceneDeferred {
         let (screen_width, screen_height) = display.get_context().get_framebuffer_dimensions();
 
         // Shader Program ------------------------------------------------------------
-        let program_pass1 = SceneDeferred::compile_shader_program_pass1(display)
-            .map_err(GLErrorKind::CreateProgram)?;
-        let program_pass2 = SceneDeferred::compile_shader_program_pass2(display)
+        let programs = SceneDeferred::compile_shader_program_pass1(display)
             .map_err(GLErrorKind::CreateProgram)?;
         // ----------------------------------------------------------------------------
 
@@ -94,7 +91,7 @@ impl Scene for SceneDeferred {
         // ----------------------------------------------------------------------------
 
         let scene = SceneDeferred {
-            program_pass1, program_pass2, deferred_fbo,
+            programs, deferred_fbo,
             teapot, torus, plane, fs_quad,
             material_buffer, light_buffer,
             angle, is_animate, projection,
@@ -135,29 +132,22 @@ impl Scene for SceneDeferred {
 
 impl SceneDeferred {
 
-    fn compile_shader_program_pass1(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+    fn compile_shader_program_pass1(display: &impl Facade) -> Result<[Program; 2], ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/deferred.pass1.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/deferred.pass1.frag.glsl");
+        let pass1_vertex   = include_str!("shaders/deferred/pass1.vert.glsl");
+        let pass1_fragment = include_str!("shaders/deferred/pass1.frag.glsl");
 
-        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
-            .with_srgb_output(true);
-        glium::Program::new(display, sources)
-    }
+        let pass2_vertex   = include_str!("shaders/deferred/pass2.vert.glsl");
+        let pass2_fragment = include_str!("shaders/deferred/pass2.frag.glsl");
 
-    fn compile_shader_program_pass2(display: &impl Facade) -> Result<Program, ProgramCreationError> {
-
-        let vertex_shader_code   = include_str!("shaders/deferred.pass2.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/deferred.pass2.frag.glsl");
-
-        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
-            .with_srgb_output(true);
-        glium::Program::new(display, sources)
+        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
+        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
+        Ok([pass1, pass2])
     }
 
     fn pass1(&mut self) -> GLResult<()> {
 
-        let program_pass1 = &self.program_pass1;
+        let program_pass1 = &self.programs[0];
         let draw_params = glium::draw_parameters::DrawParameters {
             depth: glium::Depth {
                 test: glium::DepthTest::IfLess,
@@ -261,7 +251,7 @@ impl SceneDeferred {
             };
 
             // TODO: handle unwrap()
-            self.fs_quad.render(frame, &self.program_pass2, &Default::default(), &uniforms).unwrap();
+            self.fs_quad.render(frame, &self.programs[1], &Default::default(), &uniforms).unwrap();
         });
 
         Ok(())

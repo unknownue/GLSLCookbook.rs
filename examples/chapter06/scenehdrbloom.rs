@@ -14,7 +14,7 @@ use glium::{Surface, uniform, implement_uniform_block};
 
 pub struct SceneHdrBloom {
 
-    program: glium::Program,
+    programs: [glium::Program; 5],
 
     teapot  : Teapot,
     plane   : Plane,
@@ -69,7 +69,7 @@ impl Scene for SceneHdrBloom {
         let aspect_ratio = (screen_width as f32) / (screen_height as f32);
 
         // Shader Program ------------------------------------------------------------
-        let program = SceneHdrBloom::compile_shader_program(display)
+        let programs = SceneHdrBloom::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
         // ----------------------------------------------------------------------------
 
@@ -128,7 +128,7 @@ impl Scene for SceneHdrBloom {
         // ----------------------------------------------------------------------------
 
         let scene = SceneHdrBloom {
-            program, hdr_fbo, blur_fbo1, blur_fbo2,
+            programs, hdr_fbo, blur_fbo1, blur_fbo2,
             teapot, sphere, plane, fs_quad,
             material_buffer, light_buffer, weight_buffer,
             screen_width, screen_height,
@@ -179,25 +179,55 @@ impl Scene for SceneHdrBloom {
 impl SceneHdrBloom {
 
     #[cfg(not(target_os = "macos"))]
-    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 5], ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/hdrbloom.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/hdrbloom.frag.glsl");
+        let pass1_vertex   = include_str!("shaders/hdrbloom/pass1.vert.glsl");
+        let pass1_fragment = include_str!("shaders/hdrbloom/pass1.frag.glsl");
 
-        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
-            .with_srgb_output(true);
-        glium::Program::new(display, sources)
+        let pass2_vertex   = include_str!("shaders/hdrbloom/pass2.vert.glsl");
+        let pass2_fragment = include_str!("shaders/hdrbloom/pass2.frag.glsl");
+
+        let pass3_vertex   = include_str!("shaders/hdrbloom/pass3.vert.glsl");
+        let pass3_fragment = include_str!("shaders/hdrbloom/pass3.frag.glsl");
+
+        let pass4_vertex   = include_str!("shaders/hdrbloom/pass4.vert.glsl");
+        let pass4_fragment = include_str!("shaders/hdrbloom/pass4.frag.glsl");
+
+        let pass5_vertex   = include_str!("shaders/hdrbloom/pass5.vert.glsl");
+        let pass5_fragment = include_str!("shaders/hdrbloom/pass5.frag.glsl");
+
+        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
+        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
+        let pass3 = glium::Program::new(display, GLSourceCode::new(pass3_vertex, pass3_fragment).with_srgb_output(true))?;
+        let pass4 = glium::Program::new(display, GLSourceCode::new(pass4_vertex, pass4_fragment).with_srgb_output(true))?;
+        let pass5 = glium::Program::new(display, GLSourceCode::new(pass5_vertex, pass5_fragment).with_srgb_output(true))?;
+        Ok([pass1, pass2, pass3, pass4, pass5])
     }
 
     #[cfg(target_os = "macos")]
-    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 5], ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/hdrbloom.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/hdrbloom_macOS.frag.glsl");
+        let pass1_vertex   = include_str!("shaders/hdrbloom/pass1.vert.glsl");
+        let pass1_fragment = include_str!("shaders/hdrbloom/pass1.frag.glsl");
 
-        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
-            .with_srgb_output(true);
-        glium::Program::new(display, sources)
+        let pass2_vertex   = include_str!("shaders/hdrbloom/pass2.vert.glsl");
+        let pass2_fragment = include_str!("shaders/hdrbloom/pass2.frag.glsl");
+
+        let pass3_vertex   = include_str!("shaders/hdrbloom/pass3.vert.glsl");
+        let pass3_fragment = include_str!("shaders/hdrbloom/pass3_macOS.frag.glsl");
+
+        let pass4_vertex   = include_str!("shaders/hdrbloom/pass4.vert.glsl");
+        let pass4_fragment = include_str!("shaders/hdrbloom/pass4_macOS.frag.glsl");
+
+        let pass5_vertex   = include_str!("shaders/hdrbloom/pass5.vert.glsl");
+        let pass5_fragment = include_str!("shaders/hdrbloom/pass5.frag.glsl");
+
+        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
+        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
+        let pass3 = glium::Program::new(display, GLSourceCode::new(pass3_vertex, pass3_fragment).with_srgb_output(true))?;
+        let pass4 = glium::Program::new(display, GLSourceCode::new(pass4_vertex, pass4_fragment).with_srgb_output(true))?;
+        let pass5 = glium::Program::new(display, GLSourceCode::new(pass5_vertex, pass5_fragment).with_srgb_output(true))?;
+        Ok([pass1, pass2, pass3, pass4, pass5])
     }
 
     fn pass1(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
@@ -235,7 +265,7 @@ impl SceneHdrBloom {
     fn pass2(&mut self) -> GLResult<()> {
 
         let hdr_fbo = &self.hdr_fbo;
-        let program = &self.program;
+        let program = &self.programs[1];
         let fs_quad = &self.fs_quad;
 
         self.blur_fbo1.rent_mut(|(framebuffer, _)| {
@@ -270,7 +300,7 @@ impl SceneHdrBloom {
     fn pass3(&mut self) -> GLResult<()> {
 
         let blur_fbo1 = &self.blur_fbo1;
-        let program = &self.program;
+        let program = &self.programs[2];
         let fs_quad = &self.fs_quad;
         let weight_buffer = &self.weight_buffer;
 
@@ -304,7 +334,7 @@ impl SceneHdrBloom {
     fn pass4(&mut self) -> GLResult<()> {
 
         let blur_fbo2 = &self.blur_fbo2;
-        let program = &self.program;
+        let program = &self.programs[3];
         let fs_quad = &self.fs_quad;
         let weight_buffer = &self.weight_buffer;
 
@@ -362,7 +392,7 @@ impl SceneHdrBloom {
                 };
 
                 // TODO: handle unwrap()
-                self.fs_quad.render(frame, &self.program, draw_params, &uniforms).unwrap();
+                self.fs_quad.render(frame, &self.programs[4], draw_params, &uniforms).unwrap();
             });
         });
 
@@ -371,7 +401,7 @@ impl SceneHdrBloom {
 
     fn draw_scene(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
 
-        let program = &self.program;
+        let program = &self.programs[0];
 
         let light_data = [
             LightInfo {

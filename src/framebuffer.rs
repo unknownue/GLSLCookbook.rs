@@ -13,19 +13,23 @@ pub use fbo_rentals::{GLFrameBuffer, GLDeferredFrameBuffer};
 //     It makes the code more uglier, but it works.
 // See https://github.com/glium/glium/blob/master/examples/deferred.rs for an example of this use case.
 
+/// Attachment with Color and Depth components used for single output framebuffer rendering.
 pub struct ColorDepthAttachment {
     pub color: Texture2d,
     pub depth: DepthRenderBuffer,
 }
 
+/// Attachment with only Color components used for single output framebuffer rendering.
 pub struct ColorAttachment {
     pub color: Texture2d,
 }
 
+/// Attachment with only Color components with high-resolution used for single output framebuffer rendering.
 pub struct HdrColorAttachment {
-    pub color: Texture2d,
+    pub color: Texture2d, // F32F32F32
 }
 
+/// Attachment with Color and Depth components with high-resolution used for single output framebuffer rendering.
 pub struct HdrColorDepthAttachment {
     pub color: Texture2d,
     pub depth: DepthRenderBuffer,
@@ -78,7 +82,7 @@ impl GLAttachment for HdrColorAttachment {
 
     fn new_attachment(display: &impl Facade, width: u32, height: u32) -> GLResult<HdrColorAttachment> {
 
-        let color_compoenent = Texture2d::empty_with_format(display, UncompressedFloatFormat::F32F32F32F32, MipmapsOption::NoMipmap, width, height)
+        let color_compoenent = Texture2d::empty_with_format(display, UncompressedFloatFormat::F32F32F32, MipmapsOption::NoMipmap, width, height)
             .map_err(GLErrorKind::CreateTexture)?;
         let attachment = HdrColorAttachment { color: color_compoenent };
         Ok(attachment)

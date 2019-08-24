@@ -14,7 +14,7 @@ use glium::{Surface, uniform, implement_uniform_block};
 
 pub struct SceneBlur {
 
-    program: glium::Program,
+    programs: [glium::Program; 3],
 
     teapot: Teapot,
     plane: Plane,
@@ -63,7 +63,7 @@ impl Scene for SceneBlur {
         let aspect_ratio = (screen_width as f32) / (screen_height as f32);
 
         // Shader Program ------------------------------------------------------------
-        let program = SceneBlur::compile_shader_program(display)
+        let programs = SceneBlur::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
         // ----------------------------------------------------------------------------
 
@@ -121,7 +121,7 @@ impl Scene for SceneBlur {
         // ----------------------------------------------------------------------------
 
         let scene = SceneBlur {
-            program, render_fbo, intermediate_fbo,
+            programs, render_fbo, intermediate_fbo,
             teapot, torus, plane, fs_quad, weights,
             weight_buffer, material_buffer, light_buffer,
             aspect_ratio, angle, is_animate,
@@ -174,33 +174,47 @@ impl Scene for SceneBlur {
 impl SceneBlur {
 
     #[cfg(not(target_os = "macos"))]
-    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 3], ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/blur.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/blur.frag.glsl");
+        let pass1_vertex   = include_str!("shaders/blur/pass1.vert.glsl");
+        let pass1_fragment = include_str!("shaders/blur/pass1.frag.glsl");
 
-        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
-            .with_srgb_output(true);
-        glium::Program::new(display, sources)
+        let pass2_vertex   = include_str!("shaders/blur/pass2.vert.glsl");
+        let pass2_fragment = include_str!("shaders/blur/pass2.frag.glsl");
+
+        let pass3_vertex   = include_str!("shaders/blur/pass3.vert.glsl");
+        let pass3_fragment = include_str!("shaders/blur/pass3.frag.glsl");
+
+        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
+        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
+        let pass3 = glium::Program::new(display, GLSourceCode::new(pass3_vertex, pass3_fragment).with_srgb_output(true))?;
+        Ok((pass1, pass2, pass3))
     }
 
     // There is a issue when transfering the weights to shader on macOS.
     // See https://github.com/unknownue/GLSLCookbook.rs/issues/5 for detail.
     // Here we use a shader that pre-calcualtes the weights in it.
     #[cfg(target_os = "macos")]
-    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 3], ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/blur.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/blur_macOS.frag.glsl");
+        let pass1_vertex   = include_str!("shaders/blur/pass1.vert.glsl");
+        let pass1_fragment = include_str!("shaders/blur/pass1.frag.glsl");
 
-        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
-            .with_srgb_output(true);
-        glium::Program::new(display, sources)
+        let pass2_vertex   = include_str!("shaders/blur/pass2.vert.glsl");
+        let pass2_fragment = include_str!("shaders/blur/pass2_macOS.frag.glsl");
+
+        let pass3_vertex   = include_str!("shaders/blur/pass3.vert.glsl");
+        let pass3_fragment = include_str!("shaders/blur/pass3_macOS.frag.glsl");
+
+        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
+        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
+        let pass3 = glium::Program::new(display, GLSourceCode::new(pass3_vertex, pass3_fragment).with_srgb_output(true))?;
+        Ok([pass1, pass2, pass3])
     }
 
     fn pass1(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
 
-        let program = &self.program;
+        let program = &self.programs[0];
 
         let view = Mat4F::look_at_rh(Vec3F::new(7.0 * self.angle.cos(), 4.0, 7.0 * self.angle.sin()), Vec3F::zero(), Vec3F::unit_y());
         let projection = Mat4F::perspective_rh_zo(60.0_f32.to_radians(), self.aspect_ratio, 0.3, 100.0);
@@ -220,7 +234,6 @@ impl SceneBlur {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (projection * mv).into_col_arrays(),
@@ -250,7 +263,6 @@ impl SceneBlur {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (projection * mv).into_col_arrays(),
@@ -278,7 +290,6 @@ impl SceneBlur {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (projection * mv).into_col_arrays(),
@@ -297,7 +308,7 @@ impl SceneBlur {
 
         let render_fbo = &self.render_fbo;
         let fs_quad = &self.fs_quad;
-        let program = &self.program;
+        let program = &self.programs[1];
 
         self.weight_buffer.write(&self.weights);
         let weight_buffer = &self.weight_buffer;
@@ -309,14 +320,10 @@ impl SceneBlur {
             render_fbo.rent(|(_, attachment)| {
 
                 let uniforms = uniform! {
-                    Pass: 2_i32,
                     WeightBlock: weight_buffer,
                     Texture0: attachment.color.sampled()
                         .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                    ModelViewMatrix: Mat4F::identity().into_col_arrays(),
-                    NormalMatrix: Mat3F::identity().into_col_arrays(),
-                    MVP: Mat4F::identity().into_col_arrays(),
                 };
 
                 // Disable depth test
@@ -335,18 +342,14 @@ impl SceneBlur {
         self.intermediate_fbo.rent(|(_, attachment)| {
 
             let uniforms = uniform! {
-                Pass: 3_i32,
                 WeightBlock: &self.weight_buffer,
                 Texture0: attachment.color.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                ModelViewMatrix: Mat4F::identity().into_col_arrays(),
-                NormalMatrix: Mat3F::identity().into_col_arrays(),
-                MVP: Mat4F::identity().into_col_arrays(),
             };
 
             // TODO: handle unwrap()
-            self.fs_quad.render(frame, &self.program, draw_params, &uniforms).unwrap();
+            self.fs_quad.render(frame, &self.programs[2], draw_params, &uniforms).unwrap();
         });
 
         Ok(())

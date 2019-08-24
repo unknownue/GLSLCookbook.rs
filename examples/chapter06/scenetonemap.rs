@@ -14,7 +14,7 @@ use glium::{Surface, uniform, implement_uniform_block};
 
 pub struct SceneToneMap {
 
-    program: glium::Program,
+    programs: [glium::Program; 2],
 
     teapot: Teapot,
     plane: Plane,
@@ -64,7 +64,7 @@ impl Scene for SceneToneMap {
         let aspect_ratio = (screen_width as f32) / (screen_height as f32);
 
         // Shader Program ------------------------------------------------------------
-        let program = SceneToneMap::compile_shader_program(display)
+        let programs = SceneToneMap::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
         // ----------------------------------------------------------------------------
 
@@ -98,7 +98,7 @@ impl Scene for SceneToneMap {
         // ----------------------------------------------------------------------------
 
         let scene = SceneToneMap {
-            program, hdr_fbo,
+            programs, hdr_fbo,
             teapot, sphere, plane, quad,
             material_buffer, light_buffer,
             screen_width, screen_height,
@@ -143,19 +143,22 @@ impl Scene for SceneToneMap {
 
 impl SceneToneMap {
 
-    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 2], ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/tonemap.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/tonemap.frag.glsl");
+        let pass1_vertex   = include_str!("shaders/tonemap/pass1.vert.glsl");
+        let pass1_fragment = include_str!("shaders/tonemap/pass1.frag.glsl");
 
-        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
-            .with_srgb_output(true);
-        glium::Program::new(display, sources)
+        let pass2_vertex   = include_str!("shaders/tonemap/pass2.vert.glsl");
+        let pass2_fragment = include_str!("shaders/tonemap/pass2.frag.glsl");
+
+        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
+        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
+        Ok([pass1, pass2])
     }
 
     fn pass1(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
 
-        let program = &self.program;
+        let program = &self.programs[0];
 
         let light_data = [
             LightInfo {
@@ -192,7 +195,6 @@ impl SceneToneMap {
         let uniforms = uniform! {
             LightBlock: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -215,7 +217,6 @@ impl SceneToneMap {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -235,7 +236,6 @@ impl SceneToneMap {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -261,7 +261,6 @@ impl SceneToneMap {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -289,7 +288,6 @@ impl SceneToneMap {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -339,18 +337,14 @@ impl SceneToneMap {
         self.hdr_fbo.rent(|(_, attachment)| {
 
             let uniforms = uniform! {
-                Pass: 2_i32,
                 AveLum: self.ave_lum,
                 HdrTex: attachment.color.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                ModelViewMatrix: Mat4F::identity().into_col_arrays(),
-                NormalMatrix: Mat3F::identity().into_col_arrays(),
-                MVP: Mat4F::identity().into_col_arrays(),
             };
 
             // TODO: handle unwrap()
-            self.quad.render(frame, &self.program, draw_params, &uniforms).unwrap();
+            self.quad.render(frame, &self.programs[1], draw_params, &uniforms).unwrap();
         });
 
         Ok(())

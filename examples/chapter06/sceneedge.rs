@@ -14,7 +14,7 @@ use glium::{Surface, uniform, implement_uniform_block};
 
 pub struct SceneEdge {
 
-    program: glium::Program,
+    programs: [glium::Program; 2],
 
     teapot: Teapot,
     plane: Plane,
@@ -58,7 +58,7 @@ impl Scene for SceneEdge {
         let aspect_ratio = (screen_width as f32) / (screen_height as f32);
 
         // Shader Program ------------------------------------------------------------
-        let program = SceneEdge::compile_shader_program(display)
+        let programs = SceneEdge::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
         // ----------------------------------------------------------------------------
 
@@ -95,7 +95,7 @@ impl Scene for SceneEdge {
         // ----------------------------------------------------------------------------
 
         let scene = SceneEdge {
-            program, fbo,
+            programs, fbo,
             teapot, torus, plane, fs_quad, 
             material_buffer, light_buffer,
             aspect_ratio, angle, is_animate,
@@ -145,19 +145,22 @@ impl Scene for SceneEdge {
 
 impl SceneEdge {
 
-    fn compile_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
+    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 2], ProgramCreationError> {
 
-        let vertex_shader_code   = include_str!("shaders/edge.vert.glsl");
-        let fragment_shader_code = include_str!("shaders/edge.frag.glsl");
+        let pass1_vertex   = include_str!("shaders/edge/pass1.vert.glsl");
+        let pass1_fragment = include_str!("shaders/edge/pass1.frag.glsl");
 
-        let sources = GLSourceCode::new(vertex_shader_code, fragment_shader_code)
-            .with_srgb_output(true);
-        glium::Program::new(display, sources)
+        let pass2_vertex   = include_str!("shaders/edge/pass2.vert.glsl");
+        let pass2_fragment = include_str!("shaders/edge/pass2.frag.glsl");
+
+        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
+        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
+        Ok([pass1, pass2])
     }
 
     fn pass1(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
 
-        let program = &self.program;
+        let program = &self.programs[0];
 
         let view = Mat4F::look_at_rh(Vec3F::new(7.0 * self.angle.cos(), 4.0, 7.0 * self.angle.sin()), Vec3F::zero(), Vec3F::unit_y());
         let projection = Mat4F::perspective_rh_zo(60.0_f32.to_radians(), self.aspect_ratio, 0.3, 100.0);
@@ -177,7 +180,6 @@ impl SceneEdge {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (projection * mv).into_col_arrays(),
@@ -207,7 +209,6 @@ impl SceneEdge {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (projection * mv).into_col_arrays(),
@@ -235,7 +236,6 @@ impl SceneEdge {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (projection * mv).into_col_arrays(),
@@ -258,18 +258,14 @@ impl SceneEdge {
         self.fbo.rent(|(_, attachment)| {
 
             let uniforms = uniform! {
-                Pass: 2_i32,
                 EdgeThreshold: 0.05_f32,
                 RenderTex: attachment.color.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                ModelViewMatrix: Mat4F::identity().into_col_arrays(),
-                NormalMatrix: Mat3F::identity().into_col_arrays(),
-                MVP: Mat4F::identity().into_col_arrays(),
             };
 
             // TODO: handle unwrap()
-            self.fs_quad.render(frame, &self.program, draw_params, &uniforms).unwrap();
+            self.fs_quad.render(frame, &self.programs[1], draw_params, &uniforms).unwrap();
         });
 
         Ok(())
