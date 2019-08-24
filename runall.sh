@@ -38,6 +38,7 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter06 blur
     cargo r --release --example chapter06 tone-map
     cargo r --release --example chapter06 hdr-bloom
+    cargo r --release --example chapter06 gamma
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -76,4 +77,5 @@ else
     cargo r --example chapter06 blur
     cargo r --example chapter06 tone-map
     cargo r --example chapter06 hdr-bloom
+    cargo r --example chapter06 gamma
 fi

@@ -5,11 +5,13 @@ mod sceneedge;
 mod sceneblur;
 mod scenetonemap;
 mod scenehdrbloom;
+mod scenegamma;
 
 use sceneedge::SceneEdge;
 use sceneblur::SceneBlur;
 use scenetonemap::SceneToneMap;
 use scenehdrbloom::SceneHdrBloom;
+use scenegamma::SceneGamma;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -59,7 +61,7 @@ fn main() -> GLResult<()> {
         | "blur"      => run::<SceneBlur>(title),
         | "deferred"  => unimplemented!(),
         | "edge"      => run::<SceneEdge>(title),
-        | "gamma"     => unimplemented!(),
+        | "gamma"     => run::<SceneGamma>(title),
         | "msaa"      => unimplemented!(),
         | "tone-map"  => run::<SceneToneMap>(title),
         | "hdr-bloom" => run::<SceneHdrBloom>(title),
