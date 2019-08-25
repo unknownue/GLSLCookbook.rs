@@ -140,7 +140,7 @@ impl SceneDeferred {
         let pass2_vertex   = include_str!("shaders/deferred/pass2.vert.glsl");
         let pass2_fragment = include_str!("shaders/deferred/pass2.frag.glsl");
 
-        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
+        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(false))?;
         let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
         Ok([pass1, pass2])
     }

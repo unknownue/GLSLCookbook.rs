@@ -3,7 +3,7 @@
 
 layout (location = 0) in vec2 TexCoord;
 
-layout (location = 0) out vec4 FragColor;
+layout (location = 0) out vec3 FragColor;
 
 uniform sampler2D HdrTex;
 
@@ -18,8 +18,8 @@ void main() {
 
     vec4 val = texture(HdrTex, TexCoord);
     if(luminance(val.rgb) > LumThresh) {
-        FragColor = val;
+        FragColor = val.rgb;
     } else {
-        FragColor = vec4(0.0);
+        FragColor = vec3(0.0);
     }
 }

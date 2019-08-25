@@ -3,7 +3,7 @@
 
 layout (location = 0) in vec2 TexCoord;
 
-layout (location = 0) out vec4 FragColor;
+layout (location = 0) out vec3 FragColor;
 
 uniform sampler2D BlurTex1;
 
@@ -26,5 +26,5 @@ void main() {
          sum += texture(BlurTex1, TexCoord - vec2(0.0, PixOffset[i]) * dy) * Weight[i];
     }
 
-    FragColor = sum;
+    FragColor = sum.rgb;
 }

@@ -1,7 +1,7 @@
 
 #version 410
 
-layout (location = 2) in vec2 TexCoord;
+layout (location = 0) in vec2 TexCoord;
 
 layout (location = 0) out vec4 FragColor;
 

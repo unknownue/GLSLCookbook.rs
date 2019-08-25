@@ -178,7 +178,6 @@ impl Scene for SceneHdrBloom {
 
 impl SceneHdrBloom {
 
-    #[cfg(not(target_os = "macos"))]
     fn compile_shader_program(display: &impl Facade) -> Result<[Program; 5], ProgramCreationError> {
 
         let pass1_vertex   = include_str!("shaders/hdrbloom/pass1.vert.glsl");
@@ -196,36 +195,10 @@ impl SceneHdrBloom {
         let pass5_vertex   = include_str!("shaders/hdrbloom/pass5.vert.glsl");
         let pass5_fragment = include_str!("shaders/hdrbloom/pass5.frag.glsl");
 
-        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
-        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
-        let pass3 = glium::Program::new(display, GLSourceCode::new(pass3_vertex, pass3_fragment).with_srgb_output(true))?;
-        let pass4 = glium::Program::new(display, GLSourceCode::new(pass4_vertex, pass4_fragment).with_srgb_output(true))?;
-        let pass5 = glium::Program::new(display, GLSourceCode::new(pass5_vertex, pass5_fragment).with_srgb_output(true))?;
-        Ok([pass1, pass2, pass3, pass4, pass5])
-    }
-
-    #[cfg(target_os = "macos")]
-    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 5], ProgramCreationError> {
-
-        let pass1_vertex   = include_str!("shaders/hdrbloom/pass1.vert.glsl");
-        let pass1_fragment = include_str!("shaders/hdrbloom/pass1.frag.glsl");
-
-        let pass2_vertex   = include_str!("shaders/hdrbloom/pass2.vert.glsl");
-        let pass2_fragment = include_str!("shaders/hdrbloom/pass2.frag.glsl");
-
-        let pass3_vertex   = include_str!("shaders/hdrbloom/pass3.vert.glsl");
-        let pass3_fragment = include_str!("shaders/hdrbloom/pass3_macOS.frag.glsl");
-
-        let pass4_vertex   = include_str!("shaders/hdrbloom/pass4.vert.glsl");
-        let pass4_fragment = include_str!("shaders/hdrbloom/pass4_macOS.frag.glsl");
-
-        let pass5_vertex   = include_str!("shaders/hdrbloom/pass5.vert.glsl");
-        let pass5_fragment = include_str!("shaders/hdrbloom/pass5.frag.glsl");
-
-        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
-        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
-        let pass3 = glium::Program::new(display, GLSourceCode::new(pass3_vertex, pass3_fragment).with_srgb_output(true))?;
-        let pass4 = glium::Program::new(display, GLSourceCode::new(pass4_vertex, pass4_fragment).with_srgb_output(true))?;
+        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(false))?;
+        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(false))?;
+        let pass3 = glium::Program::new(display, GLSourceCode::new(pass3_vertex, pass3_fragment).with_srgb_output(false))?;
+        let pass4 = glium::Program::new(display, GLSourceCode::new(pass4_vertex, pass4_fragment).with_srgb_output(false))?;
         let pass5 = glium::Program::new(display, GLSourceCode::new(pass5_vertex, pass5_fragment).with_srgb_output(true))?;
         Ok([pass1, pass2, pass3, pass4, pass5])
     }
@@ -275,15 +248,11 @@ impl SceneHdrBloom {
             hdr_fbo.rent(|(_, attachment)| {
 
                 let uniforms = uniform! {
-                    Pass: 2_i32,
                     LumThresh: 1.7_f32,
                     HdrTex: attachment.color.sampled()
                         .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
                         .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
-                    ModelViewMatrix: Mat4F::identity().into_col_arrays(),
-                    NormalMatrix: Mat3F::identity().into_col_arrays(),
-                    MVP: Mat4F::identity().into_col_arrays(),
                 };
 
                 // Disable depth test
@@ -309,15 +278,11 @@ impl SceneHdrBloom {
             blur_fbo1.rent(|(_, attachment)| {
 
                 let uniforms = uniform! {
-                    Pass: 3_i32,
                     WeightBlock: weight_buffer,
                     BlurTex1: attachment.color.sampled()
                         .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
                         .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
-                    ModelViewMatrix: Mat4F::identity().into_col_arrays(),
-                    NormalMatrix: Mat3F::identity().into_col_arrays(),
-                    MVP: Mat4F::identity().into_col_arrays(),
                 };
 
                 // Disable depth test
@@ -343,15 +308,11 @@ impl SceneHdrBloom {
             blur_fbo2.rent(|(_, attachment)| {
 
                 let uniforms = uniform! {
-                    Pass: 4_i32,
                     WeightBlock: weight_buffer,
                     BlurTex2: attachment.color.sampled()
                         .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
                         .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
-                    ModelViewMatrix: Mat4F::identity().into_col_arrays(),
-                    NormalMatrix: Mat3F::identity().into_col_arrays(),
-                    MVP: Mat4F::identity().into_col_arrays(),
                 };
 
                 // Disable depth test
@@ -376,7 +337,6 @@ impl SceneHdrBloom {
             self.blur_fbo1.rent(|(_, blur_attachment)| {
 
                 let uniforms = uniform! {
-                    Pass: 5_i32,
                     AveLum: self.ave_lum,
                     HdrTex: hdr_attachment.color.sampled()
                         .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
@@ -386,9 +346,6 @@ impl SceneHdrBloom {
                         .minify_filter(glium::uniforms::MinifySamplerFilter::Linear)
                         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear)
                         .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
-                    ModelViewMatrix: Mat4F::identity().into_col_arrays(),
-                    NormalMatrix: Mat3F::identity().into_col_arrays(),
-                    MVP: Mat4F::identity().into_col_arrays(),
                 };
 
                 // TODO: handle unwrap()
@@ -438,7 +395,6 @@ impl SceneHdrBloom {
         let uniforms = uniform! {
             LightBlock: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -461,7 +417,6 @@ impl SceneHdrBloom {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -481,7 +436,6 @@ impl SceneHdrBloom {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -507,7 +461,6 @@ impl SceneHdrBloom {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -535,7 +488,6 @@ impl SceneHdrBloom {
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
             MaterialInfo: &self.material_buffer,
-            Pass: 1_i32,
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),

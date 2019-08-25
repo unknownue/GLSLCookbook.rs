@@ -185,10 +185,10 @@ impl SceneBlur {
         let pass3_vertex   = include_str!("shaders/blur/pass3.vert.glsl");
         let pass3_fragment = include_str!("shaders/blur/pass3.frag.glsl");
 
-        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
-        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
+        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(false))?;
+        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(false))?;
         let pass3 = glium::Program::new(display, GLSourceCode::new(pass3_vertex, pass3_fragment).with_srgb_output(true))?;
-        Ok((pass1, pass2, pass3))
+        Ok([pass1, pass2, pass3])
     }
 
     // There is a issue when transfering the weights to shader on macOS.
@@ -206,8 +206,8 @@ impl SceneBlur {
         let pass3_vertex   = include_str!("shaders/blur/pass3.vert.glsl");
         let pass3_fragment = include_str!("shaders/blur/pass3_macOS.frag.glsl");
 
-        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(true))?;
-        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
+        let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(false))?;
+        let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(false))?;
         let pass3 = glium::Program::new(display, GLSourceCode::new(pass3_vertex, pass3_fragment).with_srgb_output(true))?;
         Ok([pass1, pass2, pass3])
     }
