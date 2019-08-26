@@ -32,6 +32,7 @@ void main() {
         biTang = cross(n, vec3(0, 0, 1));
     biTang = normalize(biTang);
     vec3 tang = cross(biTang, n);
+    // matrix convert from tangent space to camera space
     mat3 toCamSpace = mat3(tang, biTang, n);
 
     float occlusionSum = 0.0;
@@ -40,7 +41,7 @@ void main() {
         vec3 samplePos = camPos + Radius * (toCamSpace * SampleKernel[i].xyz);
 
         // Project point
-        vec4 p = ProjectionMatrix * vec4(samplePos,1);
+        vec4 p = ProjectionMatrix * vec4(samplePos, 1);
         p *= 1.0 / p.w;
         p.xyz = p.xyz * 0.5 + 0.5;
 

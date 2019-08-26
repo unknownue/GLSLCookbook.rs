@@ -31,13 +31,13 @@ vec3 ambAndDiffuse(vec3 pos, vec3 norm, vec3 diff, float ao) {
 void main() {
 
     // Retrieve position and normal information from textures
-    vec3 pos       = texture(PositionTex, TexCoord).xyz;
-    vec3 norm      = texture(NormalTex, TexCoord).xyz;
+    vec3 position  = texture(PositionTex, TexCoord).xyz;
+    vec3 normal    = texture(NormalTex, TexCoord).xyz;
     vec3 diffColor = texture(ColorTex, TexCoord).rgb;
     float aoVal    = texture(AoTex, TexCoord).r;
 
-    vec3 col = ambAndDiffuse(pos, norm, diffColor, aoVal);
-    col = pow(col, vec3(1.0 / 2.2));
+    vec3 color = ambAndDiffuse(position, normal, diffColor, aoVal);
+    color = pow(color, vec3(1.0 / 2.2));
 
-    FragColor = vec4(col, 1.0);
+    FragColor = vec4(color, 1.0);
 }

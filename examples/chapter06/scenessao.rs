@@ -81,7 +81,7 @@ impl Scene for SceneSsao {
             is_center: true,
             is_print_load_message: true,
         })?;
-        let plane = Plane::new(display, 50.0, 50.0, 1, 1, 1.0, 1.0)?;
+        let plane = Plane::new(display, 10.0, 10.0, 1, 1, 10.0, 7.0)?;
         let quad = Quad::new(display)?;
         // ----------------------------------------------------------------------------
 
@@ -390,12 +390,10 @@ impl SceneSsao {
         let deferred_fbo = &self.deferred_fbo;
         let ssao_fbo2 = &self.ssao_fbo2;
 
-
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
-        frame.clear_depth(1.0);
 
         deferred_fbo.rent(|(_, deferred_attachment)| {
-            
+
             ssao_fbo2.rent(|(_, ao_attachment)| {
 
                 let uniforms = uniform! {

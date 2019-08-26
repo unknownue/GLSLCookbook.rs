@@ -23,6 +23,7 @@ void main() {
     NormalData = normalize(Normal);
     if(UseTex) {
         ColorData = pow(texture(DiffTex, TexCoord.xy).rgb, vec3(2.2));
-    } else
+    } else {
         ColorData = Kd;
+    }
 }
