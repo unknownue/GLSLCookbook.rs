@@ -11,6 +11,7 @@ use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
 use glium::uniforms::UniformBuffer;
 use glium::texture::texture2d::Texture2d;
+use glium::texture::UncompressedFloatFormat;
 use glium::{Surface, uniform, implement_uniform_block};
 
 
@@ -78,7 +79,7 @@ impl Scene for SceneRenderToTex {
         // ----------------------------------------------------------------------------
 
         // Initialize FrameBuffer Objects ---------------------------------------------
-        let fbo = GLFrameBuffer::setup(display, 512, 512)?;
+        let fbo = GLFrameBuffer::setup(display, 512, 512, UncompressedFloatFormat::U8U8U8U8)?;
         // ----------------------------------------------------------------------------
 
         // Initialize MVP -------------------------------------------------------------
@@ -128,7 +129,7 @@ impl Scene for SceneRenderToTex {
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) -> GLResult<()> {
 
-        self.fbo = GLFrameBuffer::setup(display, 512, 512)?;
+        self.fbo = GLFrameBuffer::setup(display, 512, 512, UncompressedFloatFormat::U8U8U8U8)?;
         self.projection = Mat4F::perspective_rh_zo(45.0_f32.to_radians(), width as f32 / height as f32, 0.3, 100.0);
         Ok(())
     }

@@ -11,6 +11,7 @@ pub mod framebuffer;
 
 pub mod objects;
 pub mod aabb;
+pub mod random;
 
 mod timer;
 mod drawable;

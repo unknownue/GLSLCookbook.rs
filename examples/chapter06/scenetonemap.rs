@@ -3,12 +3,13 @@ use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::{Teapot, Plane, Sphere, Quad};
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
-use cookbook::framebuffer::{HdrColorDepthAttachment, GLFrameBuffer};
+use cookbook::framebuffer::{ColorDepthAttachment, GLFrameBuffer};
 use cookbook::Drawable;
 
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
 use glium::uniforms::UniformBuffer;
+use glium::texture::UncompressedFloatFormat;
 use glium::{Surface, uniform, implement_uniform_block};
 
 
@@ -21,7 +22,7 @@ pub struct SceneToneMap {
     sphere: Sphere,
     quad: Quad,
 
-    hdr_fbo: GLFrameBuffer::<HdrColorDepthAttachment>,
+    hdr_fbo: GLFrameBuffer::<ColorDepthAttachment>,
 
     material_buffer: UniformBuffer<MaterialInfo>,
     light_buffer: UniformBuffer<[LightInfo; 5]>,
@@ -77,7 +78,7 @@ impl Scene for SceneToneMap {
         // ----------------------------------------------------------------------------
 
         // Initialize FrameBuffer Objects ---------------------------------------------
-        let hdr_fbo = GLFrameBuffer::setup(display, screen_width, screen_height)?;
+        let hdr_fbo = GLFrameBuffer::setup(display, screen_width, screen_height, UncompressedFloatFormat::F32F32F32)?;
         // ----------------------------------------------------------------------------
 
         // Initialize MVP -------------------------------------------------------------
@@ -129,7 +130,7 @@ impl Scene for SceneToneMap {
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) -> GLResult<()> {
         self.aspect_ratio = width as f32 / height as f32;
-        self.hdr_fbo = GLFrameBuffer::setup(display, width, height)?;
+        self.hdr_fbo = GLFrameBuffer::setup(display, width, height, UncompressedFloatFormat::F32F32F32)?;
         self.projection = Mat4F::perspective_rh_zo(60.0_f32.to_radians(), self.aspect_ratio, 0.3, 100.0);
         self.screen_width  = width;
         self.screen_height = height;

@@ -9,6 +9,7 @@ use cookbook::Drawable;
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
 use glium::uniforms::UniformBuffer;
+use glium::texture::UncompressedFloatFormat;
 use glium::{Surface, uniform, implement_uniform_block};
 
 
@@ -80,7 +81,7 @@ impl Scene for SceneEdge {
 
 
         // Initialize Uniforms --------------------------------------------------------
-        let fbo = GLFrameBuffer::setup(display, screen_width, screen_height)?;
+        let fbo = GLFrameBuffer::setup(display, screen_width, screen_height, UncompressedFloatFormat::U8U8U8U8)?;
 
         glium::implement_uniform_block!(LightInfo, LightPosition, L, La);
         let light_buffer = UniformBuffer::immutable(display, LightInfo {
@@ -130,7 +131,7 @@ impl Scene for SceneEdge {
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) -> GLResult<()> {
         self.aspect_ratio = width as f32 / height as f32;
-        self.fbo = GLFrameBuffer::setup(display, width, height)?;
+        self.fbo = GLFrameBuffer::setup(display, width, height, UncompressedFloatFormat::U8U8U8U8)?;
         Ok(())
     }
 

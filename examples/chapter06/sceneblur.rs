@@ -9,6 +9,7 @@ use cookbook::Drawable;
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
 use glium::uniforms::UniformBuffer;
+use glium::texture::UncompressedFloatFormat;
 use glium::{Surface, uniform, implement_uniform_block};
 
 
@@ -103,8 +104,8 @@ impl Scene for SceneBlur {
 
 
         // Initialize Uniforms --------------------------------------------------------
-        let render_fbo = GLFrameBuffer::setup(display, screen_width, screen_height)?;
-        let intermediate_fbo = GLFrameBuffer::setup(display, screen_width, screen_height)?;
+        let render_fbo = GLFrameBuffer::setup(display, screen_width, screen_height, UncompressedFloatFormat::U8U8U8U8)?;
+        let intermediate_fbo = GLFrameBuffer::setup(display, screen_width, screen_height, UncompressedFloatFormat::U8U8U8U8)?;
 
         glium::implement_uniform_block!(LightInfo, LightPosition, L, La);
         let light_buffer = UniformBuffer::immutable(display, LightInfo {
@@ -157,8 +158,8 @@ impl Scene for SceneBlur {
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) -> GLResult<()> {
         self.aspect_ratio = width as f32 / height as f32;
-        self.render_fbo = GLFrameBuffer::setup(display, width, height)?;
-        self.intermediate_fbo = GLFrameBuffer::setup(display, width, height)?;
+        self.render_fbo = GLFrameBuffer::setup(display, width, height, UncompressedFloatFormat::U8U8U8U8)?;
+        self.intermediate_fbo = GLFrameBuffer::setup(display, width, height, UncompressedFloatFormat::U8U8U8U8)?;
         Ok(())
     }
 

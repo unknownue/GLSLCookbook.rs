@@ -3,12 +3,13 @@ use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::{Teapot, Plane, Sphere, Quad};
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
-use cookbook::framebuffer::{HdrColorDepthAttachment, HdrColorAttachment, GLFrameBuffer};
+use cookbook::framebuffer::{ColorDepthAttachment, ColorAttachment, GLFrameBuffer};
 use cookbook::Drawable;
 
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
 use glium::uniforms::UniformBuffer;
+use glium::texture::UncompressedFloatFormat;
 use glium::{Surface, uniform, implement_uniform_block};
 
 
@@ -21,9 +22,9 @@ pub struct SceneHdrBloom {
     sphere  : Sphere,
     fs_quad : Quad,
 
-    hdr_fbo   : GLFrameBuffer::<HdrColorDepthAttachment>,
-    blur_fbo1 : GLFrameBuffer::<HdrColorAttachment>,
-    blur_fbo2 : GLFrameBuffer::<HdrColorAttachment>,
+    hdr_fbo   : GLFrameBuffer::<ColorDepthAttachment>,
+    blur_fbo1 : GLFrameBuffer::<ColorAttachment>,
+    blur_fbo2 : GLFrameBuffer::<ColorAttachment>,
 
     material_buffer : UniformBuffer<MaterialInfo>,
     light_buffer    : UniformBuffer<[LightInfo; 5]>,
@@ -82,10 +83,10 @@ impl Scene for SceneHdrBloom {
         // ----------------------------------------------------------------------------
 
         // Initialize FrameBuffer Objects ---------------------------------------------
-        let hdr_fbo = GLFrameBuffer::setup(display, screen_width, screen_height)?;
+        let hdr_fbo = GLFrameBuffer::setup(display, screen_width, screen_height, UncompressedFloatFormat::F32F32F32)?;
         // Create an FBO for the bright-pass filter and blur
-        let blur_fbo1 = GLFrameBuffer::setup(display, bloom_buffer_width, bloom_buffer_height)?;
-        let blur_fbo2 = GLFrameBuffer::setup(display, bloom_buffer_width, bloom_buffer_height)?;
+        let blur_fbo1 = GLFrameBuffer::setup(display, bloom_buffer_width, bloom_buffer_height, UncompressedFloatFormat::F32F32F32)?;
+        let blur_fbo2 = GLFrameBuffer::setup(display, bloom_buffer_width, bloom_buffer_height, UncompressedFloatFormat::F32F32F32)?;
         // ----------------------------------------------------------------------------
 
         // Compute and sum the weights ------------------------------------------------
@@ -162,9 +163,9 @@ impl Scene for SceneHdrBloom {
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) -> GLResult<()> {
         self.aspect_ratio = width as f32 / height as f32;
-        self.hdr_fbo      = GLFrameBuffer::setup(display, width, height)?;
-        self.blur_fbo1    = GLFrameBuffer::setup(display, width / 8, height / 8)?;
-        self.blur_fbo2    = GLFrameBuffer::setup(display, width / 8, height / 8)?;
+        self.hdr_fbo      = GLFrameBuffer::setup(display, width, height, UncompressedFloatFormat::F32F32F32)?;
+        self.blur_fbo1    = GLFrameBuffer::setup(display, width / 8, height / 8, UncompressedFloatFormat::F32F32F32)?;
+        self.blur_fbo2    = GLFrameBuffer::setup(display, width / 8, height / 8, UncompressedFloatFormat::F32F32F32)?;
         self.projection   = Mat4F::perspective_rh_zo(60.0_f32.to_radians(), self.aspect_ratio, 0.3, 100.0);
         self.screen_width  = width;
         self.screen_height = height;
