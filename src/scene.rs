@@ -85,3 +85,13 @@ impl<'a> From<GLSourceCode<'a>> for program::ProgramCreationInput<'a> {
         v.input
     }
 }
+
+
+
+// .vert - a vertex shader
+// .tesc - a tessellation control shader
+// .tese - a tessellation evaluation shader
+// .geom - a geometry shader
+// .frag - a fragment shader
+// .comp - a compute shader
+

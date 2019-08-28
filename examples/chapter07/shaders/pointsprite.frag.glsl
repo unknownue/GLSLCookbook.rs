@@ -1,7 +1,7 @@
 
 #version 410
 
-in vec2 TexCoord;
+layout (location = 0) in vec2 TexCoord;
 
 uniform sampler2D SpriteTex;
 

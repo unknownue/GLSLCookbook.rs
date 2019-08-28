@@ -75,7 +75,7 @@ impl Scene for SceneSsao {
 
 
         // Initialize Mesh ------------------------------------------------------------
-        let bunny = ObjMesh::load(display, "media/pig_triangulated.obj", ObjMeshConfiguration {
+        let bunny = ObjMesh::load(display, "media/dragon.obj", ObjMeshConfiguration {
             is_with_adjacency: false,
             is_gen_tangents: false,
             is_center: true,
