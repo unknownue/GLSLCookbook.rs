@@ -137,7 +137,7 @@ impl ObjMeshData {
         }
 
         if config.is_with_adjacency {
-            ObjMeshData::generate_faces_to_adjancency_format();
+            indices = ObjMeshData::generate_faces_to_adjancency_format(&indices);
         } else if config.is_gen_tangents {
             // Generate tangents
             ObjMeshData::generate_tangents(&mut vertices, &indices);
@@ -311,8 +311,109 @@ impl ObjMeshData {
         }
     }
 
-    fn generate_faces_to_adjancency_format() {
-        unimplemented!()
+    fn generate_faces_to_adjancency_format(indices: &[u32]) -> Vec<u32> {
+
+        const MAX: u32 = std::u32::MAX;
+
+        // Elements with adjacency info
+        let mut el_adj = Vec::with_capacity(indices.len() * 2);
+
+        // Copy and make room for adjacency info
+        for i in (0..indices.len()).step_by(3) {
+
+            el_adj.extend(&[
+                indices[i]    , MAX,
+                indices[i + 1], MAX,
+                indices[i + 2], MAX,
+            ]);
+        }
+
+
+        // Find matching edges
+        for i in (0..el_adj.len()).step_by(6) {
+            // A triangle
+            let a1 = el_adj[i];
+            let b1 = el_adj[i + 2];
+            let c1 = el_adj[i + 4];
+
+            // Scan subsequent triangles
+            for j in ((i + 6)..el_adj.len()).step_by(6) {
+                let a2 = el_adj[j];
+                let b2 = el_adj[j + 2];
+                let c2 = el_adj[j + 4];
+
+                // Edge 1 == Edge 1
+                if (a1 == a2 && b1 == b2) || (a1 == b2 && b1 == a2) {
+                    el_adj[i + 1] = c2;
+                    el_adj[j + 1] = c1;
+                }
+                
+                // Edge 1 == Edge 2
+                if (a1 == b2 && b1 == c2) || (a1 == c2 && b1 == b2) {
+                    el_adj[i + 1] = a2;
+                    el_adj[j + 3] = c1;
+                }
+
+                // Edge 1 == Edge 3
+                if (a1 == c2 && b1 == a2) || (a1 == a2 && b1 == c2) {
+                    el_adj[i + 1] = b2;
+                    el_adj[j + 5] = c1;
+                }
+
+                // Edge 2 == Edge 1
+                if (b1 == a2 && c1 == b2) || (b1 == b2 && c1 == a2) {
+                    el_adj[i + 3] = c2;
+                    el_adj[j + 1] = a1;
+                }
+
+                // Edge 2 == Edge 2
+                if (b1 == b2 && c1 == c2) || (b1 == c2 && c1 == b2) {
+                    el_adj[i + 3] = a2;
+                    el_adj[j + 3] = a1;
+                }
+
+                // Edge 2 == Edge 3
+                if (b1 == c2 && c1 == a2) || (b1 == a2 && c1 == c2) {
+                    el_adj[i + 3] = b2;
+                    el_adj[j + 5] = a1;
+                }
+
+                // Edge 3 == Edge 1
+                if (c1 == a2 && a1 == b2) || (c1 == b2 && a1 == a2) {
+                    el_adj[i + 5] = c2;
+                    el_adj[j + 1] = b1;
+                }
+
+                // Edge 3 == Edge 2
+                if (c1 == b2 && a1 == c2) || (c1 == c2 && a1 == b2) {
+                    el_adj[i + 5] = a2;
+                    el_adj[j + 3] = b1;
+                }
+
+                // Edge 3 == Edge 3
+                if (c1 == c2 && a1 == a2) || (c1 == a2 && a1 == c2) {
+                    el_adj[i + 5] = b2;
+                    el_adj[j + 5] = b1;
+                }
+            }
+        }
+
+        // Look for any outside edges
+        for i in (0..el_adj.len()).step_by(6) {
+            if el_adj[i + 1] == MAX {
+                el_adj[i + 1] = el_adj[i + 4];
+            }
+
+            if el_adj[i + 3] == MAX {
+                el_adj[i + 3] = el_adj[i];
+            }
+
+            if el_adj[i + 5] == MAX {
+                el_adj[i + 5] = el_adj[i + 2];
+            }
+        }
+
+        el_adj
     }
 
     fn print_help_message(path: impl AsRef<Path>, vertices: &[ObjVertex], indices: &[u32]) {

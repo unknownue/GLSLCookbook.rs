@@ -3,9 +3,11 @@ extern crate glsl_cookbook_rs as cookbook;
 
 mod scenepointsprite;
 mod sceneshadewire;
+mod scenesilhouette;
 
 use scenepointsprite::ScenePointSprite;
 use sceneshadewire::SceneShadeWire;
+use scenesilhouette::SceneSilhouette;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -54,7 +56,7 @@ fn main() -> GLResult<()> {
         | "point-sprite"      => run::<ScenePointSprite>(title),
         | "quad-tess"         => unimplemented!(),
         | "shade-wire"        => run::<SceneShadeWire>(title),
-        | "silhouette"        => unimplemented!(),
+        | "silhouette"        => run::<SceneSilhouette>(title),
         | "tess-teapot"       => unimplemented!(),
         | "tess-teapot-depth" => unimplemented!(),
         | _ => unreachable!(),
