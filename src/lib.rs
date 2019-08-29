@@ -1,6 +1,6 @@
 
-#[macro_use]
-extern crate rental;
+#[macro_use] extern crate rental;
+#[macro_use] extern crate itertools;
 
 pub mod scene;
 pub mod scenerunner;

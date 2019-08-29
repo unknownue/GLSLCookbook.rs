@@ -171,7 +171,7 @@ fn build_cubemap<I, T>(display: &impl Facade, faces_pxiels: Vec<I>) -> GLResult<
     // blit the face data from framebuffer to cubemap faces
     let blit_target = glium::BlitTarget { left: 0, bottom: 0, width: dimension as i32, height: dimension as i32 };
 
-    for (layer, pixels) in CUBEMAP_LAYWERS.into_iter().zip(faces_pxiels.into_iter()) {
+    for (layer, pixels) in izip!(&CUBEMAP_LAYWERS, faces_pxiels) {
         let framebuffer = glium::framebuffer::SimpleFrameBuffer::new(display, cubemap_texture.main_level().image(*layer))
             .map_err(BufferCreationErrorKind::FrameBuffer)?;
         let cubemap_face = Texture2d::new(display, pixels.build_raw_image())

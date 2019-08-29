@@ -1,5 +1,6 @@
 
 extern crate glsl_cookbook_rs as cookbook;
+#[macro_use] extern crate itertools;
 
 mod scenetexture;
 mod scenemultitex;

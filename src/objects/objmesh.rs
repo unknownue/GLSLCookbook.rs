@@ -232,11 +232,11 @@ impl ObjMeshData {
             normals[index2] += n;
             normals[index3] += n;
         }
-
-        vertices.iter_mut().zip(normals.into_iter())
-            .for_each(|(vertex, normal)| {
-                vertex.VertexNormal = normal.normalized().into_array();
-            });
+        
+        // izip! is provided by the 'itertools' crate
+        for (vertex, normal) in izip!(vertices, normals) {
+            vertex.VertexNormal = normal.normalized().into_array();
+        }
     }
 
     fn generate_tangents(vertices: &mut Vec<ObjVertex>, indices: &[u32]) {

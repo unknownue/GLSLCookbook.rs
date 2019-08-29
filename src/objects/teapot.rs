@@ -156,16 +156,12 @@ impl Teapot {
         let mut patch: [[Vec3F; 4]; 4] = Default::default();
 
         if reverse_v {
-            for u in 0..4 {
-                for v in 0..4 {
-                    patch[u][v] = Vec3F::from(TEAPOT_CP_DATA[TEAPOT_PATCH_DATA[patch_num][u * 4 + (3 - v)]]);
-                }
+            for (u, v) in iproduct!(0..4, 0..4) {
+                patch[u][v] = Vec3F::from(TEAPOT_CP_DATA[TEAPOT_PATCH_DATA[patch_num][u * 4 + (3 - v)]]);
             }
         } else {
-            for u in 0..4 {
-                for v in 0..4 {
-                    patch[u][v] = Vec3F::from(TEAPOT_CP_DATA[TEAPOT_PATCH_DATA[patch_num][u * 4 + v]]);
-                }
+            for (u, v) in iproduct!(0..4, 0..4) {
+                patch[u][v] = Vec3F::from(TEAPOT_CP_DATA[TEAPOT_PATCH_DATA[patch_num][u * 4 + v]]);
             }
         }
 
@@ -178,24 +174,22 @@ impl Teapot {
         let tc_factor = 1.0 / grid as f32;
         let base_vertices = vertices.len();
 
-        for i in 0..=grid {
-            for j in 0..=grid {
+        for (i, j) in iproduct!(0..=grid, 0..=grid) {
 
-                let pt = (*reflect) * Teapot::evaluate(i, j, B, patch);
-                let mut norm = (*reflect) * Teapot::evaluate_normal(i, j, B, dB, patch);
+            let pt = (*reflect) * Teapot::evaluate(i, j, B, patch);
+            let mut norm = (*reflect) * Teapot::evaluate_normal(i, j, B, dB, patch);
 
-                if invert_normal {
-                    norm = -norm;
-                }
-
-                let vertex = TeapotVertex {
-                    VertexPosition: pt.into_array(),
-                    VertexNormal  : norm.into_array(),
-                    VertexTexCoord: [i as f32 * tc_factor, j as f32 * tc_factor],
-                    ..Default::default()
-                };
-                vertices.push(vertex);
+            if invert_normal {
+                norm = -norm;
             }
+
+            let vertex = TeapotVertex {
+                VertexPosition: pt.into_array(),
+                VertexNormal  : norm.into_array(),
+                VertexTexCoord: [i as f32 * tc_factor, j as f32 * tc_factor],
+                ..Default::default()
+            };
+            vertices.push(vertex);
         }
 
         for i in 0..grid {
@@ -220,12 +214,13 @@ impl Teapot {
 
     #[allow(non_snake_case)]
     fn evaluate(grid_u: usize, grid_v: usize, B: &[f32], patch: &[[Vec3F; 4]; 4]) -> Vec3F {
+
         let mut p = Vec3F::zero();
-        for i in 0..4 {
-            for j in 0..4 {
-                p += patch[i][j] * B[grid_u * 4 + i] * B[grid_v * 4 + j];
-            }
+
+        for (i, j) in iproduct!(0..4, 0..4) {
+            p += patch[i][j] * B[grid_u * 4 + i] * B[grid_v * 4 + j];
         }
+
         p
     }
 
@@ -235,11 +230,9 @@ impl Teapot {
         let mut du = Vec3F::zero();
         let mut dv = Vec3F::zero();
 
-        for i in 0..4 {
-            for j in 0..4 {
-                du += patch[i][j] * dB[grid_u * 4 + i] * B[grid_v * 4 + j];
-                dv += patch[i][j] * B[grid_u * 4 + i] * dB[grid_v * 4 + j];
-            }
+        for (i, j) in iproduct!(0..4, 0..4) {
+            du += patch[i][j] * dB[grid_u * 4 + i] *  B[grid_v * 4 + j];
+            dv += patch[i][j] *  B[grid_u * 4 + i] * dB[grid_v * 4 + j];
         }
 
         let norm = du.cross(dv);
