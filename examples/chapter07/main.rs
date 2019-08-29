@@ -4,10 +4,12 @@ extern crate glsl_cookbook_rs as cookbook;
 mod scenepointsprite;
 mod sceneshadewire;
 mod scenesilhouette;
+mod scenebezcurve;
 
 use scenepointsprite::ScenePointSprite;
 use sceneshadewire::SceneShadeWire;
 use scenesilhouette::SceneSilhouette;
+use scenebezcurve::SceneBezCurve;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -52,7 +54,7 @@ fn main() -> GLResult<()> {
     let (recipe, title) = SceneRunner::parse_command_line_args(&HASHMAP)?;
 
     match recipe.as_ref() {
-        | "bez-curve"         => unimplemented!(),
+        | "bez-curve"         => run::<SceneBezCurve>(title),
         | "point-sprite"      => run::<ScenePointSprite>(title),
         | "quad-tess"         => unimplemented!(),
         | "shade-wire"        => run::<SceneShadeWire>(title),
