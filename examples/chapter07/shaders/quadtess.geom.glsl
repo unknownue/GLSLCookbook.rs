@@ -4,14 +4,7 @@
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
-layout (location = 0) in vec3 VPosition[];
-layout (location = 1) in vec3 VNormal[];
-
-layout (location = 0) out vec3 GPosition;
-layout (location = 1) out vec3 GNormal;
-// noperspective means to use linear interpolation.
-// GEdgeDistance is in screen space.
-layout (location = 2) noperspective out vec3 GEdgeDistance;
+layout (location = 0) noperspective out vec3 EdgeDistance;
 
 
 uniform mat4 ViewportMatrix;  // Viewport matrix
@@ -33,21 +26,15 @@ void main() {
     float hb = abs(c * sin(alpha));
     float hc = abs(b * sin(alpha));
 
-    GEdgeDistance = vec3(ha, 0, 0);
-    GNormal     = VNormal[0];
-    GPosition   = VPosition[0];
+    EdgeDistance = vec3(ha, 0, 0);
     gl_Position = gl_in[0].gl_Position;
     EmitVertex();
 
-    GEdgeDistance = vec3(0, hb, 0);
-    GNormal     = VNormal[1];
-    GPosition   = VPosition[1];
+    EdgeDistance = vec3(0, hb, 0);
     gl_Position = gl_in[1].gl_Position;
     EmitVertex();
 
-    GEdgeDistance = vec3(0, 0, hc);
-    GNormal     = VNormal[2];
-    GPosition   = VPosition[2];
+    EdgeDistance = vec3(0, 0, hc);
     gl_Position = gl_in[2].gl_Position;
     EmitVertex();
 

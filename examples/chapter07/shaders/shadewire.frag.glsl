@@ -3,6 +3,7 @@
 
 layout (location = 0) in vec3 GPosition;
 layout (location = 1) in vec3 GNormal;
+// Now the GEdgeDistance is interpolated into the distance from current fragment to each of the three edges of the triangle.
 layout (location = 2) noperspective in vec3 GEdgeDistance;
 
 layout (location = 0) out vec4 FragColor;
@@ -42,20 +43,29 @@ vec3 phongModel(vec3 pos, vec3 norm) {
 
 void main() {
 
-    vec4 color = vec4(phongModel(GPosition, GNormal), 1.0);
-
     // Find the smallest distance
-    float d = min(GEdgeDistance.x, GEdgeDistance.y);
-    d = min(d, GEdgeDistance.z);
+    float d = min(min(GEdgeDistance.x, GEdgeDistance.y), GEdgeDistance.z);
 
-    float mixVal;
-    if(d < LineWidth - 1) {
-        mixVal = 1.0;
-    } else if(d > LineWidth + 1) {
-        mixVal = 0.0;
+    // float mixVal;
+    // if(d < LineWidth - 1) {
+    //     mixVal = 1.0;
+    // } else if(d > LineWidth + 1) {
+    //     mixVal = 0.0;
+    // } else {
+    //     float x = d - (LineWidth - 1);
+    //     mixVal = exp2(-2.0 * (x * x));
+    // }
+    // FragColor = mix(color, LineColor, mixVal);
+
+    if (d < LineWidth - 1.0) {
+        FragColor = LineColor;
+    } else if (d > LineWidth + 1.0) {
+        vec4 color = vec4(phongModel(GPosition, GNormal), 1.0);
+        FragColor = color;
     } else {
+        vec4 color = vec4(phongModel(GPosition, GNormal), 1.0);
         float x = d - (LineWidth - 1);
-        mixVal = exp2(-2.0 * (x * x));
+        float mixVal = exp2(-2.0 * (x * x));
+        FragColor = mix(color, LineColor, mixVal);
     }
-    FragColor = mix(color, LineColor, mixVal);
 }

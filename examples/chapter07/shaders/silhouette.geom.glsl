@@ -9,12 +9,12 @@ layout (location = 1) in vec3 VNormal[];
 
 layout (location = 0) out vec3 GPosition;
 layout (location = 1) out vec3 GNormal;
-layout (location = 2) flat out int GIsEdge;
-
 // Which triangle edges are silhouette edges
+layout (location = 2) flat out int GIsEdge;
 
 uniform float EdgeWidth;
 uniform float PctExtend;
+
 
 bool isFrontFacing(vec3 a, vec3 b, vec3 c) {
     return ((a.x * b.y - b.x * a.y) + (b.x * c.y - c.x * b.y) + (c.x * a.y - a.x * c.y))
@@ -25,6 +25,7 @@ void emitEdgeQuad(vec3 e0, vec3 e1) {
 
     vec2 ext = PctExtend * (e1.xy - e0.xy);
     vec2 v = normalize(e1.xy - e0.xy);
+    // n is the vector that is perpendicular to v(a counter-close 90-degree rotation in 2D)
     vec2 n = vec2(-v.y, v.x) * EdgeWidth;
 
     GIsEdge = 1;   // This is part of the sil. edge
@@ -46,6 +47,8 @@ void emitEdgeQuad(vec3 e0, vec3 e1) {
 
 void main() {
 
+    // Convert the positions from homogeneous representation to the true Cartesian value.
+    // This is necessary for perspective projection, but not for orthographic projection.
     vec3 p0 = gl_in[0].gl_Position.xyz / gl_in[0].gl_Position.w;
     vec3 p1 = gl_in[1].gl_Position.xyz / gl_in[1].gl_Position.w;
     vec3 p2 = gl_in[2].gl_Position.xyz / gl_in[2].gl_Position.w;
