@@ -1,5 +1,6 @@
 
 pub use self::teapot::Teapot;
+pub use self::teapot_patch::TeapotPatch;
 pub use self::torus::Torus;
 pub use self::plane::Plane;
 pub use self::objmesh::{ObjMesh, ObjMeshConfiguration};
@@ -9,6 +10,7 @@ pub use self::quad::Quad;
 pub use self::sphere::Sphere;
 
 mod teapot;
+mod teapot_patch;
 mod torus;
 mod plane;
 mod cube;
