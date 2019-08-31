@@ -6,12 +6,14 @@ mod sceneshadewire;
 mod scenesilhouette;
 mod scenebezcurve;
 mod scenequadtess;
+mod scenetessteapot;
 
 use scenepointsprite::ScenePointSprite;
 use sceneshadewire::SceneShadeWire;
 use scenesilhouette::SceneSilhouette;
 use scenebezcurve::SceneBezCurve;
 use scenequadtess::SceneQuadTess;
+use scenetessteapot::SceneTessTeapot;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -61,7 +63,7 @@ fn main() -> GLResult<()> {
         | "quad-tess"         => run::<SceneQuadTess>(title),
         | "shade-wire"        => run::<SceneShadeWire>(title),
         | "silhouette"        => run::<SceneSilhouette>(title),
-        | "tess-teapot"       => unimplemented!(),
+        | "tess-teapot"       => run::<SceneTessTeapot>(title),
         | "tess-teapot-depth" => unimplemented!(),
         | _ => unreachable!(),
     }

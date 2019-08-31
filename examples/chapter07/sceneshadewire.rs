@@ -23,8 +23,7 @@ pub struct SceneShadeWire {
     light_buffer    : UniformBuffer<LightInfo>,
 
     projection: Mat4F,
-    screen_width : f32,
-    screen_height: f32,
+    viewport: Mat4F,
 }
 
 #[allow(non_snake_case)]
@@ -57,9 +56,6 @@ impl Scene for SceneShadeWire {
 
     fn new(display: &impl Facade) -> GLResult<SceneShadeWire> {
 
-        let (screen_width, screen_height) = display.get_context().get_framebuffer_dimensions();
-        let (screen_width, screen_height) = (screen_width as f32, screen_height as f32);
-
         // Shader Program ------------------------------------------------------------
         let program = SceneShadeWire::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
@@ -80,6 +76,8 @@ impl Scene for SceneShadeWire {
             left: -0.4 * C, right: 0.4 * C, bottom: -0.3 * C, top: 0.3 * C,
             near: 0.1, far: 100.0,
         });
+
+        let viewport = Mat4F::identity();
         // ----------------------------------------------------------------------------
 
         // Initialize Uniforms --------------------------------------------------------
@@ -106,10 +104,9 @@ impl Scene for SceneShadeWire {
 
 
         let scene = SceneShadeWire {
-            program,
-            ogre,
+            program, ogre,
             material_buffer, line_buffer, light_buffer,
-            projection, screen_width, screen_height,
+            projection, viewport,
         };
         Ok(scene)
     }
@@ -136,18 +133,12 @@ impl Scene for SceneShadeWire {
         let model = Mat4F::identity();
         let mv: Mat4F = view * model;
 
-        let viewport = Mat4F::new(
-            self.screen_width / 2.0, 0.0, 0.0, 0.0,
-            0.0, self.screen_height / 2.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            self.screen_width / 2.0, self.screen_height / 2.0, 0.0, 1.0,
-        );
 
         let uniforms = uniform! {
             MaterialInfo: &self.material_buffer,
             LineInfo: &self.line_buffer,
             LightInfo: &self.light_buffer,
-            ViewportMatrix: viewport.into_col_arrays(),
+            ViewportMatrix: self.viewport.into_col_arrays(),
             ModelViewMatrix: mv.clone().into_col_arrays(),
             NormalMatrix: Mat3F::from(mv).into_col_arrays(),
             MVP: (self.projection * mv).into_col_arrays(),
@@ -159,8 +150,13 @@ impl Scene for SceneShadeWire {
     }
 
     fn resize(&mut self, _display: &impl Facade, width: u32, height: u32) -> GLResult<()> {
-        self.screen_width  = width as f32;
-        self.screen_height = height as f32;
+
+        self.viewport = Mat4F::new(
+            width as f32 / 2.0, 0.0, 0.0, 0.0,
+            0.0, height as f32 / 2.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            width as f32 / 2.0, height as f32 / 2.0, 0.0, 1.0,
+        );
         Ok(())
     }
 

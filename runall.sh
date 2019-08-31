@@ -48,6 +48,7 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter07 silhouette
     cargo r --release --example chapter07 bez-curve
     cargo r --release --example chapter07 quad-tess
+    cargo r --release --example chapter07 tess-teapot
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -96,4 +97,5 @@ else
     cargo r --example chapter07 silhouette
     cargo r --example chapter07 bez-curve
     cargo r --example chapter07 quad-tess
+    cargo r --example chapter07 tess-teapot
 fi
