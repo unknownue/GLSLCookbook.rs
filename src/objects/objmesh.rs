@@ -164,9 +164,13 @@ impl ObjMeshData {
                 for i in 0..3 {
                     // TODO: Handle unwrap()
                     let mut indices_split = line_splits.next().unwrap().split('/');
-                    let pos_index = indices_split.next().and_then(|i| i.parse::<usize>().ok()).unwrap() - 1;
-                    let tex_index = indices_split.next().and_then(|i| i.parse::<usize>().ok()).unwrap() - 1;
-                    let nor_index = indices_split.next().and_then(|i| i.parse::<usize>().ok()).unwrap() - 1;
+                    let pos_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
+                    let tex_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
+                    let nor_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
+
+                    let pos_index = if pos_index.is_negative() { (pos_index + vertices.len() as i32) } else { pos_index - 1 } as usize;
+                    let nor_index = if nor_index.is_negative() { (nor_index + normals.len() as i32) } else { nor_index - 1 } as usize;
+                    let tex_index = if tex_index.is_negative() { (tex_index + texcoords.len() as i32) } else { tex_index - 1 } as usize;
 
                     let dest_vertex = &mut vertices[pos_index];
                     dest_vertex.VertexNormal   =   normals[nor_index];
@@ -178,8 +182,11 @@ impl ObjMeshData {
                 for i in 0..3 {
                     // TODO: Handle unwrap()
                     let mut indices_split = line_splits.next().unwrap().split('/');
-                    let pos_index = indices_split.next().and_then(|i| i.parse::<usize>().ok()).unwrap() - 1;
-                    let nor_index = indices_split.next().and_then(|i| i.parse::<usize>().ok()).unwrap() - 1;
+                    let pos_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
+                    let nor_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
+
+                    let pos_index = if pos_index.is_negative() { (pos_index + vertices.len() as i32) } else { pos_index - 1 } as usize;
+                    let nor_index = if nor_index.is_negative() { (nor_index + normals.len() as i32) } else { nor_index - 1 } as usize;
 
                     let dest_vertex = &mut vertices[pos_index];
                     dest_vertex.VertexNormal = normals[nor_index];
@@ -190,8 +197,11 @@ impl ObjMeshData {
                 for i in 0..3 {
                     // TODO: Handle unwrap()
                     let mut indices_split = line_splits.next().unwrap().split('/');
-                    let pos_index = indices_split.next().and_then(|i| i.parse::<usize>().ok()).unwrap() - 1;
-                    let tex_index = indices_split.next().and_then(|i| i.parse::<usize>().ok()).unwrap() - 1;
+                    let pos_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
+                    let tex_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
+
+                    let pos_index = if pos_index.is_negative() { (pos_index + vertices.len() as i32) } else { pos_index - 1 } as usize;
+                    let tex_index = if tex_index.is_negative() { (tex_index + texcoords.len() as i32) } else { tex_index - 1 } as usize;
 
                     let dest_vertex = &mut vertices[pos_index];
                     dest_vertex.VertexTexCoord = texcoords[tex_index];
@@ -202,7 +212,10 @@ impl ObjMeshData {
                 for i in 0..3 {
                     // TODO: Handle unwrap()
                     let mut indices_split = line_splits.next().unwrap().split('/');
-                    let pos_index = indices_split.next().and_then(|i| i.parse::<usize>().ok()).unwrap() - 1;
+                    let pos_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
+
+                    let pos_index = if pos_index.is_negative() { (pos_index + vertices.len() as i32) } else { pos_index - 1 } as usize;
+
                     triangle_indices[i] = pos_index as u32;
                 }
             },
