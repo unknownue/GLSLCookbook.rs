@@ -2,8 +2,9 @@
 use crate::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 
 use glium::texture::texture2d::Texture2d;
+use glium::texture::depth_texture2d::DepthTexture2d;
 use glium::framebuffer::{DepthRenderBuffer, SimpleFrameBuffer, MultiOutputFrameBuffer};
-use glium::texture::{MipmapsOption, UncompressedFloatFormat};
+use glium::texture::{MipmapsOption, UncompressedFloatFormat, DepthFormat};
 use glium::backend::Facade;
 
 pub use fbo_rentals::{GLFrameBuffer, GLDeferredFrameBuffer};
@@ -24,12 +25,22 @@ pub struct ColorAttachment {
     pub color: Texture2d,
 }
 
-pub trait GLAttachment: Sized {
+/// Attachment with only Depth components used for single output framebuffer and shadow depth rendering.
+pub struct ShadowDepthAttachment {
+    pub depth: DepthTexture2d,
+}
+
+pub trait GLColorAttachment: Sized {
     fn new_attachment(display: &impl Facade, width: u32, height: u32, color_format: UncompressedFloatFormat) -> GLResult<Self>;
     fn new_framebuffer<'a>(display: &impl Facade, attachment: &'a Self) -> GLResult<SimpleFrameBuffer<'a>>;
 }
 
-impl GLAttachment for ColorAttachment {
+pub trait GLDepthAttachment: Sized {
+    fn new_attachment(display: &impl Facade, width: u32, height: u32, depth_format: DepthFormat) -> GLResult<Self>;
+    fn new_framebuffer<'a>(display: &impl Facade, attachment: &'a Self) -> GLResult<SimpleFrameBuffer<'a>>;
+}
+
+impl GLColorAttachment for ColorAttachment {
 
     fn new_attachment(display: &impl Facade, width: u32, height: u32, color_format: UncompressedFloatFormat) -> GLResult<ColorAttachment> {
 
@@ -46,7 +57,7 @@ impl GLAttachment for ColorAttachment {
     }
 }
 
-impl GLAttachment for ColorDepthAttachment {
+impl GLColorAttachment for ColorDepthAttachment {
 
     fn new_attachment(display: &impl Facade, width: u32, height: u32, color_format: UncompressedFloatFormat) -> GLResult<ColorDepthAttachment> {
 
@@ -60,6 +71,24 @@ impl GLAttachment for ColorDepthAttachment {
 
     fn new_framebuffer<'a>(display: &impl Facade, attachment: &'a ColorDepthAttachment) -> GLResult<SimpleFrameBuffer<'a>> {
         let framebuffer = SimpleFrameBuffer::with_depth_buffer(display, &attachment.color, &attachment.depth)
+            .map_err(BufferCreationErrorKind::FrameBuffer)?;
+        Ok(framebuffer)
+    }
+}
+
+
+impl GLDepthAttachment for ShadowDepthAttachment {
+
+    fn new_attachment(display: &impl Facade, width: u32, height: u32, depth_format: DepthFormat) -> GLResult<ShadowDepthAttachment> {
+
+        let depth_compoenent = DepthTexture2d::empty_with_format(display, depth_format, MipmapsOption::NoMipmap, width, height)
+            .map_err(GLErrorKind::CreateTexture)?;
+        let attachment = ShadowDepthAttachment { depth: depth_compoenent };
+        Ok(attachment)
+    }
+
+    fn new_framebuffer<'a>(display: &impl Facade, attachment: &'a ShadowDepthAttachment) -> GLResult<SimpleFrameBuffer<'a>> {
+        let framebuffer = SimpleFrameBuffer::depth_only(display, &attachment.depth)
             .map_err(BufferCreationErrorKind::FrameBuffer)?;
         Ok(framebuffer)
     }
@@ -133,13 +162,33 @@ rental! {
 
 impl<A> GLFrameBuffer<A>
     where
-        A: 'static + GLAttachment {
+        A: 'static + GLColorAttachment {
 
     pub fn setup(display: &impl Facade, width: u32, height: u32, color_format: UncompressedFloatFormat) -> GLResult<GLFrameBuffer<A>> {
 
         // Build the self-referential struct using rental crate.
         let fbo = fbo_rentals::GLFrameBuffer::new(
             Box::new(A::new_attachment(display, width, height, color_format)?),
+            |attachment| { 
+                // TODO: handle unwrap()
+                let framebuffer = A::new_framebuffer(display, &attachment).unwrap();
+                (framebuffer, &attachment)
+            }
+        );
+
+        Ok(fbo)
+    }
+}
+
+impl<A> GLFrameBuffer<A>
+    where
+        A: 'static + GLDepthAttachment {
+
+    pub fn setup_depth(display: &impl Facade, width: u32, height: u32, depth_format: DepthFormat) -> GLResult<GLFrameBuffer<A>> {
+
+        // Build the self-referential struct using rental crate.
+        let fbo = fbo_rentals::GLFrameBuffer::new(
+            Box::new(A::new_attachment(display, width, height, depth_format)?),
             |attachment| { 
                 // TODO: handle unwrap()
                 let framebuffer = A::new_framebuffer(display, &attachment).unwrap();
@@ -170,3 +219,4 @@ impl<A> GLDeferredFrameBuffer<A>
         Ok(fbo)
     }
 }
+
