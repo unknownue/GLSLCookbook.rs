@@ -1,7 +1,7 @@
 
 #version 410
 
-layout (quads) in;
+layout (quads, equal_spacing, ccw) in;
 
 layout (location = 0) out vec4 TEPosition;
 layout (location = 1) out vec3 TENormal;
