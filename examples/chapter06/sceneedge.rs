@@ -187,13 +187,13 @@ impl SceneEdge {
         };
 
         let teapot = &self.teapot;
-        self.fbo.rent_mut(|(framebuffer, _)| {
+        self.fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
             framebuffer.clear_color(1.0, 0.0, 0.0, 1.0);
             framebuffer.clear_depth(1.0);
-            // TODO: handle unwrap()
-            teapot.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+
+            teapot.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render plane ------------------------------------------------------------
@@ -216,10 +216,9 @@ impl SceneEdge {
         };
 
         let plane = &self.plane;
-        self.fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            plane.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render torus ------------------------------------------------------------
@@ -243,12 +242,10 @@ impl SceneEdge {
         };
 
         let torus = &self.torus;
-        self.fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            torus.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            torus.render(framebuffer, program, draw_params, &uniforms)
+        })
         // ------------------------------------------------------------------------- 
-        Ok(())
     }
 
     fn pass2(&self, frame: &mut glium::Frame, draw_params: &glium::DrawParameters) -> GLResult<()> {
@@ -256,7 +253,7 @@ impl SceneEdge {
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
 
-        self.fbo.rent(|(_, attachment)| {
+        self.fbo.rent(|(_, attachment)| -> GLResult<()> {
 
             let uniforms = uniform! {
                 EdgeThreshold: 0.05_f32,
@@ -265,10 +262,7 @@ impl SceneEdge {
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
             };
 
-            // TODO: handle unwrap()
-            self.fs_quad.render(frame, &self.programs[1], draw_params, &uniforms).unwrap();
-        });
-
-        Ok(())
+            self.fs_quad.render(frame, &self.programs[1], draw_params, &uniforms)
+        })
     }
 }

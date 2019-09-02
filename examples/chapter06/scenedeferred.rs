@@ -55,7 +55,7 @@ impl Scene for SceneDeferred {
         let (screen_width, screen_height) = display.get_context().get_framebuffer_dimensions();
 
         // Shader Program ------------------------------------------------------------
-        let programs = SceneDeferred::compile_shader_program_pass1(display)
+        let programs = SceneDeferred::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
         // ----------------------------------------------------------------------------
 
@@ -132,7 +132,7 @@ impl Scene for SceneDeferred {
 
 impl SceneDeferred {
 
-    fn compile_shader_program_pass1(display: &impl Facade) -> Result<[Program; 2], ProgramCreationError> {
+    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 2], ProgramCreationError> {
 
         let pass1_vertex   = include_str!("shaders/deferred/pass1.vert.glsl");
         let pass1_fragment = include_str!("shaders/deferred/pass1.frag.glsl");
@@ -173,13 +173,13 @@ impl SceneDeferred {
         };
 
         let teapot = &self.teapot;
-        self.deferred_fbo.rent_mut(|(framebuffer, _)| {
+        self.deferred_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
             framebuffer.clear_color(0.0, 0.0, 0.0, 1.0);
             framebuffer.clear_depth(1.0);
-            // TODO: handle unwrap()
-            teapot.render(framebuffer, program_pass1, &draw_params, &uniforms).unwrap();
-        });
+
+            teapot.render(framebuffer, program_pass1, &draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render Plane ------------------------------------------------------------
@@ -196,10 +196,9 @@ impl SceneDeferred {
         };
 
         let plane = &self.plane;
-        self.deferred_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program_pass1, &draw_params, &uniforms).unwrap();
-        });
+        self.deferred_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            plane.render(framebuffer, program_pass1, &draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render Torus ------------------------------------------------------------
@@ -217,10 +216,9 @@ impl SceneDeferred {
         };
 
         let torus = &self.torus;
-        self.deferred_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            torus.render(framebuffer, program_pass1, &draw_params, &uniforms).unwrap();
-        });
+        self.deferred_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            torus.render(framebuffer, program_pass1, &draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Write the material one more time
@@ -235,7 +233,7 @@ impl SceneDeferred {
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
 
-        self.deferred_fbo.rent(|(_, attachment)| {
+        self.deferred_fbo.rent(|(_, attachment)| -> GLResult<()> {
 
             let uniforms = uniform! {
                 LightInfo: &self.light_buffer,
@@ -250,10 +248,7 @@ impl SceneDeferred {
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
             };
 
-            // TODO: handle unwrap()
-            self.fs_quad.render(frame, &self.programs[1], &Default::default(), &uniforms).unwrap();
-        });
-
-        Ok(())
+            self.fs_quad.render(frame, &self.programs[1], &Default::default(), &uniforms)
+        })
     }
 }

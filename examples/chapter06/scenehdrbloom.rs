@@ -242,11 +242,11 @@ impl SceneHdrBloom {
         let program = &self.programs[1];
         let fs_quad = &self.fs_quad;
 
-        self.blur_fbo1.rent_mut(|(framebuffer, _)| {
+        self.blur_fbo1.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
             framebuffer.clear_color(0.0, 0.0, 0.0, 0.0);
 
-            hdr_fbo.rent(|(_, attachment)| {
+            hdr_fbo.rent(|(_, attachment)| -> GLResult<()> {
 
                 let uniforms = uniform! {
                     LumThresh: 1.7_f32,
@@ -259,12 +259,9 @@ impl SceneHdrBloom {
                 // Disable depth test
                 let draw_params: glium::DrawParameters = Default::default();
 
-                // TODO: handle unwrap()
-                fs_quad.render(framebuffer, program, &draw_params, &uniforms).unwrap();
-            });
-        });
-
-        Ok(())
+                fs_quad.render(framebuffer, program, &draw_params, &uniforms)
+            })
+        })
     }
 
     fn pass3(&mut self) -> GLResult<()> {
@@ -274,9 +271,9 @@ impl SceneHdrBloom {
         let fs_quad = &self.fs_quad;
         let weight_buffer = &self.weight_buffer;
 
-        self.blur_fbo2.rent_mut(|(framebuffer, _)| {
+        self.blur_fbo2.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
-            blur_fbo1.rent(|(_, attachment)| {
+            blur_fbo1.rent(|(_, attachment)| -> GLResult<()> {
 
                 let uniforms = uniform! {
                     WeightBlock: weight_buffer,
@@ -289,12 +286,9 @@ impl SceneHdrBloom {
                 // Disable depth test
                 let draw_params: glium::DrawParameters = Default::default();
 
-                // TODO: handle unwrap()
-                fs_quad.render(framebuffer, program, &draw_params, &uniforms).unwrap();
-            });
-        });
-
-       Ok(())
+                fs_quad.render(framebuffer, program, &draw_params, &uniforms)
+            })
+        })
     }
 
     fn pass4(&mut self) -> GLResult<()> {
@@ -304,9 +298,9 @@ impl SceneHdrBloom {
         let fs_quad = &self.fs_quad;
         let weight_buffer = &self.weight_buffer;
 
-        self.blur_fbo1.rent_mut(|(framebuffer, _)| {
+        self.blur_fbo1.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
-            blur_fbo2.rent(|(_, attachment)| {
+            blur_fbo2.rent(|(_, attachment)| -> GLResult<()> {
 
                 let uniforms = uniform! {
                     WeightBlock: weight_buffer,
@@ -319,12 +313,9 @@ impl SceneHdrBloom {
                 // Disable depth test
                 let draw_params: glium::DrawParameters = Default::default();
 
-                // TODO: handle unwrap()
-                fs_quad.render(framebuffer, program, &draw_params, &uniforms).unwrap();
-            });
-        });
-
-        Ok(())
+                fs_quad.render(framebuffer, program, &draw_params, &uniforms)
+            })
+        })
     }
 
     fn pass5(&self, frame: &mut glium::Frame, draw_params: &glium::DrawParameters) -> GLResult<()> {
@@ -334,8 +325,8 @@ impl SceneHdrBloom {
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
 
-        self.hdr_fbo.rent(|(_, hdr_attachment)| {
-            self.blur_fbo1.rent(|(_, blur_attachment)| {
+        self.hdr_fbo.rent(|(_, hdr_attachment)| -> GLResult<()> {
+            self.blur_fbo1.rent(|(_, blur_attachment)| -> GLResult<()> {
 
                 let uniforms = uniform! {
                     AveLum: self.ave_lum,
@@ -349,12 +340,9 @@ impl SceneHdrBloom {
                         .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp),
                 };
 
-                // TODO: handle unwrap()
-                self.fs_quad.render(frame, &self.programs[4], draw_params, &uniforms).unwrap();
-            });
-        });
-
-        Ok(())
+                self.fs_quad.render(frame, &self.programs[4], draw_params, &uniforms)
+            })
+        })
     }
 
     fn draw_scene(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
@@ -402,13 +390,13 @@ impl SceneHdrBloom {
         };
 
         let plane = &self.plane;
-        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
             framebuffer.clear_color(0.5, 0.5, 0.5, 1.0);
             framebuffer.clear_depth(1.0);
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+
+            plane.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render bottom plane -----------------------------------------------------
@@ -423,10 +411,9 @@ impl SceneHdrBloom {
             MVP: (self.projection * mv).into_col_arrays(),
         };
 
-        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            plane.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render top plane --------------------------------------------------------
@@ -442,10 +429,9 @@ impl SceneHdrBloom {
             MVP: (self.projection * mv).into_col_arrays(),
         };
 
-        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            plane.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render sphere -----------------------------------------------------------
@@ -468,10 +454,9 @@ impl SceneHdrBloom {
         };
 
         let sphere = &self.sphere;
-        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            sphere.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            sphere.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // -----------------------------------------------------------------------
 
         // Render teapot ---------------------------------------------------------
@@ -495,12 +480,10 @@ impl SceneHdrBloom {
         };
 
         let teapot = &self.teapot;
-        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            teapot.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            teapot.render(framebuffer, program, draw_params, &uniforms)
+        })
         // ------------------------------------------------------------------------- 
-        Ok(())
     }
 }
 

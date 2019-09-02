@@ -202,13 +202,13 @@ impl SceneToneMap {
         };
 
         let plane = &self.plane;
-        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
             framebuffer.clear_color(0.5, 0.5, 0.5, 1.0);
             framebuffer.clear_depth(1.0);
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+
+            plane.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render bottom plane -----------------------------------------------------
@@ -223,10 +223,9 @@ impl SceneToneMap {
             MVP: (self.projection * mv).into_col_arrays(),
         };
 
-        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            plane.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render top plane --------------------------------------------------------
@@ -242,10 +241,9 @@ impl SceneToneMap {
             MVP: (self.projection * mv).into_col_arrays(),
         };
 
-        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            plane.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render sphere -----------------------------------------------------------
@@ -268,10 +266,9 @@ impl SceneToneMap {
         };
 
         let sphere = &self.sphere;
-        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            sphere.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            sphere.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // -----------------------------------------------------------------------
 
         // Render teapot ---------------------------------------------------------
@@ -295,12 +292,10 @@ impl SceneToneMap {
         };
 
         let teapot = &self.teapot;
-        self.hdr_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            teapot.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.hdr_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            teapot.render(framebuffer, program, draw_params, &uniforms)
+        })
         // ------------------------------------------------------------------------- 
-        Ok(())
     }
 
     fn compute_log_ave_luminance(&mut self) {
@@ -335,7 +330,7 @@ impl SceneToneMap {
         frame.clear_color(0.0, 0.0, 0.0, 1.0);
         frame.clear_depth(1.0);
 
-        self.hdr_fbo.rent(|(_, attachment)| {
+        self.hdr_fbo.rent(|(_, attachment)| -> GLResult<()> {
 
             let uniforms = uniform! {
                 AveLum: self.ave_lum,
@@ -344,10 +339,7 @@ impl SceneToneMap {
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
             };
 
-            // TODO: handle unwrap()
-            self.quad.render(frame, &self.programs[1], draw_params, &uniforms).unwrap();
-        });
-
-        Ok(())
+            self.quad.render(frame, &self.programs[1], draw_params, &uniforms)
+        })
     }
 }

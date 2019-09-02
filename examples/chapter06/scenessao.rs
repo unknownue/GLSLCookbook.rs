@@ -242,13 +242,13 @@ impl SceneSsao {
             MVP: (self.projection * mv).into_col_arrays(),
         };
 
-        self.deferred_fbo.rent_mut(|(framebuffer, _)| {
+        self.deferred_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
             framebuffer.clear_color(0.0, 0.0, 0.0, 1.0);
             framebuffer.clear_depth(1.0);
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program, &draw_params, &uniforms).unwrap();
-        });
+
+            plane.render(framebuffer, program, &draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Plane2 ------------------------------------------------------------
@@ -266,10 +266,9 @@ impl SceneSsao {
             MVP: (self.projection * mv).into_col_arrays(),
         };
 
-        self.deferred_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program, &draw_params, &uniforms).unwrap();
-        });
+        self.deferred_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            plane.render(framebuffer, program, &draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render Plane3 ------------------------------------------------------------
@@ -288,10 +287,9 @@ impl SceneSsao {
             MVP: (self.projection * mv).into_col_arrays(),
         };
 
-        self.deferred_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program, &draw_params, &uniforms).unwrap();
-        });
+        self.deferred_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            plane.render(framebuffer, program, &draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render Mesh -------------------------------------------------------------
@@ -313,13 +311,10 @@ impl SceneSsao {
         };
 
         let bunny = &self.bunny;
-        self.deferred_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            bunny.render(framebuffer, program, &draw_params, &uniforms).unwrap();
-        });
+        self.deferred_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            bunny.render(framebuffer, program, &draw_params, &uniforms)
+        })
         // ------------------------------------------------------------------------- 
-
-        Ok(())
     }
 
     fn pass2(&mut self) -> GLResult<()> {
@@ -331,11 +326,11 @@ impl SceneSsao {
         let quad = &self.quad;
         let program = &self.programs[1];
 
-        self.ssao_fbo1.rent_mut(|(framebuffer, _)| {
+        self.ssao_fbo1.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
             framebuffer.clear_color(0.0, 0.0, 0.0, 1.0);
 
-            deferred_fbo.rent(|(_, attachment)| {
+            deferred_fbo.rent(|(_, attachment)| -> GLResult<()> {
 
                 let uniforms = uniform! {
                     ProjectionMatrix: projection,
@@ -351,12 +346,9 @@ impl SceneSsao {
                         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                 };
 
-                // TODO: handle unwrap()
-                quad.render(framebuffer, program, &Default::default(), &uniforms).unwrap();
-            });
-        });
-
-        Ok(())
+                quad.render(framebuffer, program, &Default::default(), &uniforms)
+            })
+        })
     }
 
     fn pass3(&mut self) -> GLResult<()> {
@@ -365,11 +357,11 @@ impl SceneSsao {
         let quad = &self.quad;
         let program = &self.programs[2];
 
-        self.ssao_fbo2.rent_mut(|(framebuffer, _)| {
+        self.ssao_fbo2.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
             framebuffer.clear_color(0.0, 0.0, 0.0, 1.0);
 
-            ao_tex.rent(|(_, attachment)| {
+            ao_tex.rent(|(_, attachment)| -> GLResult<()> {
 
                 let uniforms = uniform! {
                     RandTex: attachment.color.sampled()
@@ -377,12 +369,9 @@ impl SceneSsao {
                         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                 };
 
-                // TODO: handle unwrap()
-                quad.render(framebuffer, program, &Default::default(), &uniforms).unwrap();
-            });
-        });
-
-        Ok(())
+                quad.render(framebuffer, program, &Default::default(), &uniforms)
+            })
+        })
     }
 
     fn pass4(&self, frame: &mut glium::Frame) -> GLResult<()> {
@@ -392,9 +381,9 @@ impl SceneSsao {
 
         frame.clear_color(0.5, 0.5, 0.5, 1.0);
 
-        deferred_fbo.rent(|(_, deferred_attachment)| {
+        deferred_fbo.rent(|(_, deferred_attachment)| -> GLResult<()> {
 
-            ssao_fbo2.rent(|(_, ao_attachment)| {
+            ssao_fbo2.rent(|(_, ao_attachment)| -> GLResult<()> {
 
                 let uniforms = uniform! {
                     LightInfo: &self.light_buffer,
@@ -412,12 +401,9 @@ impl SceneSsao {
                         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                 };
 
-                // TODO: handle unwrap()
-                self.quad.render(frame, &self.programs[3], &Default::default(), &uniforms).unwrap();
-            });
-        });
-
-        Ok(())
+                self.quad.render(frame, &self.programs[3], &Default::default(), &uniforms)
+            })
+        })
     }
 }
 

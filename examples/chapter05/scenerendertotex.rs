@@ -194,15 +194,12 @@ impl SceneRenderToTex {
         let spot    = &self.spot;
         let program = &self.program;
 
-        self.fbo.rent_mut(|(framebuffer, _)| {
+        self.fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
             framebuffer.clear_color(0.5, 0.5, 0.5, 1.0);
             framebuffer.clear_depth(1.0);
-            // TODO: handle unwrap()
-            spot.render(framebuffer, program, &draw_params, &uniforms).unwrap();
-        });
-
-        Ok(())
+            spot.render(framebuffer, program, &draw_params, &uniforms)
+        })
         // ------------------------------------------------------------------------- 
     }
 
@@ -231,7 +228,7 @@ impl SceneRenderToTex {
         let model = Mat4F::identity();
         let mv: Mat4F = view * model;
 
-        self.fbo.rent(|(_, attachment)| {
+        self.fbo.rent(|(_, attachment)| -> GLResult<()> {
 
             let uniforms = uniform! {
                 LightInfo: &self.light_buffer,
@@ -244,11 +241,8 @@ impl SceneRenderToTex {
                 MVP: (self.projection * mv).into_col_arrays(),
             };
 
-            // TODO: handle unwrap()
-            self.cube.render(frame, &self.program, &draw_params, &uniforms).unwrap();
-        });
-
-        Ok(())
+            self.cube.render(frame, &self.program, &draw_params, &uniforms)
+        })
         // ------------------------------------------------------------------------- 
     }
 }

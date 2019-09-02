@@ -241,13 +241,13 @@ impl SceneBlur {
         };
 
         let teapot = &self.teapot;
-        self.render_fbo.rent_mut(|(framebuffer, _)| {
+        self.render_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
             framebuffer.clear_color(0.0, 0.0, 0.0, 1.0);
             framebuffer.clear_depth(1.0);
-            // TODO: handle unwrap()
-            teapot.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+
+            teapot.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render plane ------------------------------------------------------------
@@ -270,10 +270,9 @@ impl SceneBlur {
         };
 
         let plane = &self.plane;
-        self.render_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            plane.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.render_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            plane.render(framebuffer, program, draw_params, &uniforms)
+        })?;
         // ------------------------------------------------------------------------- 
 
         // Render torus ------------------------------------------------------------
@@ -297,12 +296,10 @@ impl SceneBlur {
         };
 
         let torus = &self.torus;
-        self.render_fbo.rent_mut(|(framebuffer, _)| {
-            // TODO: handle unwrap()
-            torus.render(framebuffer, program, draw_params, &uniforms).unwrap();
-        });
+        self.render_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
+            torus.render(framebuffer, program, draw_params, &uniforms)
+        })
         // ------------------------------------------------------------------------- 
-        Ok(())
     }
 
     fn pass2(&mut self) -> GLResult<()> {
@@ -314,11 +311,11 @@ impl SceneBlur {
         self.weight_buffer.write(&self.weights);
         let weight_buffer = &self.weight_buffer;
 
-        self.intermediate_fbo.rent_mut(|(framebuffer, _)| {
+        self.intermediate_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
             framebuffer.clear_color(0.0, 0.0, 0.0, 1.0);
 
-            render_fbo.rent(|(_, attachment)| {
+            render_fbo.rent(|(_, attachment)| -> GLResult<()> {
 
                 let uniforms = uniform! {
                     WeightBlock: weight_buffer,
@@ -328,11 +325,9 @@ impl SceneBlur {
                 };
 
                 // Disable depth test
-                fs_quad.render(framebuffer, program, &Default::default(), &uniforms).unwrap();
-            });
-        });
-
-        Ok(())
+                fs_quad.render(framebuffer, program, &Default::default(), &uniforms)
+            })
+        })
     }
 
     fn pass3(&self, frame: &mut glium::Frame, draw_params: &glium::DrawParameters) -> GLResult<()> {
@@ -340,7 +335,7 @@ impl SceneBlur {
         frame.clear_color(0.0, 0.0, 0.0, 1.0);
         frame.clear_depth(1.0);
 
-        self.intermediate_fbo.rent(|(_, attachment)| {
+        self.intermediate_fbo.rent(|(_, attachment)| -> GLResult<()> {
 
             let uniforms = uniform! {
                 WeightBlock: &self.weight_buffer,
@@ -349,11 +344,8 @@ impl SceneBlur {
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
             };
 
-            // TODO: handle unwrap()
-            self.fs_quad.render(frame, &self.programs[2], draw_params, &uniforms).unwrap();
-        });
-
-        Ok(())
+            self.fs_quad.render(frame, &self.programs[2], draw_params, &uniforms)
+        })
     }
 }
 
