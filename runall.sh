@@ -50,6 +50,8 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter07 quad-tess
     cargo r --release --example chapter07 tess-teapot
     cargo r --release --example chapter07 tess-teapot-depth
+
+    cargo r --release --example chapter08 shadow-map
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -100,4 +102,6 @@ else
     cargo r --example chapter07 quad-tess
     cargo r --example chapter07 tess-teapot
     cargo r --example chapter07 tess-teapot-depth
+
+    cargo r --example chapter08 shadow-map
 fi

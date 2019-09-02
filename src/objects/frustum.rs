@@ -52,7 +52,7 @@ impl Frustum {
             fovy: 0.0, ar: 0.0, near: 0.0, far: 0.0,
         };
 
-        frustum.orient(Vec3F::new(0.0, 0.0, 1.0), Vec3F::zero(), Vec3F::unit_y());
+        frustum.orient(Vec3F::unit_z(), Vec3F::zero(), Vec3F::unit_y());
         frustum.set_perspective(50.0, 1.0, 0.5, 100.0);
 
         Ok(frustum)
@@ -75,9 +75,9 @@ impl Frustum {
         self.far  = far;
 
         let dy  = near * (fovy.to_radians() / 2.0).tan();
-        let dx  = self.ar * dy;
+        let dx  = ar * dy;
         let fdy = far * (fovy.to_radians() / 2.0).tan();
-        let fdx = self.ar * fdy;
+        let fdx = ar * fdy;
 
         let vertices = [
             FrustumVertex { VertexPosition: [0.0, 0.0, 0.0], ..Default::default() },
@@ -119,8 +119,8 @@ impl Frustum {
     pub fn get_inverse_view_matrix(&self) -> Mat4F {
         let rot = Mat4F::new(
             self.u.x, self.u.y, self.u.z, 0.0,
-            self.v.y, self.v.y, self.v.y, 0.0,
-            self.n.z, self.n.z, self.n.z, 0.0,
+            self.v.x, self.v.y, self.v.z, 0.0,
+            self.n.x, self.n.y, self.n.z, 0.0,
             0.0, 0.0, 0.0, 1.0,
         );
         let trans = Mat4F::translation_3d(self.center);
