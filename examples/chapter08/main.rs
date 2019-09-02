@@ -2,8 +2,10 @@
 extern crate glsl_cookbook_rs as cookbook;
 
 mod sceneshadowmap;
+mod scenepcf;
 
 use sceneshadowmap::SceneShadowMap;
+use scenepcf::ScenePcf;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -48,7 +50,7 @@ fn main() -> GLResult<()> {
     match recipe.as_ref() {
         | "ao"            => unimplemented!(),
         | "jitter"        => unimplemented!(),
-        | "pcf"           => unimplemented!(),
+        | "pcf"           => run::<ScenePcf>(title),
         | "shadow-map"    => run::<SceneShadowMap>(title),
         | "shadow-volume" => unimplemented!(),
         | _ => unreachable!(),
