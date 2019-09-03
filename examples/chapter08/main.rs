@@ -3,9 +3,11 @@ extern crate glsl_cookbook_rs as cookbook;
 
 mod sceneshadowmap;
 mod scenepcf;
+mod sceneao;
 
 use sceneshadowmap::SceneShadowMap;
 use scenepcf::ScenePcf;
+use sceneao::SceneAo;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -48,7 +50,7 @@ fn main() -> GLResult<()> {
     let (recipe, title) = SceneRunner::parse_command_line_args(&HASHMAP)?;
 
     match recipe.as_ref() {
-        | "ao"            => unimplemented!(),
+        | "ao"            => run::<SceneAo>(title),
         | "jitter"        => unimplemented!(),
         | "pcf"           => run::<ScenePcf>(title),
         | "shadow-map"    => run::<SceneShadowMap>(title),

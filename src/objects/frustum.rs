@@ -61,7 +61,7 @@ impl Frustum {
     pub fn orient(&mut self, pos: Vec3F, at: Vec3F, up: Vec3F) {
 
         self.n = (pos - at).normalized();
-        self.u = up.cross(self.n).normalized();
+        self.u = self.n.cross(up).normalized();
         self.v = self.n.cross(self.u).normalized();
 
         self.center = pos;
