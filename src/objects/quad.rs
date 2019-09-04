@@ -25,16 +25,20 @@ pub struct Quad {
 impl Quad {
 
     pub fn new(display: &impl Facade) -> GLResult<Quad> {
+        Quad::new_with_texcoord_scale(display, 1.0)
+    }
+
+    pub fn new_with_texcoord_scale(display: &impl Facade, scale: f32) -> GLResult<Quad> {
 
         glium::implement_vertex!(QuadVertex, VertexPosition, VertexNormal, VertexTexCoord);
 
         let vertices = [
-            QuadVertex { VertexPosition: [-1.0, -1.0, 0.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
-            QuadVertex { VertexPosition: [ 1.0, -1.0, 0.0], VertexTexCoord: [1.0, 0.0], ..Default::default() },
-            QuadVertex { VertexPosition: [ 1.0,  1.0, 0.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
-            QuadVertex { VertexPosition: [-1.0, -1.0, 0.0], VertexTexCoord: [0.0, 0.0], ..Default::default() },
-            QuadVertex { VertexPosition: [ 1.0,  1.0, 0.0], VertexTexCoord: [1.0, 1.0], ..Default::default() },
-            QuadVertex { VertexPosition: [-1.0,  1.0, 0.0], VertexTexCoord: [0.0, 1.0], ..Default::default() },
+            QuadVertex { VertexPosition: [-1.0, -1.0, 0.0], VertexTexCoord: [0.0 * scale, 0.0 * scale], ..Default::default() },
+            QuadVertex { VertexPosition: [ 1.0, -1.0, 0.0], VertexTexCoord: [1.0 * scale, 0.0 * scale], ..Default::default() },
+            QuadVertex { VertexPosition: [ 1.0,  1.0, 0.0], VertexTexCoord: [1.0 * scale, 1.0 * scale], ..Default::default() },
+            QuadVertex { VertexPosition: [-1.0, -1.0, 0.0], VertexTexCoord: [0.0 * scale, 0.0 * scale], ..Default::default() },
+            QuadVertex { VertexPosition: [ 1.0,  1.0, 0.0], VertexTexCoord: [1.0 * scale, 1.0 * scale], ..Default::default() },
+            QuadVertex { VertexPosition: [-1.0,  1.0, 0.0], VertexTexCoord: [0.0 * scale, 1.0 * scale], ..Default::default() },
         ];
 
         let vbuffer = glium::VertexBuffer::immutable(display, &vertices)

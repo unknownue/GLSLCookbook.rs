@@ -12,6 +12,7 @@ pub mod framebuffer;
 pub mod objects;
 pub mod aabb;
 pub mod random;
+pub mod noise;
 
 mod timer;
 mod drawable;
