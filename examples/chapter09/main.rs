@@ -3,9 +3,11 @@ extern crate glsl_cookbook_rs as cookbook;
 
 mod scenenoise;
 mod scenesky;
+mod scenewood;
 
 use scenenoise::SceneNoise;
 use scenesky::SceneSky;
+use scenewood::SceneWood;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -55,7 +57,7 @@ fn main() -> GLResult<()> {
         | "night-vision" => unimplemented!(),
         | "paint"        => unimplemented!(),
         | "sky"          => run::<SceneSky>(title),
-        | "wood"         => unimplemented!(),
+        | "wood"         => run::<SceneWood>(title),
         | "rust"         => unimplemented!(),
         | _ => unreachable!(),
     }
