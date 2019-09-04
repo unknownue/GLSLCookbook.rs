@@ -54,6 +54,8 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter08 shadow-map
     cargo r --release --example chapter08 pcf
     cargo r --release --example chapter08 ao
+
+    cargo r --release --example chapter09 noise
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -108,4 +110,6 @@ else
     cargo r --example chapter08 shadow-map
     cargo r --example chapter08 pcf
     cargo r --example chapter08 ao
+
+    cargo r --example chapter09 noise
 fi
