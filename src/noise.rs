@@ -9,19 +9,27 @@ use crate::{Vec2F, Vec4F};
 
 
 pub fn generate_periodic_2d_texture(display: &impl Facade, base_freq: f32, persist: f32, w: u32, h: u32, mipmaps: MipmapsOption) -> GLResult<Texture2d> {
-    
+    generate_2d_tex(display, base_freq, persist, w, h, mipmaps, true)
+}
+
+pub fn generate_2d_texture(display: &impl Facade, base_freq: f32, persist: f32, w: u32, h: u32, mipmaps: MipmapsOption) -> GLResult<Texture2d> {
+    generate_2d_tex(display, base_freq, persist, w, h, mipmaps, false)
+}
+
+fn generate_2d_tex(display: &impl Facade, base_freq: f32, persist: f32, w: u32, h: u32, mipmaps: MipmapsOption, is_periodit: bool) -> GLResult<Texture2d> {
+
     println!("Generating noise texture...");
     let width  = w as usize;
     let height = h as usize;
 
-    let bytes = generate_2d_tex(base_freq, persist, width, height, true);
+    let bytes = generate_2d_tex_bytes(base_freq, persist, width, height, is_periodit);
     let texture = load_custom_texture(display, bytes, width, height, mipmaps, UncompressedFloatFormat::U8U8U8U8)?;
 
     println!("Done noise texture generation...");
     Ok(texture)
 }
 
-fn generate_2d_tex(base_freq: f32, persistence: f32, width: usize, height: usize, periodit: bool) -> Vec<u8> {
+fn generate_2d_tex_bytes(base_freq: f32, persistence: f32, width: usize, height: usize, periodit: bool) -> Vec<u8> {
 
     let mut data = Vec::with_capacity(width * height * 4);
 

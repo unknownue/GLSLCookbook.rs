@@ -2,8 +2,10 @@
 extern crate glsl_cookbook_rs as cookbook;
 
 mod scenenoise;
+mod scenesky;
 
 use scenenoise::SceneNoise;
+use scenesky::SceneSky;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -52,7 +54,7 @@ fn main() -> GLResult<()> {
         | "jitter"       => unimplemented!(),
         | "night-vision" => unimplemented!(),
         | "paint"        => unimplemented!(),
-        | "sky"          => unimplemented!(),
+        | "sky"          => run::<SceneSky>(title),
         | "wood"         => unimplemented!(),
         | "rust"         => unimplemented!(),
         | _ => unreachable!(),
