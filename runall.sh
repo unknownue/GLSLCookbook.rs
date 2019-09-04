@@ -58,6 +58,7 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter09 noise
     cargo r --release --example chapter09 sky
     cargo r --release --example chapter09 wood
+    cargo r --release --example chapter09 decay
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -116,4 +117,5 @@ else
     cargo r --example chapter09 noise
     cargo r --example chapter09 sky
     cargo r --example chapter09 wood
+    cargo r --example chapter09 decay
 fi
