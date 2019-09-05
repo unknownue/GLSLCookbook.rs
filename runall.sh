@@ -60,6 +60,7 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter09 wood
     cargo r --release --example chapter09 decay
     cargo r --release --example chapter09 paint
+    cargo r --release --example chapter09 rust
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -120,4 +121,5 @@ else
     cargo r --example chapter09 wood
     cargo r --example chapter09 decay
     cargo r --example chapter09 paint
+    cargo r --example chapter09 rust
 fi

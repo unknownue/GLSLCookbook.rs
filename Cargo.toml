@@ -1,7 +1,7 @@
 
 [package]
 name = "glsl-cookbook-rs"
-version = "0.8.4"
+version = "0.8.5"
 authors = ["unknownue <usami-ssc@protonmail.com>"]
 edition = "2018"
 description = "A Rust implementation of *OpenGL 4 Shading Language Cookbook 3rd*"

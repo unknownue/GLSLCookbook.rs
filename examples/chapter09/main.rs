@@ -6,12 +6,14 @@ mod scenesky;
 mod scenewood;
 mod scenedecay;
 mod scenepaint;
+mod scenerust;
 
 use scenenoise::SceneNoise;
 use scenesky::SceneSky;
 use scenewood::SceneWood;
 use scenedecay::SceneDecay;
 use scenepaint::ScenePaint;
+use scenerust::SceneRust;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -62,7 +64,7 @@ fn main() -> GLResult<()> {
         | "paint"        => run::<ScenePaint>(title),
         | "sky"          => run::<SceneSky>(title),
         | "wood"         => run::<SceneWood>(title),
-        | "rust"         => unimplemented!(),
+        | "rust"         => run::<SceneRust>(title),
         | _ => unreachable!(),
     }
 }
