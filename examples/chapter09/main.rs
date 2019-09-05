@@ -7,6 +7,7 @@ mod scenewood;
 mod scenedecay;
 mod scenepaint;
 mod scenerust;
+mod scenenightvision;
 
 use scenenoise::SceneNoise;
 use scenesky::SceneSky;
@@ -14,6 +15,7 @@ use scenewood::SceneWood;
 use scenedecay::SceneDecay;
 use scenepaint::ScenePaint;
 use scenerust::SceneRust;
+use scenenightvision::SceneNightVision;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -60,7 +62,7 @@ fn main() -> GLResult<()> {
     match recipe.as_ref() {
         | "noise"        => run::<SceneNoise>(title),
         | "decay"        => run::<SceneDecay>(title),
-        | "night-vision" => unimplemented!(),
+        | "night-vision" => run::<SceneNightVision>(title),
         | "paint"        => run::<ScenePaint>(title),
         | "sky"          => run::<SceneSky>(title),
         | "wood"         => run::<SceneWood>(title),

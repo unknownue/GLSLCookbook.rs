@@ -61,6 +61,7 @@ if [ "$1" = "release" ]; then
     cargo r --release --example chapter09 decay
     cargo r --release --example chapter09 paint
     cargo r --release --example chapter09 rust
+    cargo r --release --example chapter09 night-vision
 else
     echo "Running examples in Debug mode"
     cargo r --example chapter01 basic
@@ -122,4 +123,5 @@ else
     cargo r --example chapter09 decay
     cargo r --example chapter09 paint
     cargo r --example chapter09 rust
+    cargo r --example chapter09 night-vision
 fi
