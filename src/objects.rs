@@ -9,6 +9,7 @@ pub use self::skybox::SkyBox;
 pub use self::quad::Quad;
 pub use self::sphere::Sphere;
 pub use self::frustum::Frustum;
+pub use self::grid::Grid;
 
 mod teapot;
 mod teapot_patch;
@@ -19,6 +20,7 @@ mod skybox;
 mod quad;
 mod sphere;
 mod frustum;
+mod grid;
 
 mod teapot_data;
 mod objmesh;
