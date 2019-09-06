@@ -2,8 +2,10 @@
 extern crate glsl_cookbook_rs as cookbook;
 
 mod scenewave;
+mod sceneparticles;
 
 use scenewave::SceneWave;
+use sceneparticles::SceneParticles;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -22,12 +24,12 @@ const MULTISAMPLING: u16 = 0;
 lazy_static! {
     static ref HASHMAP: HashMap<String, String> = {
         let mut m = HashMap::new();
-        m.insert("fire".into(), "particles simulating fire".into());
-		m.insert("particles".into(), "a fountain of particles".into());
-		m.insert("particles-feedback".into(), "a fountain of particles implemented with transform feedback".into());
-		m.insert("particles-instanced".into(), "a fountain of instanced particles, mmmm.. donuts".into());
-		m.insert("smoke".into(), "particles simulating smoke".into());
-		m.insert("wave".into(), "a plane wave displacement animation".into());
+        m.insert("fire".into(), "Particles simulating fire".into());
+		m.insert("particles".into(), "A fountain of particles".into());
+		m.insert("particles-feedback".into(), "A fountain of particles implemented with transform feedback".into());
+		m.insert("particles-instanced".into(), "A fountain of instanced particles, mmmm.. donuts".into());
+		m.insert("smoke".into(), "Particles simulating smoke".into());
+		m.insert("wave".into(), "A plane wave displacement animation".into());
         m
     };
 }
@@ -48,7 +50,7 @@ fn main() -> GLResult<()> {
 
     match recipe.as_ref() {
         | "fire"                => unimplemented!(),
-        | "particles"           => unimplemented!(),
+        | "particles"           => run::<SceneParticles>(title),
         | "particles-feedback"  => unimplemented!(),
         | "particles-instanced" => unimplemented!(),
         | "smoke"               => unimplemented!(),

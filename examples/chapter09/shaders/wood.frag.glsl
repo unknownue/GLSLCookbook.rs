@@ -14,8 +14,7 @@ uniform mat4 Slice;
 
 void main() {
 
-    // Transform the texture coordinates to define the
-    // "slice" of the log.
+    // Transform the texture coordinates to define the "slice" of the log.
     vec2 tc = TexCoord;
     if (tc.s > 0.5)
         tc.s = 1.0 - tc.s;
@@ -28,8 +27,7 @@ void main() {
     vec4 noise = texture(NoiseTex, tc);
     dist += noise.b * 2.5;
 
-    // Determine the color as a mixture of the light and
-    // dark wood colors
+    // Determine the color as a mixture of the light and dark wood colors
     float t = 1.0 - abs(fract(dist) * 2.0 - 1.0);
     t = smoothstep(0.2, 0.5, t);
     vec4 color = mix(DarkWoodColor, LightWoodColor, t);

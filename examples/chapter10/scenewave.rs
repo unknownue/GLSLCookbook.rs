@@ -93,7 +93,10 @@ impl Scene for SceneWave {
     }
 
     fn update(&mut self, delta_time: f32) {
-        self.time += delta_time;
+        
+        if self.is_animate {
+            self.time += delta_time;
+        }
     }
 
     fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {

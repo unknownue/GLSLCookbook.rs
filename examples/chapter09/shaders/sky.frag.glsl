@@ -14,6 +14,9 @@ uniform vec4 CloudColor = vec4(1.0, 1.0, 1.0, 1.0);
 
 void main() {
 
+    // Further reading on cloud generation: 
+    // http://vterrain.org/Atmosphere/Clouds
+
     vec4 noise = texture(NoiseTex, TexCoord);
     float t = (cos(noise.a * PI) + 1.0) / 2.0;
     vec4 color = mix(SkyColor, CloudColor, t);

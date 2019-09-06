@@ -13,6 +13,7 @@ pub mod objects;
 pub mod aabb;
 pub mod random;
 pub mod noise;
+pub mod particle;
 
 mod timer;
 mod drawable;
