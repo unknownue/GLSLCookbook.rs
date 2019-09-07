@@ -15,7 +15,7 @@ pub fn make_arbitrary_basis(dir: Vec3F) -> Mat3F {
         n = Vec3F::unit_y().cross(v);
     }
 
-    let mut u = v.cross(n);
+    let mut u = n.cross(v);
 
     u.normalize();
     v.normalize();
@@ -24,7 +24,7 @@ pub fn make_arbitrary_basis(dir: Vec3F) -> Mat3F {
     Mat3F::new(
         u.x, u.y, u.z,
         v.x, v.y, v.z,
-        n.x, n.y, n.z
+        n.x, n.y, n.z,
     )
 }
 

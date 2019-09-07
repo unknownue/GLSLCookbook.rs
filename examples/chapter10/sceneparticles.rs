@@ -1,6 +1,6 @@
 
 use cookbook::scene::{Scene, GLSourceCode};
-use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
+use cookbook::error::{GLResult, GLError, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::Grid;
 use cookbook::texture::load_texture;
 use cookbook::{Mat4F, Vec3F};
@@ -60,7 +60,7 @@ impl Scene for SceneParticles {
 
         // Initialize MVP -------------------------------------------------------------
         let projection = Mat4F::identity();
-        let angle = std::f32::consts::PI / 2.0;
+        let angle = std::f32::consts::FRAC_PI_2;
         let is_animate = true;
         let time = 0.0;
         // ----------------------------------------------------------------------------
@@ -76,7 +76,7 @@ impl Scene for SceneParticles {
     fn update(&mut self, delta_time: f32) {
         
         const TWO_PI: f32 = std::f32::consts::PI * 2.0;
-        const ROTATE_SPEED: f32 = 0.75;
+        const ROTATE_SPEED: f32 = 0.55;
 
         if self.is_animating() {
             self.time += delta_time;
@@ -135,8 +135,12 @@ impl Scene for SceneParticles {
                 .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
         };
 
+        let draw_vertices = glium::vertex::EmptyVertexAttributes { len: 6 };
+        let per_instance = self.vertex_buffer.per_instance()
+            .map_err(|_| GLError::device("Invalid draw instance usage"))?;
         let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
-        frame.draw((&self.vertex_buffer, self.vertex_buffer.per_instance().unwrap()), &no_indices, &self.program, &uniforms, &draw_params)
+
+        frame.draw((draw_vertices, per_instance), &no_indices, &self.program, &uniforms, &draw_params)
             .map_err(GLErrorKind::DrawError)?;
         // -------------------------------------------------------------------------
 
@@ -192,7 +196,7 @@ impl SceneParticles {
         const PARTICLE_LIFE_TIME: f32 = 5.5;
 
         let emitter_dir = Vec3F::new(-1.0, 2.0, 0.0);
-        let rate =  PARTICLE_LIFE_TIME / N_PARTICLES as f32;
+        let rate = PARTICLE_LIFE_TIME / N_PARTICLES as f32;
 
         let mix = |a: f32, b: f32, r: f32| -> f32 { a * (1.0 - r) + b * r };
 
@@ -200,7 +204,7 @@ impl SceneParticles {
         let data: Vec<ParticleVertex> = (0..N_PARTICLES).map(|i| {
             
             let theta = mix(0.0, std::f32::consts::PI / 20.0, between.sample(&mut rng));
-            let phi   = mix(0.0, std::f32::consts::PI,        between.sample(&mut rng));
+            let phi   = mix(0.0, std::f32::consts::PI * 2.0,  between.sample(&mut rng));
 
             let v = Vec3F::new(
                 theta.sin() * phi.cos(),

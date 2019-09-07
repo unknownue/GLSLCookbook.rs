@@ -19,8 +19,6 @@ uniform MaterialInfo {
     float Shininess;
 };
 
-uniform float Time;
-
 
 vec3 phongModel(vec3 kd) {
 
