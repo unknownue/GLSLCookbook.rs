@@ -99,7 +99,7 @@ impl Scene for SceneWave {
         }
     }
 
-    fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
+    fn render(&mut self, _display: &impl Facade, frame: &mut glium::Frame) -> GLResult<()> {
 
         frame.clear_color_srgb(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);

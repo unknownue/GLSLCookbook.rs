@@ -12,6 +12,8 @@ use glium::uniforms::UniformBuffer;
 use glium::texture::DepthFormat;
 use glium::{Surface, uniform, implement_uniform_block};
 
+// Official shadow map example
+// https://github.com/glium/glium/blob/master/examples/shadow_mapping.rs
 
 pub struct SceneShadowMap {
 
@@ -321,7 +323,8 @@ impl SceneShadowMap {
                 LightInfo: &self.light_buffer,
                 ShadowMap: shadowmap.depth.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+                    .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
                 ModelViewMatrix: mv.clone().into_col_arrays(),
                 NormalMatrix: Mat3F::from(mv).into_col_arrays(),
                 MVP: (self.projection * mv).into_col_arrays(),
@@ -341,7 +344,8 @@ impl SceneShadowMap {
                 LightInfo: &self.light_buffer,
                 ShadowMap: shadowmap.depth.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+                    .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
                 ModelViewMatrix: mv.clone().into_col_arrays(),
                 NormalMatrix: Mat3F::from(mv).into_col_arrays(),
                 MVP: (self.projection * mv).into_col_arrays(),
@@ -368,7 +372,8 @@ impl SceneShadowMap {
                 LightInfo: &self.light_buffer,
                 ShadowMap: shadowmap.depth.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+                    .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
                 ModelViewMatrix: mv.clone().into_col_arrays(),
                 NormalMatrix: Mat3F::from(mv).into_col_arrays(),
                 MVP: (self.projection * mv).into_col_arrays(),
@@ -388,7 +393,8 @@ impl SceneShadowMap {
                 LightInfo: &self.light_buffer,
                 ShadowMap: shadowmap.depth.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+                    .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
                 ModelViewMatrix: mv.clone().into_col_arrays(),
                 NormalMatrix: Mat3F::from(mv).into_col_arrays(),
                 MVP: (self.projection * mv).into_col_arrays(),
@@ -408,7 +414,8 @@ impl SceneShadowMap {
                 LightInfo: &self.light_buffer,
                 ShadowMap: shadowmap.depth.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+                    .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
                 ModelViewMatrix: mv.clone().into_col_arrays(),
                 NormalMatrix: Mat3F::from(mv).into_col_arrays(),
                 MVP: (self.projection * mv).into_col_arrays(),

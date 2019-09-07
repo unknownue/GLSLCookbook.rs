@@ -84,7 +84,7 @@ impl Scene for SceneParticles {
         }
     }
 
-    fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
+    fn render(&mut self, _display: &impl Facade, frame: &mut glium::Frame) -> GLResult<()> {
 
         frame.clear_color_srgb(0.1, 0.1, 0.1, 1.0);
         frame.clear_depth(1.0);
@@ -125,7 +125,7 @@ impl Scene for SceneParticles {
 
         let uniforms = uniform! {
             Time: self.time,
-            ParticleLiftTime: 5.5_f32,
+            ParticleLifeTime: 5.5_f32,
             EmitterPos: [1.0_f32, 0.0, 0.0],
             ModelViewMatrix: mv.into_col_arrays(),
             ProjectionMatrix: self.projection.into_col_arrays(),
@@ -190,7 +190,7 @@ impl SceneParticles {
         use rand::distributions::Distribution;
 
         let mut rng = rand::thread_rng();
-        let between = rand::distributions::Uniform::from(0.0..1.0_f32);
+        let dist01 = rand::distributions::Uniform::from(0.0..1.0_f32);
 
         const N_PARTICLES: usize = 8000;
         const PARTICLE_LIFE_TIME: f32 = 5.5;
@@ -203,8 +203,8 @@ impl SceneParticles {
         let emitter_basis = particle::make_arbitrary_basis(emitter_dir);
         let data: Vec<ParticleVertex> = (0..N_PARTICLES).map(|i| {
             
-            let theta = mix(0.0, std::f32::consts::PI / 20.0, between.sample(&mut rng));
-            let phi   = mix(0.0, std::f32::consts::PI * 2.0,  between.sample(&mut rng));
+            let theta = mix(0.0, std::f32::consts::PI / 20.0, dist01.sample(&mut rng));
+            let phi   = mix(0.0, std::f32::consts::PI * 2.0,  dist01.sample(&mut rng));
 
             let v = Vec3F::new(
                 theta.sin() * phi.cos(),
@@ -212,7 +212,7 @@ impl SceneParticles {
                 theta.sin() * phi.sin(),
             );
 
-            let velocity: f32 = mix(1.25, 1.5, between.sample(&mut rng));
+            let velocity: f32 = mix(1.25, 1.5, dist01.sample(&mut rng));
             let v = (emitter_basis * v).normalized() * velocity;
 
             ParticleVertex {

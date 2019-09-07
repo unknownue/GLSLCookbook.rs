@@ -36,10 +36,10 @@ pub fn random_tex_1d(display: &impl Facade, size: usize) -> GLResult<Texture1d> 
     use rand::distributions::Distribution;
 
     let mut rng = rand::thread_rng();
-    let between = rand::distributions::Uniform::from(0.0..1.0_f32);
+    let dist01 = rand::distributions::Uniform::from(0.0..1.0_f32);
 
     let rand_data: Vec<f32> = (0..size)
-        .map(|_| between.sample(&mut rng)).collect();
+        .map(|_| dist01.sample(&mut rng)).collect();
     
     let texture = Texture1d::with_format(display, rand_data, glium::texture::UncompressedFloatFormat::F32, glium::texture::MipmapsOption::NoMipmap)
         .map_err(GLErrorKind::CreateTexture)?;

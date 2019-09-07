@@ -8,7 +8,7 @@ layout (location = 0) out float Transp;   // Transparency of the particle
 layout (location = 1) out vec2  TexCoord; // Texture coordinate
 
 uniform float Time;                            // Animation time
-uniform float ParticleLiftTime;                // Max particle lifetime
+uniform float ParticleLifeTime;                // Max particle lifetime
 uniform float ParticleSize = 0.05;             // Particle size
 uniform vec3 Gracity = vec3(0.0, -0.2, 0.0);   // Gravity vector in world coords
 uniform vec3 EmitterPos;                       // Emiter position in world coordinates
@@ -41,10 +41,10 @@ void main() {
     vec3 cameraPos;  // Position in camera coordinates
 
     float t = Time - VertexBirthTime;
-    if (t >= 0 && t < ParticleLiftTime) {
+    if (t >= 0 && t < ParticleLifeTime) {
         vec3 pos = EmitterPos + VertexInitVel * t + Gracity * t * t;
         cameraPos = (ModelViewMatrix * vec4(pos, 1.0)).xyz + (offsets[gl_VertexID] * ParticleSize);
-        Transp = mix(1.0, 0.0, t / ParticleLiftTime);
+        Transp = mix(1.0, 0.0, t / ParticleLifeTime);
     } else {
         // Particle doesn't "exist", draw fully transparent
         cameraPos = vec3(0.0);

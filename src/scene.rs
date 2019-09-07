@@ -13,7 +13,7 @@ pub trait Scene: Sized {
     fn update(&mut self, t: f32);
 
     /// Draw your scene.
-    fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()>;
+    fn render(&mut self, display: &impl Facade, frame: &mut glium::Frame) -> GLResult<()>;
 
     /// Called when screen is resized.
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) -> GLResult<()>;
@@ -74,6 +74,13 @@ impl<'a> GLSourceCode<'a> {
     pub fn with_point_size_enable(mut self, is_enable: bool) -> GLSourceCode<'a> {
         if let program::ProgramCreationInput::SourceCode { ref mut uses_point_size, .. } = &mut self.input {
             *uses_point_size = is_enable;
+        }
+        self
+    }
+
+    pub fn with_transform_feedback_varyings(mut self, varyings: Vec<String>, mode: glium::program::TransformFeedbackMode) -> GLSourceCode<'a> {
+        if let program::ProgramCreationInput::SourceCode { ref mut transform_feedback_varyings, .. } = &mut self.input {
+            *transform_feedback_varyings = Some((varyings, mode))
         }
         self
     }
