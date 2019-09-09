@@ -5,11 +5,13 @@ mod scenewave;
 mod sceneparticles;
 mod sceneparticlesfeedback;
 mod sceneparticlesinstanced;
+mod scenefire;
 
 use scenewave::SceneWave;
 use sceneparticles::SceneParticles;
 use sceneparticlesfeedback::SceneParticlesFeedback;
 use sceneparticlesinstanced::SceneParticlesInstanced;
+use scenefire::SceneFire;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -53,7 +55,7 @@ fn main() -> GLResult<()> {
     let (recipe, title) = SceneRunner::parse_command_line_args(&HASHMAP)?;
 
     match recipe.as_ref() {
-        | "fire"                => unimplemented!(),
+        | "fire"                => run::<SceneFire>(title),
         | "particles"           => run::<SceneParticles>(title),
         | "particles-feedback"  => run::<SceneParticlesFeedback>(title),
         | "particles-instanced" => run::<SceneParticlesInstanced>(title),
