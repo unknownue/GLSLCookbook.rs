@@ -13,7 +13,11 @@ pub trait Scene: Sized {
     fn update(&mut self, t: f32);
 
     /// Draw your scene.
-    fn render(&mut self, display: &impl Facade, frame: &mut glium::Frame) -> GLResult<()>;
+    fn render(&mut self, frame: &mut glium::Frame) -> GLResult<()>;
+
+    fn render2(&mut self, _display: &impl Facade, frame: &mut glium::Frame) -> GLResult<()> {
+        self.render(frame)
+    }
 
     /// Called when screen is resized.
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) -> GLResult<()>;

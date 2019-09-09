@@ -103,7 +103,7 @@ impl SceneRunner {
             scene.update(timer.delta_time());
 
             let mut frame = self.display.draw();
-            match scene.render(&self.display, &mut frame) {
+            match scene.render2(&self.display, &mut frame) {
                 | Ok(()) => frame.finish().map_err(GLError::rendering_finish)?,
                 | Err(e) => {
                     // frame.finish() must be called no matter if any error occurred.

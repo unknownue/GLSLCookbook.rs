@@ -84,7 +84,7 @@ impl Scene for SceneParticles {
         }
     }
 
-    fn render(&mut self, _display: &impl Facade, frame: &mut glium::Frame) -> GLResult<()> {
+    fn render2(&mut self, _display: &impl Facade, frame: &mut glium::Frame) -> GLResult<()> {
 
         frame.clear_color_srgb(0.1, 0.1, 0.1, 1.0);
         frame.clear_depth(1.0);
@@ -159,6 +159,9 @@ impl Scene for SceneParticles {
     fn toggle_animation(&mut self) {
         self.is_animate = !self.is_animate;
     }
+
+    // ignore
+    fn render(&mut self, _frame: &mut glium::Frame) -> GLResult<()> { unimplemented!() }
 }
 
 
