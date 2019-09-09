@@ -1,8 +1,8 @@
 
 #version 410
 
-layout (location = 0) in vec3  VertexPosition;
-layout (location = 1) in vec3  VertexVelocity;
+layout (location = 0) in vec3 VertexPosition;
+layout (location = 1) in vec3 VertexVelocity;
 layout (location = 2) in float VertexAge;
 
 layout (location = 0) out vec3 Position;

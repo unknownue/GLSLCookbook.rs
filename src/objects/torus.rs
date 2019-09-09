@@ -18,9 +18,9 @@ pub struct TorusVertex {
 #[derive(Debug)]
 pub struct Torus {
     /// vertex buffer of triangle mesh
-    vbuffer: glium::VertexBuffer<TorusVertex>,
+    pub vbuffer: glium::VertexBuffer<TorusVertex>,
     /// index buffer of triangle mesh
-    ibuffer: glium::IndexBuffer<u32>,
+    pub ibuffer: glium::IndexBuffer<u32>,
 }
 
 impl Torus {

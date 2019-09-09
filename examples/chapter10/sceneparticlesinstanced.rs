@@ -1,30 +1,33 @@
 
 use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLError, GLErrorKind, BufferCreationErrorKind};
-use cookbook::objects::Grid;
-use cookbook::texture::load_texture;
+use cookbook::objects::{Grid, Torus};
 use cookbook::particle;
 use cookbook::{Mat4F, Vec3F};
 use cookbook::Drawable;
 
 use glium::backend::Facade;
 use glium::program::{Program, ProgramCreationError};
-use glium::texture::{Texture1d, Texture2d};
-use glium::{Surface, uniform};
+use glium::texture::Texture1d;
+use glium::uniforms::UniformBuffer;
+use glium::{Surface, uniform, implement_uniform_block};
 
 
 #[derive(Debug)]
-pub struct SceneParticlesFeedback {
+pub struct SceneParticlesInstanced {
 
     programs: [glium::Program; 2],
     flat_program: glium::Program,
 
+    torus: Torus,
     grid: Grid,
 
     vbuffer1: glium::VertexBuffer<ParticleVertex>,
     vbuffer2: glium::VertexBuffer<ParticleVertex>,
 
-    water_tex: Texture2d,
+    material_buffer: UniformBuffer<MaterialInfo>,
+    light_buffer   : UniformBuffer<LightInfo>,
+
     random_tex: Texture1d,
 
     time: f32,
@@ -41,34 +44,72 @@ pub struct SceneParticlesFeedback {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 struct ParticleVertex {
-    VertexPosition: [f32; 3], 
-    VertexVelocity: [f32; 3],
-    VertexAge: f32,
+    ParticlePosition: [f32; 3],   // position
+    ParticleVelocity: [f32; 3],   // velocity
+    ParticleAge: f32,             // age
+    ParticleRotation: [f32; 2], // rotational velocity and angle
+}
+
+#[allow(non_snake_case)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+struct LightInfo {
+    LightPosition: [f32; 4],
+    Intensity: [f32; 3], _padding1: f32,
+}
+
+#[allow(non_snake_case)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+struct MaterialInfo {
+    Ka: [f32; 3], _padding1: f32,
+    Kd: [f32; 3], _padding2: f32,
+    Ks: [f32; 3],
+    Shininess: f32,
+    E: [f32; 3], _padding3: f32,
 }
 
 
-impl Scene for SceneParticlesFeedback {
+impl Scene for SceneParticlesInstanced {
 
-    fn new(display: &impl Facade) -> GLResult<SceneParticlesFeedback> {
+    fn new(display: &impl Facade) -> GLResult<SceneParticlesInstanced> {
 
         // Shader Program ------------------------------------------------------------
-        let programs = SceneParticlesFeedback::compile_shader_program(display)
+        let programs = SceneParticlesInstanced::compile_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
-        let flat_program = SceneParticlesFeedback::compile_flat_shader_program(display)
+        let flat_program = SceneParticlesInstanced::compile_flat_shader_program(display)
             .map_err(GLErrorKind::CreateProgram)?;
         // ----------------------------------------------------------------------------
 
         // Initialize Mesh ------------------------------------------------------------
-        const N_PARTICLES: usize = 4000;
-        const PARTICLE_LIFETIME: f32 = 6.0;
-
         let grid = Grid::new(display, 10.0, 10)?;
-        let (vbuffer1, vbuffer2) = SceneParticlesFeedback::init_buffers(display, PARTICLE_LIFETIME, N_PARTICLES)?;
+        let torus = Torus::new(display, 0.7 * 0.1, 0.3 * 0.1, 20, 20)?;
+
+        const N_PARTICLES: usize = 500;
+        const PARTICLE_LIFETIME: f32 = 10.5;
+
+        let (vbuffer1, vbuffer2) = SceneParticlesInstanced::init_buffers(display, PARTICLE_LIFETIME, N_PARTICLES)?;
         // ----------------------------------------------------------------------------
 
         // Initialize Texture ---------------------------------------------------------
-        let water_tex = load_texture(display, "media/texture/bluewater.png")?;
-        let random_tex = particle::random_tex_1d(display, N_PARTICLES * 3)?;
+        let random_tex = particle::random_tex_1d(display, N_PARTICLES * 4)?;
+        // ----------------------------------------------------------------------------
+
+        // Initialize Uniforms --------------------------------------------------------
+        glium::implement_uniform_block!(LightInfo, LightPosition, Intensity);
+        let light_buffer = UniformBuffer::immutable(display, LightInfo {
+            LightPosition: [0.0_f32, 0.0, 0.0, 1.0],
+            Intensity: [1.0_f32, 1.0, 1.0], ..Default::default()
+        }).map_err(BufferCreationErrorKind::UniformBlock)?;
+
+        glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess, E);
+        let material_buffer = UniformBuffer::immutable(display, MaterialInfo {
+            Ka: [0.1, 0.1, 0.1],
+            Kd: [0.9, 0.5, 0.2],
+            Ks: [0.95, 0.95, 0.95],
+            Shininess: 100.0,
+            E: [0.0, 0.0, 0.0], ..Default::default()
+        }).map_err(BufferCreationErrorKind::UniformBlock)?;
         // ----------------------------------------------------------------------------
 
         // Initialize MVP -------------------------------------------------------------
@@ -81,10 +122,11 @@ impl Scene for SceneParticlesFeedback {
         let pass = 0;
         // ----------------------------------------------------------------------------
 
-        let scene = SceneParticlesFeedback {
+        let scene = SceneParticlesInstanced {
             programs, flat_program,
-            grid, vbuffer1, vbuffer2,
-            water_tex, random_tex,
+            grid, torus,
+            vbuffer1, vbuffer2, random_tex,
+            light_buffer, material_buffer,
             projection, angle, is_animate, time, delta_time, n_particles, pass,
         };
         Ok(scene)
@@ -105,7 +147,7 @@ impl Scene for SceneParticlesFeedback {
 
     fn render(&mut self, display: &impl Facade, frame: &mut glium::Frame) -> GLResult<()> {
 
-        frame.clear_color_srgb(0.1, 0.1, 0.1, 1.0);
+        frame.clear_color_srgb(0.5, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
 
         self.render_scene(display, frame, self.pass)?;
@@ -129,30 +171,29 @@ impl Scene for SceneParticlesFeedback {
 }
 
 
-impl SceneParticlesFeedback {
+impl SceneParticlesInstanced {
 
     fn compile_shader_program(display: &impl Facade) -> Result<[Program; 2], ProgramCreationError> {
 
-        let pass1_vertex   = include_str!("shaders/transfeedback/pass1.vert.glsl");
-        let pass1_fragment = include_str!("shaders/transfeedback/pass1.frag.glsl");
+        let pass1_vertex   = include_str!("shaders/particleinstanced/pass1.vert.glsl");
+        let pass1_fragment = include_str!("shaders/particleinstanced/pass1.frag.glsl");
 
-        let pass2_vertex   = include_str!("shaders/transfeedback/pass2.vert.glsl");
-        let pass2_fragment = include_str!("shaders/transfeedback/pass2.frag.glsl");
+        let pass2_vertex   = include_str!("shaders/particleinstanced/pass2.vert.glsl");
+        let pass2_fragment = include_str!("shaders/particleinstanced/pass2.frag.glsl");
 
         let transform_feedback_varyings = vec![
             String::from("Position"),
             String::from("Velocity"),
             String::from("Age"),
+            String::from("Rotation"),
         ];
 
         let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment)
             .with_transform_feedback_varyings(transform_feedback_varyings.clone(), glium::program::TransformFeedbackMode::Interleaved)
             .with_srgb_output(true))?;
         let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment)
-            // .with_transform_feedback_varyings(transform_feedback_varyings.clone(), glium::program::TransformFeedbackMode::Interleaved)
             .with_srgb_output(true))?;
 
-        // dbg!(pass1.get_transform_feedback_buffers());
         Ok([pass1, pass2])
     }
 
@@ -170,20 +211,19 @@ impl SceneParticlesFeedback {
 
         let rate = particle_lifetime / n_particles as f32;
 
-        glium::implement_vertex!(ParticleVertex, VertexPosition, VertexVelocity, VertexAge);
+        glium::implement_vertex!(ParticleVertex, ParticlePosition, ParticleVelocity, ParticleAge, ParticleRotation);
 
-        let temp_data: Vec<ParticleVertex> = (0..n_particles).map(|i| {
+        let initial_states: Vec<ParticleVertex> = (0..n_particles).map(|i| {
             ParticleVertex {
-                VertexAge: -rate * (n_particles - i) as f32,
+                ParticleAge: -rate * (n_particles - i) as f32,
                 ..Default::default()
             }
         }).collect();
 
-        let vbuffer1 = glium::VertexBuffer::dynamic(display, &temp_data)
+        let vbuffer1 = glium::VertexBuffer::dynamic(display, &initial_states)
             .map_err(BufferCreationErrorKind::Vertex)?;
         let vbuffer2 = glium::VertexBuffer::empty_dynamic(display, n_particles)
             .map_err(BufferCreationErrorKind::Vertex)?;
-        // dbg!(vbuffer2.get_bindings());
 
         Ok((vbuffer1, vbuffer2))
     }
@@ -191,28 +231,9 @@ impl SceneParticlesFeedback {
 
     fn render_scene(&mut self, display: &impl Facade, frame: &mut glium::Frame, current_pass: usize) -> GLResult<()> {
 
-        let view = Mat4F::look_at_rh(Vec3F::new(4.0 * self.angle.cos(), 1.5, 4.0 * self.angle.sin()), Vec3F::new(0.0, 1.5, 0.0), Vec3F::unit_y());
+        let view = Mat4F::look_at_rh(Vec3F::new(3.0 * self.angle.cos(), 1.5, 3.0 * self.angle.sin()), Vec3F::new(0.0, 1.5, 0.0), Vec3F::unit_y());
         let model = Mat4F::identity();
         let mv: Mat4F = view * model;
-
-        // Render Grid -------------------------------------------------------------
-        let draw_params = glium::draw_parameters::DrawParameters {
-            depth: glium::Depth {
-                test: glium::DepthTest::IfLess,
-                write: true,
-                ..Default::default()
-            },
-            blend: glium::Blend::alpha_blending(),
-            ..Default::default()
-        };
-
-        let uniforms = uniform! {
-            color: [0.3_f32, 0.3, 0.3, 1.0],
-            MVP: (self.projection * mv).into_col_arrays(),
-        };
-
-        self.grid.render(frame, &self.flat_program, &draw_params, &uniforms)?;
-        // -------------------------------------------------------------------------
 
         {
             // Particle Update pass -----------------------------------------------------
@@ -232,23 +253,18 @@ impl SceneParticlesFeedback {
                     write: true,
                     ..Default::default()
                 },
-                // ################################################################################
-                // ################################################################################
                 draw_primitives: false,  // Enable GL_RASTERIZER_DISCARD feature
                 transform_feedback: Some(&transform_feedback),
-                // ################################################################################
-                // ################################################################################
-                blend: glium::Blend::alpha_blending(),
                 ..Default::default()
             };
 
             let uniforms = uniform! {
                 Time  : self.time,
                 DeltaT: self.delta_time,
-                ParticleLifeTime: 6.0_f32,
-                Accel:   [0.0_f32, -0.5, 0.0],
-                Emitter: [1.0_f32,  0.0, 0.0],
-                EmitterBasis: particle::make_arbitrary_basis(Vec3F::new(-1.0, 2.0, 0.0)).into_col_arrays(),
+                ParticleLifeTime: 10.5_f32,
+                Accel:   [0.0_f32, -0.4, 0.0],
+                Emitter: [0.0_f32,  0.0, 0.0],
+                EmitterBasis: particle::make_arbitrary_basis(Vec3F::new(0.0, 1.0, 0.0)).into_col_arrays(),
                 RandomTex: self.random_tex.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
@@ -257,31 +273,26 @@ impl SceneParticlesFeedback {
             let draw_points = glium::index::NoIndices(glium::index::PrimitiveType::Points);
 
             frame.draw(input_buffer, &draw_points, &self.programs[0], &uniforms, &draw_params)
-                .map_err(GLErrorKind::DrawError)?;;
+                .map_err(GLErrorKind::DrawError)?;
             // ----------------------------------------------------------------------------
         }
 
+        let draw_params = glium::draw_parameters::DrawParameters {
+            depth: glium::Depth {
+                test: glium::DepthTest::IfLess,
+                write: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
         {
             // Particle Render pass --------------------------------------------------------
-            let draw_params = glium::draw_parameters::DrawParameters {
-                depth: glium::Depth {
-                    test: glium::DepthTest::IfLess,
-                    write: false,
-                    ..Default::default()
-                },
-                blend: glium::Blend::alpha_blending(),
-                ..Default::default()
-            };
-
             let uniforms = uniform! {
-                ParticleLifeTime: 6.0_f32,
-                ParticleSize: 0.05_f32,
+                LightInfo: &self.light_buffer,
+                MaterialInfo: &self.material_buffer,
                 ModelViewMatrix: mv.into_col_arrays(),
                 ProjectionMatrix: self.projection.into_col_arrays(),
-                ParticleTex: self.water_tex.sampled()
-                    .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
-                    .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
             };
 
             let per_instance = if current_pass == 0 {
@@ -290,11 +301,21 @@ impl SceneParticlesFeedback {
                 self.vbuffer1.per_instance()
             }.map_err(|_| GLError::device("Invalid draw instance usage"))?;
 
-            let draw_quad = glium::vertex::EmptyVertexAttributes { len: 6 };
-            let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+            // let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-            frame.draw((draw_quad, per_instance), &no_indices, &self.programs[1], &uniforms, &draw_params)
+            frame.draw((&self.torus.vbuffer, per_instance), &self.torus.ibuffer, &self.programs[1], &uniforms, &draw_params)
                 .map_err(GLErrorKind::DrawError)?;
+            // -------------------------------------------------------------------------
+        }
+
+        {
+            // Render Grid -------------------------------------------------------------
+            let uniforms = uniform! {
+                color: [0.2_f32, 0.2, 0.2, 1.0],
+                MVP: (self.projection * mv).into_col_arrays(),
+            };
+
+            self.grid.render(frame, &self.flat_program, &draw_params, &uniforms)?;
             // -------------------------------------------------------------------------
         }
 

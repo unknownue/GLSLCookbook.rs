@@ -4,10 +4,12 @@ extern crate glsl_cookbook_rs as cookbook;
 mod scenewave;
 mod sceneparticles;
 mod sceneparticlesfeedback;
+mod sceneparticlesinstanced;
 
 use scenewave::SceneWave;
 use sceneparticles::SceneParticles;
 use sceneparticlesfeedback::SceneParticlesFeedback;
+use sceneparticlesinstanced::SceneParticlesInstanced;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -54,7 +56,7 @@ fn main() -> GLResult<()> {
         | "fire"                => unimplemented!(),
         | "particles"           => run::<SceneParticles>(title),
         | "particles-feedback"  => run::<SceneParticlesFeedback>(title),
-        | "particles-instanced" => unimplemented!(),
+        | "particles-instanced" => run::<SceneParticlesInstanced>(title),
         | "smoke"               => unimplemented!(),
         | "wave"                => run::<SceneWave>(title),
         | _ => unreachable!(),
