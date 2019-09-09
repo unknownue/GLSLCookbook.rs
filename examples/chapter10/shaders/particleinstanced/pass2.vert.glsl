@@ -3,7 +3,7 @@
 
 layout (location = 0) in vec3 VertexPosition;
 layout (location = 1) in vec3 VertexNormal;
-layout (location = 2) in vec3 VertexTexCoord;
+layout (location = 2) in vec2 VertexTexCoord;
 
 layout (location = 3) in vec3 ParticlePosition;
 layout (location = 4) in vec3 ParticleVelocity;
@@ -33,8 +33,8 @@ void main() {
     );
 
     mat4 m = ModelViewMatrix * rotationAndTranslation;
-    fPosition = (m * vec4(VertexPosition, 1)).xyz;
-    fNormal   = (m * vec4(VertexNormal,   0)).xyz;
+    fPosition = (m * vec4(VertexPosition, 1.0)).xyz;
+    fNormal   = (m * vec4(VertexNormal,   0.0)).xyz;
 
     // Draw at the current position
     gl_Position = ProjectionMatrix * vec4(fPosition, 1.0);

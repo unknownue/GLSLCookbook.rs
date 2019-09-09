@@ -19,7 +19,7 @@ uniform float Time;               // Simulation time
 uniform float DeltaT;             // Elapsed time between frames
 uniform float ParticleLifetime;   // Particle lifespan
 uniform vec3 Accel;               // Particle acceleration (gravity)
-uniform vec3 Emitter = vec3(0.0); // World position of the emitter.
+uniform vec3 Emitter;             // World position of the emitter.
 uniform mat3 EmitterBasis;        // Rotation that rotates y axis to the direction of emitter
 
 uniform sampler1D RandomTex;

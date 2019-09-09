@@ -16,7 +16,6 @@ uniform MaterialInfo {
     vec3 Kd;            // Diffuse reflectivity
     vec3 Ks;            // Specular reflectivity
     float Shininess;    // Specular shininess factor
-    vec3 E;             // Emission
 };
 
 
@@ -41,5 +40,5 @@ vec3 phongModel(vec3 pos, vec3 norm) {
 
 void main() {
 
-    FragColor = vec4(E + phongModel(fPosition, fNormal), 1.0);
+    FragColor = vec4(phongModel(fPosition, fNormal), 1.0);
 }

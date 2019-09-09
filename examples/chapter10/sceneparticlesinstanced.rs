@@ -47,7 +47,7 @@ struct ParticleVertex {
     ParticlePosition: [f32; 3],   // position
     ParticleVelocity: [f32; 3],   // velocity
     ParticleAge: f32,             // age
-    ParticleRotation: [f32; 2], // rotational velocity and angle
+    ParticleRotation: [f32; 2],   // rotational velocity and angle
 }
 
 #[allow(non_snake_case)]
@@ -66,7 +66,6 @@ struct MaterialInfo {
     Kd: [f32; 3], _padding2: f32,
     Ks: [f32; 3],
     Shininess: f32,
-    E: [f32; 3], _padding3: f32,
 }
 
 
@@ -102,13 +101,12 @@ impl Scene for SceneParticlesInstanced {
             Intensity: [1.0_f32, 1.0, 1.0], ..Default::default()
         }).map_err(BufferCreationErrorKind::UniformBlock)?;
 
-        glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess, E);
+        glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess);
         let material_buffer = UniformBuffer::immutable(display, MaterialInfo {
             Ka: [0.1, 0.1, 0.1],
             Kd: [0.9, 0.5, 0.2],
             Ks: [0.95, 0.95, 0.95],
-            Shininess: 100.0,
-            E: [0.0, 0.0, 0.0], ..Default::default()
+            Shininess: 100.0, ..Default::default()
         }).map_err(BufferCreationErrorKind::UniformBlock)?;
         // ----------------------------------------------------------------------------
 
@@ -261,7 +259,7 @@ impl SceneParticlesInstanced {
             let uniforms = uniform! {
                 Time  : self.time,
                 DeltaT: self.delta_time,
-                ParticleLifeTime: 10.5_f32,
+                ParticleLifetime: 10.5_f32,
                 Accel:   [0.0_f32, -0.4, 0.0],
                 Emitter: [0.0_f32,  0.0, 0.0],
                 EmitterBasis: particle::make_arbitrary_basis(Vec3F::new(0.0, 1.0, 0.0)).into_col_arrays(),
@@ -283,6 +281,7 @@ impl SceneParticlesInstanced {
                 write: true,
                 ..Default::default()
             },
+            draw_primitives: true,
             ..Default::default()
         };
 
