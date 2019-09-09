@@ -1,11 +1,8 @@
 
 use glium::backend::Facade;
-use glium::draw_parameters::DrawParameters;
-use glium::{Surface, Program};
-use glium::uniforms::Uniforms;
 
-use crate::drawable::Drawable;
-use crate::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
+use crate::drawable::TriangleMesh;
+use crate::error::{GLResult, BufferCreationErrorKind};
 use crate::{Vec3F, Mat4F};
 
 
@@ -136,12 +133,11 @@ impl Frustum {
     }
 }
 
-impl Drawable for Frustum {
+impl TriangleMesh for Frustum {
+    type VertexType = FrustumVertex;
+    type IndexType  = u32;
 
-    fn render(&self, surface: &mut impl Surface, program: &Program, params: &DrawParameters, uniform: &impl Uniforms) -> GLResult<()> {
-
-        surface.draw(&self.vbuffer, &self.ibuffer, program, uniform, params)
-            .map_err(GLErrorKind::DrawError)?;
-        Ok(())
+    fn buffers(&self) -> (&glium::VertexBuffer<FrustumVertex>, &glium::IndexBuffer<u32>) {
+        (&self.vbuffer, &self.ibuffer)
     }
 }

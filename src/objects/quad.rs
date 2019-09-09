@@ -57,4 +57,11 @@ impl Drawable for Quad {
             .map_err(GLErrorKind::DrawError)?;
         Ok(())
     }
+
+    fn render_instanced(&self, surface: &mut impl Surface, per_instanced: glium::vertex::PerInstance, program: &Program, params: &DrawParameters, uniform: &impl Uniforms) -> GLResult<()> {
+        let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+        surface.draw((&self.vbuffer, per_instanced), &no_indices, program, uniform, params)
+            .map_err(GLErrorKind::DrawError)?;
+        Ok(())
+    }
 }

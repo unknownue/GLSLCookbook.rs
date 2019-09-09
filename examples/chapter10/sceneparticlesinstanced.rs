@@ -301,10 +301,7 @@ impl SceneParticlesInstanced {
                 self.vbuffer1.per_instance()
             }.map_err(|_| GLError::device("Invalid draw instance usage"))?;
 
-            // let no_indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
-
-            frame.draw((&self.torus.vbuffer, per_instance), &self.torus.ibuffer, &self.programs[1], &uniforms, &draw_params)
-                .map_err(GLErrorKind::DrawError)?;
+            self.torus.render_instanced(frame, per_instance, &self.programs[1], &draw_params, &uniforms)?;
             // -------------------------------------------------------------------------
         }
 

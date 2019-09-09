@@ -144,4 +144,12 @@ impl Drawable for TeapotPatch {
             .map_err(GLErrorKind::DrawError)?;
         Ok(())
     }
+
+    fn render_instanced(&self, surface: &mut impl Surface, per_instanced: glium::vertex::PerInstance, program: &Program, params: &DrawParameters, uniform: &impl Uniforms) -> GLResult<()> {
+
+        let draw_patches = glium::index::NoIndices(glium::index::PrimitiveType::Patches { vertices_per_patch: 16 });
+        surface.draw((&self.vbuffer, per_instanced), draw_patches, program, uniform, params)
+            .map_err(GLErrorKind::DrawError)?;
+        Ok(())
+    }
 }

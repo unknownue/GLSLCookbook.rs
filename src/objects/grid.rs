@@ -72,4 +72,12 @@ impl Drawable for Grid {
             .map_err(GLErrorKind::DrawError)?;
         Ok(())
     }
+
+    fn render_instanced(&self, surface: &mut impl Surface, per_instanced: glium::vertex::PerInstance, program: &Program, params: &DrawParameters, uniform: &impl Uniforms) -> GLResult<()> {
+
+        let draw_lines = glium::index::NoIndices(glium::index::PrimitiveType::LinesList);
+        surface.draw((&self.vbuffer, per_instanced), &draw_lines, program, uniform, params)
+            .map_err(GLErrorKind::DrawError)?;
+        Ok(())
+    }
 }
