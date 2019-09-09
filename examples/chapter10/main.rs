@@ -6,12 +6,14 @@ mod sceneparticles;
 mod sceneparticlesfeedback;
 mod sceneparticlesinstanced;
 mod scenefire;
+mod scenesmoke;
 
 use scenewave::SceneWave;
 use sceneparticles::SceneParticles;
 use sceneparticlesfeedback::SceneParticlesFeedback;
 use sceneparticlesinstanced::SceneParticlesInstanced;
 use scenefire::SceneFire;
+use scenesmoke::SceneSmoke;
 
 use cookbook::scenerunner::SceneRunner;
 use cookbook::scene::Scene;
@@ -59,7 +61,7 @@ fn main() -> GLResult<()> {
         | "particles"           => run::<SceneParticles>(title),
         | "particles-feedback"  => run::<SceneParticlesFeedback>(title),
         | "particles-instanced" => run::<SceneParticlesInstanced>(title),
-        | "smoke"               => unimplemented!(),
+        | "smoke"               => run::<SceneSmoke>(title),
         | "wave"                => run::<SceneWave>(title),
         | _ => unreachable!(),
     }
