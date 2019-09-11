@@ -1,7 +1,7 @@
 
 [package]
 name = "glsl-cookbook-rs"
-version = "0.9.5"
+version = "0.10.0"
 authors = ["unknownue <usami-ssc@protonmail.com>"]
 edition = "2018"
 description = "A Rust implementation of *OpenGL 4 Shading Language Cookbook 3rd*"
@@ -13,8 +13,8 @@ rand = "0.7.0"
 rental = "0.5.4"
 itertools = "0.8.0"
 
-# glium  = "0.24.0"
-glium = { version = "0.24.0", path = "../../Rust/glium-0.24.0/"}
+glium  = "0.24.0"
+# glium = { version = "0.24.0", path = "../../Rust/glium-0.24.0/"}
 vek    = "0.9.7"
 png    = "0.15.0"
 hdrldr = "0.1.2"
