@@ -1,8 +1,8 @@
 
 use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
-use cookbook::objects::{Teapot, Plane, Torus, Frustum};
-use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
+use cookbook::objects::{Teapot, Plane, Torus, Frustum, Quad};
+use cookbook::{Mat4F, Mat3F, Vec3F};
 use cookbook::framebuffer::{ShadowDepthAttachment, GLFrameBuffer};
 use cookbook::Drawable;
 
@@ -17,13 +17,14 @@ use glium::{Surface, uniform, implement_uniform_block};
 
 pub struct SceneShadowMap {
 
-    programs: [glium::Program; 2],
+    programs: [glium::Program; 3],
     solid_program: glium::Program,
 
     teapot  : Teapot,
     plane   : Plane,
     torus   : Torus,
     frustum : Frustum,
+    quad: Quad,
 
     shadow_fbo: GLFrameBuffer<ShadowDepthAttachment>,
 
@@ -44,8 +45,8 @@ pub struct SceneShadowMap {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 struct LightInfo {
-    LightPosition: [f32; 4],
-    Intensity: [f32; 3], _padding: f32,
+    LightPosition: [f32; 3], _padding1: f32,
+    Intensity: [f32; 3], _padding2: f32,
 }
 
 #[allow(non_snake_case)]
@@ -76,6 +77,7 @@ impl Scene for SceneShadowMap {
         let plane = Plane::new(display, 40.0, 40.0, 2, 2, 1.0, 1.0)?;
         let torus = Torus::new(display, 0.7 * 2.0, 0.3 * 2.0, 50, 50)?;
         let mut frustum = Frustum::new(display)?;
+        let quad = Quad::new(display)?;
         // ----------------------------------------------------------------------------
 
         // Initialize FrameBuffer Objects ---------------------------------------------
@@ -84,10 +86,10 @@ impl Scene for SceneShadowMap {
 
         // Initialize MVP -------------------------------------------------------------
         let shadow_bias = Mat4F::new(
-            0.5, 0.0, 0.0, 0.0,
-            0.0, 0.5, 0.0, 0.0,
-            0.0, 0.0, 0.5, 0.0,
-            0.5, 0.5, 0.5, 1.0,
+            0.5, 0.0, 0.0, 0.5,
+            0.0, 0.5, 0.0, 0.5,
+            0.0, 0.0, 0.5, 0.5,
+            0.0, 0.0, 0.0, 1.0,
         );
         let c: f32 = 1.65;
         let light_pos = Vec3F::new(0.0, c * 5.25, c * 7.5); // World coords
@@ -116,7 +118,7 @@ impl Scene for SceneShadowMap {
 
         let scene = SceneShadowMap {
             programs, solid_program, shadow_fbo,
-            teapot, torus, plane, frustum,
+            teapot, torus, plane, frustum, quad,
             material_buffer, light_buffer,
             angle, is_animate, aspect_ratio,
             light_pv, view, projection,
@@ -139,6 +141,8 @@ impl Scene for SceneShadowMap {
         self.pass1()?;
         // Pass 2 (render)
         self.pass2(frame)?;
+        // Pass 3 (shadowmap)
+        self.pass3(frame)?;
         // Draw the light frustum
         self.draw_light_frustum(frame)
     }
@@ -161,7 +165,7 @@ impl Scene for SceneShadowMap {
 
 impl SceneShadowMap {
 
-    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 2], ProgramCreationError> {
+    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 3], ProgramCreationError> {
 
         let pass1_vertex   = include_str!("shaders/shadowmap/pass1.vert.glsl");
         let pass1_fragment = include_str!("shaders/shadowmap/pass1.frag.glsl");
@@ -169,9 +173,13 @@ impl SceneShadowMap {
         let pass2_vertex   = include_str!("shaders/shadowmap/pass2.vert.glsl");
         let pass2_fragment = include_str!("shaders/shadowmap/pass2.frag.glsl");
 
+        let pass3_vertex   = include_str!("shaders/shadowmap/pass3.vert.glsl");
+        let pass3_fragment = include_str!("shaders/shadowmap/pass3.frag.glsl");
+
         let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(false))?;
         let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
-        Ok([pass1, pass2])
+        let pass3 = glium::Program::new(display, GLSourceCode::new(pass3_vertex, pass3_fragment).with_srgb_output(true))?;
+        Ok([pass1, pass2, pass3])
     }
 
     fn compile_solid_shader_program(display: &impl Facade) -> Result<Program, ProgramCreationError> {
@@ -215,10 +223,8 @@ impl SceneShadowMap {
         self.view = Mat4F::look_at_rh(camera_pos, Vec3F::zero(), Vec3F::unit_y());
         self.projection = Mat4F::perspective_rh_zo(50.0_f32.to_radians(), self.aspect_ratio, 0.1, 100.0);
 
-        let frustum_origin = self.frustum.get_origin();
-        let light_pos = self.view * Vec4F::new(frustum_origin.x, frustum_origin.y, frustum_origin.z, 1.0);
         self.light_buffer.write(&LightInfo {
-            LightPosition: light_pos.into_array(),
+            LightPosition: self.frustum.get_origin().into_array(),
             Intensity: [0.85, 0.85, 0.85], ..Default::default()
         });
 
@@ -236,6 +242,27 @@ impl SceneShadowMap {
         };
 
         self.draw_scene_pass2(frame, &self.programs[1], &draw_params)
+    }
+
+    fn pass3(&self, frame: &mut glium::Frame) -> GLResult<()> {
+
+        let draw_params = glium::draw_parameters::DrawParameters {
+            viewport: Some(glium::Rect {
+                left: 0, bottom: 0, width: 512, height: 512,
+            }),
+            ..Default::default()
+        };
+
+        self.shadow_fbo.rent(|(_, shadowmap)| -> GLResult<()> {
+
+            let uniforms = uniform! {
+                ShadowMap: shadowmap.depth.sampled()
+                    .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+            };
+
+            self.quad.render(frame, &self.programs[2], &draw_params, &uniforms)
+        })
     }
 
     fn draw_scene_pass1(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
@@ -271,35 +298,25 @@ impl SceneShadowMap {
             torus.render(framebuffer, program, draw_params, &uniforms)?;
             // ------------------------------------------------------------------------- 
 
-            // Render Plane 1 ------------------------------------------------------------
-            let uniforms = uniform! {
-                MVP: (projection * view * Mat4F::identity()).into_col_arrays(),
-            };
+            // Render three Plane -------------------------------------------------------
+            let models: [Mat4F; 3] = [
+                Mat4F::identity(),
+                Mat4F::rotation_z(-90.0_f32.to_radians())
+                    .translated_3d(Vec3F::new(-5.0, 5.0, 0.0)),
+                Mat4F::rotation_x(90.0_f32.to_radians())
+                    .translated_3d(Vec3F::new(0.0, 5.0, -5.0)),
+            ];
 
-            plane.render(framebuffer, program, draw_params, &uniforms)?;
+            for &model in models.into_iter() {
+                let uniforms = uniform! {
+                    MVP: (projection * view * model).into_col_arrays(),
+                };
+
+                plane.render(framebuffer, program, draw_params, &uniforms)?;
+            }
             // ------------------------------------------------------------------------- 
-            
-            // Render Plane 2 ------------------------------------------------------------
-            let model = Mat4F::rotation_z(-90.0_f32.to_radians())
-                .translated_3d(Vec3F::new(-5.0, 5.0, 0.0));
 
-            let uniforms = uniform! {
-                MVP: (projection * view * model).into_col_arrays(),
-            };
-
-            plane.render(framebuffer, program, draw_params, &uniforms)?;
-            // ------------------------------------------------------------------------- 
-
-            // Render Plane 3 ------------------------------------------------------------
-            let model = Mat4F::rotation_x(90.0_f32.to_radians())
-                .translated_3d(Vec3F::new(0.0, 5.0, -5.0));
-
-            let uniforms = uniform! {
-                MVP: (projection * view * model).into_col_arrays(),
-            };
-
-            plane.render(framebuffer, program, draw_params, &uniforms)
-            // ------------------------------------------------------------------------- 
+            Ok(())
         })
     }
 
@@ -322,6 +339,7 @@ impl SceneShadowMap {
                 MaterialInfo: &self.material_buffer,
                 LightInfo: &self.light_buffer,
                 ShadowMap: shadowmap.depth.sampled()
+                    .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
                     .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
@@ -343,6 +361,7 @@ impl SceneShadowMap {
                 MaterialInfo: &self.material_buffer,
                 LightInfo: &self.light_buffer,
                 ShadowMap: shadowmap.depth.sampled()
+                    .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
                     .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
@@ -355,8 +374,7 @@ impl SceneShadowMap {
             self.torus.render(framebuffer, program, draw_params, &uniforms)?;
             // ------------------------------------------------------------------------- 
 
-
-            // Render Plane 1 ------------------------------------------------------------
+            // Render three Plane ----------------------------------------------------
             self.material_buffer.write(&MaterialInfo {
                 Ka: [0.05, 0.05, 0.05],
                 Kd: [0.25, 0.25, 0.25],
@@ -364,66 +382,36 @@ impl SceneShadowMap {
                 Shininess: 1.0, ..Default::default()
             });
 
-            let model = Mat4F::identity();
-            let mv: Mat4F = self.view * model;
+            let models: [Mat4F; 3] = [
+                Mat4F::identity(),
+                Mat4F::rotation_z(-90.0_f32.to_radians())
+                    .translated_3d(Vec3F::new(-5.0, 5.0, 0.0)),
+                Mat4F::rotation_x(90.0_f32.to_radians())
+                    .translated_3d(Vec3F::new(0.0, 5.0, -5.0)),
+            ];
 
-            let uniforms = uniform! {
-                MaterialInfo: &self.material_buffer,
-                LightInfo: &self.light_buffer,
-                ShadowMap: shadowmap.depth.sampled()
-                    .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
-                    .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
-                ModelViewMatrix: mv.clone().into_col_arrays(),
-                NormalMatrix: Mat3F::from(mv).into_col_arrays(),
-                MVP: (self.projection * mv).into_col_arrays(),
-                ShadowMatrix: (self.light_pv * model).into_col_arrays(),
-            };
+            for &model in models.into_iter() {
+                let mv: Mat4F = self.view * model;
 
-            self.plane.render(framebuffer, program, draw_params, &uniforms)?;
-            // ------------------------------------------------------------------------- 
-            
-            // Render Plane 2 ------------------------------------------------------------
-            let model = Mat4F::rotation_z(-90.0_f32.to_radians())
-                .translated_3d(Vec3F::new(-5.0, 5.0, 0.0));
-            let mv: Mat4F = self.view * model;
+                let uniforms = uniform! {
+                    MaterialInfo: &self.material_buffer,
+                    LightInfo: &self.light_buffer,
+                    ShadowMap: shadowmap.depth.sampled()
+                        .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
+                        .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+                        .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+                        .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
+                    ModelViewMatrix: mv.clone().into_col_arrays(),
+                    NormalMatrix: Mat3F::from(mv).into_col_arrays(),
+                    MVP: (self.projection * mv).into_col_arrays(),
+                    ShadowMatrix: (self.light_pv * model).into_col_arrays(),
+                };
 
-            let uniforms = uniform! {
-                MaterialInfo: &self.material_buffer,
-                LightInfo: &self.light_buffer,
-                ShadowMap: shadowmap.depth.sampled()
-                    .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
-                    .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
-                ModelViewMatrix: mv.clone().into_col_arrays(),
-                NormalMatrix: Mat3F::from(mv).into_col_arrays(),
-                MVP: (self.projection * mv).into_col_arrays(),
-                ShadowMatrix: (self.light_pv * model).into_col_arrays(),
-            };
-
-            self.plane.render(framebuffer, program, draw_params, &uniforms)?;
+                self.plane.render(framebuffer, program, draw_params, &uniforms)?;
+            }
             // ------------------------------------------------------------------------- 
 
-            // Render Plane 3 ------------------------------------------------------------
-            let model = Mat4F::rotation_x(90.0_f32.to_radians())
-                .translated_3d(Vec3F::new(0.0, 5.0, -5.0));
-            let mv: Mat4F = self.view * model;
-
-            let uniforms = uniform! {
-                MaterialInfo: &self.material_buffer,
-                LightInfo: &self.light_buffer,
-                ShadowMap: shadowmap.depth.sampled()
-                    .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
-                    .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
-                ModelViewMatrix: mv.clone().into_col_arrays(),
-                NormalMatrix: Mat3F::from(mv).into_col_arrays(),
-                MVP: (self.projection * mv).into_col_arrays(),
-                ShadowMatrix: (self.light_pv * model).into_col_arrays(),
-            };
-
-            self.plane.render(framebuffer, program, draw_params, &uniforms)
-            // ------------------------------------------------------------------------- 
+            Ok(())
         })
     }
 
