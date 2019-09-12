@@ -123,7 +123,7 @@ impl ObjMeshData {
                         normals.push(nor);
                     },
                     | "f" => {
-                        let triangle_indices = ObjMeshData::read_face(&mut line_splits, &mut vertices, &texcoords, &normals)?;
+                        let triangle_indices = ObjMeshData::read_face(&mut line_splits, &mut vertices, &texcoords, &normals);
                         indices.extend(&triangle_indices);
                     },
                     | _ => {}
@@ -155,15 +155,16 @@ impl ObjMeshData {
         Ok(mesh)
     }
 
-    fn read_face<'a>(line_splits: &mut impl Iterator<Item=&'a str>, vertices: &mut Vec<ObjVertex>, texcoords: &[[f32; 2]], normals: &[[f32; 3]]) -> GLResult<[u32; 3]> {
+    fn read_face<'a>(line_splits: &mut impl Iterator<Item=&'a str>, vertices: &mut Vec<ObjVertex>, texcoords: &[[f32; 2]], normals: &[[f32; 3]]) -> Vec<u32> {
 
-        let mut triangle_indices: [u32; 3] = Default::default();
+        let mut vertex_indices: Vec<u32> = vec![];
+        let mut indies_count = 0;
 
         match (texcoords.is_empty(), normals.is_empty()) {
             | (false, false) => {
-                for i in 0..3 {
-                    // TODO: Handle unwrap()
-                    let mut indices_split = line_splits.next().unwrap().split('/');
+                while let Some(indices_split) = line_splits.next() {
+                    let mut indices_split = indices_split.split('/');
+
                     let pos_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
                     let tex_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
                     let nor_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
@@ -175,13 +176,15 @@ impl ObjMeshData {
                     let dest_vertex = &mut vertices[pos_index];
                     dest_vertex.VertexNormal   =   normals[nor_index];
                     dest_vertex.VertexTexCoord = texcoords[tex_index];
-                    triangle_indices[i] = pos_index as u32;
+                    vertex_indices.push(pos_index as u32);
+
+                    indies_count += 1;
                 }
             },
             | (true, false) => {
-                for i in 0..3 {
-                    // TODO: Handle unwrap()
-                    let mut indices_split = line_splits.next().unwrap().split('/');
+                while let Some(indices_split) = line_splits.next() {
+                    let mut indices_split = indices_split.split('/');
+
                     let pos_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
                     let nor_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
 
@@ -190,13 +193,15 @@ impl ObjMeshData {
 
                     let dest_vertex = &mut vertices[pos_index];
                     dest_vertex.VertexNormal = normals[nor_index];
-                    triangle_indices[i] = pos_index as u32;
+                    vertex_indices.push(pos_index as u32);
+
+                    indies_count += 1;
                 }
             },
             | (false, true) => {
-                for i in 0..3 {
-                    // TODO: Handle unwrap()
-                    let mut indices_split = line_splits.next().unwrap().split('/');
+                while let Some(indices_split) = line_splits.next() {
+                    let mut indices_split = indices_split.split('/');
+
                     let pos_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
                     let tex_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
 
@@ -205,23 +210,35 @@ impl ObjMeshData {
 
                     let dest_vertex = &mut vertices[pos_index];
                     dest_vertex.VertexTexCoord = texcoords[tex_index];
-                    triangle_indices[i] = pos_index as u32;
+                    vertex_indices.push(pos_index as u32);
+
+                    indies_count += 1;
                 }
             },
             | (true, true) => {
-                for i in 0..3 {
-                    // TODO: Handle unwrap()
-                    let mut indices_split = line_splits.next().unwrap().split('/');
+                while let Some(indices_split) = line_splits.next() {
+                    let mut indices_split = indices_split.split('/');
+
                     let pos_index = indices_split.next().and_then(|i| i.parse::<i32>().ok()).unwrap();
 
                     let pos_index = if pos_index.is_negative() { (pos_index + vertices.len() as i32) } else { pos_index - 1 } as usize;
 
-                    triangle_indices[i] = pos_index as u32;
+                    vertex_indices.push(pos_index as u32);
+
+                    indies_count += 1;
                 }
             },
         }
 
-        Ok(triangle_indices)
+        let triangle_count = indies_count - 2;
+        let mut triangle_indices = Vec::with_capacity(3 * triangle_count);
+        for i in 2..indies_count {
+            triangle_indices.push(vertex_indices[0]);
+            triangle_indices.push(vertex_indices[i]);
+            triangle_indices.push(vertex_indices[i - 1]);
+        }
+
+        triangle_indices
     }
 
     fn generate_normals(vertices: &mut Vec<ObjVertex>, indices: &[u32]) {
