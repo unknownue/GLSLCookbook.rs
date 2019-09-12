@@ -11,31 +11,27 @@ use crate::timer::Timer;
 use std::collections::HashMap;
 
 
-pub struct SceneRunner {
+pub struct SceneRunner;
 
-    event_loop: EventLoop<()>,
+#[derive(Debug, Clone)]
+pub struct SceneParams {
 
     title: String,
-    initial_width : u32,
-    initial_height: u32,
+    width: u32,
+    height: u32,
     samples: u16,
-
+    
     is_debug: bool, // Set true to enable debug messages
 }
 
-impl SceneRunner {
+impl From<(String, u32, u32, u16, bool)> for SceneParams {
 
-    pub fn new(title: impl Into<String>, width: u32, height: u32, is_debug: bool, samples: u16) -> GLResult<SceneRunner> {
-
-        let event_loop = EventLoop::new();
-
-        let title = title.into();
-        let initial_width  = width;
-        let initial_height = height;
-
-        let runner = SceneRunner { event_loop, title, initial_width, initial_height, samples, is_debug };
-        Ok(runner)
+    fn from(v: (String, u32, u32, u16, bool)) -> SceneParams {
+        SceneParams { title: v.0, width: v.1, height: v.2, samples: v.3, is_debug: v.4 }
     }
+}
+
+impl SceneRunner {
 
     #[cfg(not(target_os = "macos"))]
     fn with_context_gl_request<T>(builder: glutin::ContextBuilder<T>) -> glutin::ContextBuilder<T>
@@ -51,12 +47,15 @@ impl SceneRunner {
         builder.with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (4, 1)))
     }
 
-    pub fn run<S: 'static + Scene>(self) -> GLResult<()> {
+    pub fn run<S: 'static + Scene>(params: SceneParams) -> GLResult<()> {
 
-        let display = self.build_display()?;
+        let params = params.into();
+
+        let event_loop = EventLoop::new();
+        let display = SceneRunner::build_display(&params, &event_loop)?;
         let mut scene = S::new(&display)?;
 
-        if self.is_debug {
+        if params.is_debug {
             // Ignore debug marker error if backend is not support.
             display.insert_debug_marker("Start debugging")
                 .or_else(|_| { eprintln!("Current backend does not support Debug Marker"); Err(()) }).ok();
@@ -65,22 +64,22 @@ impl SceneRunner {
         SceneRunner::resize_window(&display, &mut scene)?;
 
         // Enter the main loop
-        SceneRunner::main_loop(self, display, scene)
+        SceneRunner::main_loop(event_loop, display, scene, params)
     }
 
-    fn build_display(&self) -> GLResult<glium::Display> {
+    fn build_display(params: &SceneParams, event_loop: &EventLoop<()>) -> GLResult<glium::Display> {
 
         let wb = WindowBuilder::new() // Window Builder
-            .with_title(self.title.clone())
-            .with_inner_size((self.initial_width, self.initial_height).into())
+            .with_title(params.title.clone())
+            .with_inner_size((params.width, params.height).into())
             .with_resizable(true);
         let cb = glutin::ContextBuilder::new() // Context Builder
             .with_gl_profile(glutin::GlProfile::Core)
-            .with_multisampling(self.samples);
+            .with_multisampling(params.samples);
 
-        let display: glium::Display = if self.is_debug {
+        let display: glium::Display = if params.is_debug {
             let wc = SceneRunner::with_context_gl_request(cb) // Windows Context
-                .build_windowed(wb, &self.event_loop)
+                .build_windowed(wb, event_loop)
                 .map_err(|_| GLError::window("Unable to create Windows context."))?;
 
             // Initializtion, set up debug callback
@@ -90,7 +89,7 @@ impl SceneRunner {
             }).map_err(|_| GLError::device("Unable to create OpenGL context."))?
         } else {
             let cb = SceneRunner::with_context_gl_request(cb);
-            glium::Display::new(wb, cb, &self.event_loop)
+            glium::Display::new(wb, cb, event_loop)
                 .map_err(|_| GLError::device("Unable to create OpenGL context."))?
         };
 
@@ -100,15 +99,13 @@ impl SceneRunner {
         Ok(display)
     }
 
-    fn main_loop<S: 'static + Scene>(runner: SceneRunner, display: glium::Display, mut scene: S) -> GLResult<()> {
+    fn main_loop<S: 'static + Scene>(event_loop: EventLoop<()>, display: glium::Display, mut scene: S, params: SceneParams) -> GLResult<()> {
 
         use glium::glutin::event_loop::ControlFlow;
         use glium::glutin::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent };
 
         // display manage the surface window.
         let mut timer = Timer::new();
-        let is_debug = runner.is_debug;
-        let event_loop = runner.event_loop;
 
         event_loop.run(move |event, _, control_flow| {
 
@@ -128,7 +125,7 @@ impl SceneRunner {
                 | Event::WindowEvent { event, .. } => {
                     match event {
                         | WindowEvent::CloseRequested => {
-                            if is_debug { display.insert_debug_marker("End debug").ok(); }
+                            if params.is_debug { display.insert_debug_marker("End debug").ok(); }
                             *control_flow = ControlFlow::Exit
                         },
                         | WindowEvent::KeyboardInput { input, .. } => {
@@ -139,7 +136,7 @@ impl SceneRunner {
                                             scene.toggle_animation();
                                         },
                                         | (Some(VirtualKeyCode::Escape), ElementState::Released) => {
-                                            if is_debug { display.insert_debug_marker("End debug").ok(); }
+                                            if params.is_debug { display.insert_debug_marker("End debug").ok(); }
                                             *control_flow = ControlFlow::Exit
                                         },
                                         | _ => {},

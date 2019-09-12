@@ -47,7 +47,7 @@ lazy_static! {
 
 fn run<S: 'static + Scene>(recipe: String) -> GLResult<()> {
     let title: String = String::from(TITLE_PREFIX) + &recipe;
-    SceneRunner::new(title, WINDOW_WIDTH, WINDOW_HEIGHT, IS_ENABLE_DEBUG, MULTISAMPLING)?.run::<S>()
+    SceneRunner::run::<S>((title, WINDOW_WIDTH, WINDOW_HEIGHT, MULTISAMPLING, IS_ENABLE_DEBUG).into())
 }
 
 fn main() -> GLResult<()> {
