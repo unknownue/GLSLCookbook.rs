@@ -23,7 +23,8 @@ pub struct SceneProjTex {
     plane: Plane,
     flower_tex: Texture2d,
 
-    material_buffer: UniformBuffer<MaterialInfo>,
+    teapot_material: UniformBuffer<MaterialInfo>,
+    plane_material : UniformBuffer<MaterialInfo>,
     light_buffer   : UniformBuffer<LightInfo>,
 
     project_matrix: Mat4F,
@@ -98,14 +99,24 @@ impl Scene for SceneProjTex {
         }).map_err(BufferCreationErrorKind::UniformBlock)?;
 
         glium::implement_uniform_block!(MaterialInfo, Ka, Kd, Ks, Shininess);
-        let material_buffer = UniformBuffer::empty_immutable(display)
-            .map_err(BufferCreationErrorKind::UniformBlock)?;
+        let teapot_material = UniformBuffer::immutable(display, MaterialInfo {
+            Ka: [0.1, 0.1, 0.1],
+            Kd: [0.5, 0.2, 0.1],
+            Ks: [0.95, 0.95, 0.95],
+            Shininess: 100.0, ..Default::default()
+        }).map_err(BufferCreationErrorKind::UniformBlock)?;
+        let plane_material = UniformBuffer::immutable(display, MaterialInfo {
+            Ka: [0.1, 0.1, 0.1],
+            Kd: [0.4, 0.4, 0.4],
+            Ks: [0.0, 0.0, 0.0],
+            Shininess: 1.0, ..Default::default()
+        }).map_err(BufferCreationErrorKind::UniformBlock)?;
         // ----------------------------------------------------------------------------
 
         let scene = SceneProjTex {
             program,
             teapot, plane, flower_tex,
-            material_buffer, light_buffer,
+            teapot_material, plane_material, light_buffer,
             projection, project_matrix, angle, is_animate,
         };
         Ok(scene)
@@ -142,22 +153,11 @@ impl Scene for SceneProjTex {
             .translated_3d(Vec3F::new(0.0, -1.0, 0.0));
         let mv: Mat4F = view * model;
 
-        self.material_buffer.write(&MaterialInfo {
-            Ka: [0.1, 0.1, 0.1],
-            Kd: [0.5, 0.2, 0.1],
-            Ks: [0.95, 0.95, 0.95],
-            Shininess: 100.0, ..Default::default()
-        });
-
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
-            MaterialInfo: &self.material_buffer,
+            MaterialInfo: &self.teapot_material,
             ProjectorTex: self.flower_tex.sampled()
-                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                // Due to limit of glium, currently there is no support for SamplerWrapFunction::Border
-                // See https://github.com/glium/glium/issues/1772 for detail.
-                .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
-                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                .wrap_function(glium::uniforms::SamplerWrapFunction::BorderClamp)
                 .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                 .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear),
             ProjectorMatrix: self.project_matrix.into_col_arrays(),
@@ -174,18 +174,11 @@ impl Scene for SceneProjTex {
         let model = Mat4F::translation_3d(Vec3F::new(0.0, -0.75, 0.0));
         let mv: Mat4F = view * model;
 
-        self.material_buffer.write(&MaterialInfo {
-            Ka: [0.1, 0.1, 0.1],
-            Kd: [0.4, 0.4, 0.4],
-            Ks: [0.0, 0.0, 0.0],
-            Shininess: 1.0, ..Default::default()
-        });
-
         let uniforms = uniform! {
             LightInfo: &self.light_buffer,
-            MaterialInfo: &self.material_buffer,
+            MaterialInfo: &self.plane_material,
             ProjectorTex: self.flower_tex.sampled()
-                .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
+                .wrap_function(glium::uniforms::SamplerWrapFunction::BorderClamp)
                 .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                 .magnify_filter(glium::uniforms::MagnifySamplerFilter::Linear),
             ProjectorMatrix: self.project_matrix.into_col_arrays(),
