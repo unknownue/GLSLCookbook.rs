@@ -1,5 +1,8 @@
 
 use glium::glutin;
+use glium::glutin::event_loop::EventLoop;
+use glium::glutin::window::WindowBuilder;
+
 use crate::scene::Scene;
 use crate::utils;
 use crate::error::{GLResult, GLError};
@@ -10,11 +13,12 @@ use std::collections::HashMap;
 
 pub struct SceneRunner {
 
-    display: glium::Display, // display manage the surface window.
-    events_loop: glutin::EventsLoop,
+    event_loop: EventLoop<()>,
 
-    fb_width  : u32,
-    fb_height : u32,
+    title: String,
+    initial_width : u32,
+    initial_height: u32,
+    samples: u16,
 
     is_debug: bool, // Set true to enable debug messages
 }
@@ -23,19 +27,60 @@ impl SceneRunner {
 
     pub fn new(title: impl Into<String>, width: u32, height: u32, is_debug: bool, samples: u16) -> GLResult<SceneRunner> {
 
-        let events_loop = glutin::EventsLoop::new();
+        let event_loop = EventLoop::new();
 
-        let wb = glutin::WindowBuilder::new() // Window Builder
-            .with_title(title)
-            .with_dimensions((width, height).into())
+        let title = title.into();
+        let initial_width  = width;
+        let initial_height = height;
+
+        let runner = SceneRunner { event_loop, title, initial_width, initial_height, samples, is_debug };
+        Ok(runner)
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn with_context_gl_request<T>(builder: glutin::ContextBuilder<T>) -> glutin::ContextBuilder<T>
+        where T: glutin::ContextCurrentState {
+        // Select OpenGL 4.6 on Windows and Linux.
+        builder.with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (4, 6)))
+    }
+
+    #[cfg(target_os = "macos")]
+    fn with_context_gl_request<T>(builder: glutin::ContextBuilder<T>) -> glutin::ContextBuilder<T>
+        where T: glutin::ContextCurrentState {
+        // Select OpenGL 4.1 on macOS.
+        builder.with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (4, 1)))
+    }
+
+    pub fn run<S: 'static + Scene>(self) -> GLResult<()> {
+
+        let display = self.build_display()?;
+        let mut scene = S::new(&display)?;
+
+        if self.is_debug {
+            // Ignore debug marker error if backend is not support.
+            display.insert_debug_marker("Start debugging")
+                .or_else(|_| { eprintln!("Current backend does not support Debug Marker"); Err(()) }).ok();
+        }
+
+        SceneRunner::resize_window(&display, &mut scene)?;
+
+        // Enter the main loop
+        SceneRunner::main_loop(self, display, scene)
+    }
+
+    fn build_display(&self) -> GLResult<glium::Display> {
+
+        let wb = WindowBuilder::new() // Window Builder
+            .with_title(self.title.clone())
+            .with_inner_size((self.initial_width, self.initial_height).into())
             .with_resizable(true);
         let cb = glutin::ContextBuilder::new() // Context Builder
             .with_gl_profile(glutin::GlProfile::Core)
-            .with_multisampling(samples);
+            .with_multisampling(self.samples);
 
-        let display: glium::Display = if is_debug {
+        let display: glium::Display = if self.is_debug {
             let wc = SceneRunner::with_context_gl_request(cb) // Windows Context
-                .build_windowed(wb, &events_loop)
+                .build_windowed(wb, &self.event_loop)
                 .map_err(|_| GLError::window("Unable to create Windows context."))?;
 
             // Initializtion, set up debug callback
@@ -45,117 +90,79 @@ impl SceneRunner {
             }).map_err(|_| GLError::device("Unable to create OpenGL context."))?
         } else {
             let cb = SceneRunner::with_context_gl_request(cb);
-            glium::Display::new(wb, cb, &events_loop)
+            glium::Display::new(wb, cb, &self.event_loop)
                 .map_err(|_| GLError::device("Unable to create OpenGL context."))?
         };
 
         // Print dump info about current OpenGL context.
         utils::dump_gl_info(&display, false);
 
-        // Get Framebuffer size.
-        let (fb_width, fb_height) = display.get_framebuffer_dimensions();
-
-        if is_debug {
-            // Ignore debug marker error if backend is not support.
-            display.insert_debug_marker("Start debugging")
-                .or_else(|_| { eprintln!("Current backend does not support Debug Marker"); Err(()) }).ok();
-        }
-
-        let runner = SceneRunner { display, events_loop, fb_width, fb_height, is_debug };
-        Ok(runner)
+        Ok(display)
     }
 
-    #[cfg(not(target_os = "macos"))]
-    fn with_context_gl_request(builder: glutin::ContextBuilder) -> glutin::ContextBuilder {
-        // Select OpenGL 4.6 on Windows and Linux.
-        builder.with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (4, 6)))
-    }
+    fn main_loop<S: 'static + Scene>(runner: SceneRunner, display: glium::Display, mut scene: S) -> GLResult<()> {
 
-    #[cfg(target_os = "macos")]
-    fn with_context_gl_request(builder: glutin::ContextBuilder) -> glutin::ContextBuilder {
-        // Select OpenGL 4.1 on macOS.
-        builder.with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (4, 1)))
-    }
+        use glium::glutin::event_loop::ControlFlow;
+        use glium::glutin::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent };
 
-    pub fn run(&mut self, scene: &mut impl Scene) -> GLResult<()> {
-
-        scene.resize(&self.display, self.fb_width, self.fb_height)?;
-
-        // Enter the main loop
-        self.main_loop(scene)?;
-
-        if self.is_debug {
-            self.display.insert_debug_marker("End debug").ok();
-        }
-
-        Ok(())
-    }
-
-    fn main_loop(&mut self, scene: &mut impl Scene) -> GLResult<()> {
-
-        let mut should_close  = false;
-        let mut should_resize = false;
-
+        // display manage the surface window.
         let mut timer = Timer::new();
+        let is_debug = runner.is_debug;
+        let event_loop = runner.event_loop;
 
-        while !should_close {
+        event_loop.run(move |event, _, control_flow| {
 
             scene.update(timer.delta_time());
 
-            let mut frame = self.display.draw();
-            match scene.render2(&self.display, &mut frame) {
-                | Ok(()) => frame.finish().map_err(GLError::rendering_finish)?,
+            let mut frame = display.draw();
+            match scene.render2(&display, &mut frame) {
+                | Ok(()) => try_ops(frame.finish().map_err(GLError::rendering_finish)),
                 | Err(e) => {
                     // frame.finish() must be called no matter if any error occurred.
-                    frame.finish().map_err(GLError::rendering_finish)?;
-                    return Err(e)
+                     try_ops(frame.finish().map_err(GLError::rendering_finish));
+                     try_ops(Err(e));
                 }
             }
 
-            self.events_loop.poll_events(|ev| {
-                match ev {
-                    glutin::Event::WindowEvent { event, .. } => match event {
-                        | glutin::WindowEvent::CloseRequested => should_close  = true,
-                        | glutin::WindowEvent::Resized(_)     => should_resize = true,
-                        | glutin::WindowEvent::KeyboardInput { input, .. } => {
-                            if let Some(code) = input.virtual_keycode {
-                                match code {
-                                    | glium::glutin::VirtualKeyCode::Space => {
-                                        match input.state {
-                                            | glutin::ElementState::Released => scene.toggle_animation(),
-                                            | glutin::ElementState::Pressed => {},
-                                        }
-                                    },
-                                    | glium::glutin::VirtualKeyCode::Escape => {
-                                        should_close = true;
-                                    },
-                                    | _ => {},
-                                }
+            match event {
+                | Event::WindowEvent { event, .. } => {
+                    match event {
+                        | WindowEvent::CloseRequested => {
+                            if is_debug { display.insert_debug_marker("End debug").ok(); }
+                            *control_flow = ControlFlow::Exit
+                        },
+                        | WindowEvent::KeyboardInput { input, .. } => {
+                            match input {
+                                | KeyboardInput { virtual_keycode, state, .. } => {
+                                    match (virtual_keycode, state) {
+                                        | (Some(VirtualKeyCode::Space), ElementState::Released) => {
+                                            scene.toggle_animation();
+                                        },
+                                        | (Some(VirtualKeyCode::Escape), ElementState::Released) => {
+                                            if is_debug { display.insert_debug_marker("End debug").ok(); }
+                                            *control_flow = ControlFlow::Exit
+                                        },
+                                        | _ => {},
+                                    }
+                                },
                             }
                         },
-
-                        _ => (),
-                    },
-                    _ => (),
-                }
-            });
-
-            if should_resize {
-                should_resize = false;
-                self.resize_window(scene)?;
+                        | WindowEvent::Resized(_new_size) => {
+                            try_ops(SceneRunner::resize_window(&display, &mut scene));
+                        },
+                        | _ => {},
+                    }
+                },
+                _ => (),
             }
 
             timer.tick_frame();
-        }
-
-        Ok(())
+        })
     }
 
-    fn resize_window(&mut self, scene: &mut impl Scene) -> GLResult<()> {
-        let (new_width, new_height) = self.display.get_framebuffer_dimensions();
-        self.fb_width  = new_width;
-        self.fb_height = new_height;
-        scene.resize(&self.display, self.fb_width, self.fb_height)
+    fn resize_window(display: &glium::Display, scene: &mut impl Scene) -> GLResult<()> {
+        let (new_width, new_height) = display.get_framebuffer_dimensions();
+        scene.resize(display, new_width, new_height)
     }
 
     pub fn print_help_info(program_name: &str, candidate_scenes: &HashMap<String, String>) {
@@ -192,7 +199,16 @@ impl SceneRunner {
         }
     }
 
-    pub fn display_backend(&self) -> &glium::Display {
-        &self.display
+}
+
+
+#[inline]
+fn try_ops(result: GLResult<()>) {
+    match result {
+        Ok(_) => {},
+        Err(e) => {
+            eprintln!("{}", e);
+            panic!()
+        }
     }
 }
