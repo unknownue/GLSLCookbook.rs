@@ -2,7 +2,7 @@
 use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
 use cookbook::objects::{Teapot, Plane, Torus, Frustum, Quad};
-use cookbook::{Mat4F, Mat3F, Vec3F};
+use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
 use cookbook::framebuffer::{ShadowDepthAttachment, GLFrameBuffer};
 use cookbook::Drawable;
 
@@ -14,6 +14,7 @@ use glium::{Surface, uniform, implement_uniform_block};
 
 // Official shadow map example
 // https://github.com/glium/glium/blob/master/examples/shadow_mapping.rs
+
 
 pub struct SceneShadowMap {
 
@@ -45,7 +46,7 @@ pub struct SceneShadowMap {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 struct LightInfo {
-    LightPosition: [f32; 3], _padding1: f32,
+    LightPosition: [f32; 4],
     Intensity: [f32; 3], _padding2: f32,
 }
 
@@ -206,8 +207,8 @@ impl SceneShadowMap {
             ..Default::default()
         };
         
+        // glPolygonOffset(2.5, 10.0); is not support in glium.
         // See https://github.com/glium/glium/issues/826
-        // glPolygonOffset(2.5, 10.0); is not implemented.
 
         self.draw_scene_pass1(&draw_params)?;
 
@@ -223,8 +224,10 @@ impl SceneShadowMap {
         self.view = Mat4F::look_at_rh(camera_pos, Vec3F::zero(), Vec3F::unit_y());
         self.projection = Mat4F::perspective_rh_zo(50.0_f32.to_radians(), self.aspect_ratio, 0.1, 100.0);
 
+        let frustum_origin = self.frustum.get_origin();
+        let light_pos = self.view * Vec4F::new(frustum_origin.x, frustum_origin.y, frustum_origin.z, 1.0);
         self.light_buffer.write(&LightInfo {
-            LightPosition: self.frustum.get_origin().into_array(),
+            LightPosition: light_pos.into_array(),
             Intensity: [0.85, 0.85, 0.85], ..Default::default()
         });
 
@@ -256,7 +259,7 @@ impl SceneShadowMap {
         self.shadow_fbo.rent(|(_, shadowmap)| -> GLResult<()> {
 
             let uniforms = uniform! {
-                ShadowMap: shadowmap.depth.sampled()
+                ShadowTex: shadowmap.depth.sampled()
                     .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
                     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
             };

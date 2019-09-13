@@ -11,7 +11,7 @@ uniform sampler2DShadow ShadowMap;
 
 
 uniform LightInfo {
-    vec3 LightPosition;
+    vec4 LightPosition;
     vec3 Intensity;
 };
 
@@ -26,7 +26,7 @@ uniform MaterialInfo {
 vec3 phongModelDiffAndSpec(vec3 position) {
 
     vec3 n = Normal;
-    vec3 s = normalize(LightPosition - position);
+    vec3 s = normalize(LightPosition.xyz - position);
 
     float sDotN = max(dot(s, n), 0.0);
     vec3 diffuse = Intensity * Kd * sDotN;

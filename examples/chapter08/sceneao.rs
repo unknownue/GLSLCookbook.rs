@@ -91,7 +91,7 @@ impl Scene for SceneAo {
         const TWO_PI: f32 = std::f32::consts::PI * 2.0;
 
         if self.is_animating() {
-            self.angle = (self.angle + delta_time * 0.3) % TWO_PI;
+            self.angle = (self.angle + delta_time) % TWO_PI;
         }
     }
 

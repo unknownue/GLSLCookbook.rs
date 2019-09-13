@@ -47,11 +47,11 @@ void shadeWithShadow() {
     vec3 diffAndSpec = phongModelDiffAndSpec();
 
     // Lookup the texels nearby
-    float sum = 0;
+    float sum = 0.0;
     float shadow = 1.0;
 
     // Dont' text points behind the light source.
-    if(ShadowCoord.z >= 0) {
+    if (ShadowCoord.z >= 0.0) {
         // Sum contributions from 4 texels around ShadowCoord
         sum += textureProjOffset(ShadowMap, ShadowCoord, ivec2(-1, -1));
         sum += textureProjOffset(ShadowMap, ShadowCoord, ivec2(-1,  1));

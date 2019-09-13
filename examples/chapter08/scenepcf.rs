@@ -1,7 +1,7 @@
 
 use cookbook::scene::{Scene, GLSourceCode};
 use cookbook::error::{GLResult, GLErrorKind, BufferCreationErrorKind};
-use cookbook::objects::{Plane, Frustum, ObjMesh, ObjMeshConfiguration};
+use cookbook::objects::{Plane, Frustum, ObjMesh, Quad, ObjMeshConfiguration};
 use cookbook::{Mat4F, Mat3F, Vec3F, Vec4F};
 use cookbook::framebuffer::{ShadowDepthAttachment, GLFrameBuffer};
 use cookbook::Drawable;
@@ -15,11 +15,12 @@ use glium::{Surface, uniform, implement_uniform_block};
 
 pub struct ScenePcf {
 
-    programs: [glium::Program; 2],
+    programs: [glium::Program; 3],
 
     building: ObjMesh,
     frustum: Frustum,
     plane: Plane,
+    quad: Quad,
 
     shadow_fbo: GLFrameBuffer<ShadowDepthAttachment>,
 
@@ -31,8 +32,6 @@ pub struct ScenePcf {
     aspect_ratio: f32,
 
     light_pv: Mat4F,
-    view: Mat4F,
-    projection: Mat4F,
 }
 
 
@@ -66,7 +65,7 @@ impl Scene for ScenePcf {
 
 
         // Initialize Mesh ------------------------------------------------------------
-        let plane = Plane::new(display, 40.0, 40.0, 2, 2, 1.0, 1.0)?;
+        let plane = Plane::new(display, 20.0, 20.0, 1, 1, 1.0, 1.0)?;
         let building = ObjMesh::load(display, "media/building.obj", ObjMeshConfiguration {
             is_with_adjacency: false,
             is_gen_tangents: false,
@@ -74,6 +73,7 @@ impl Scene for ScenePcf {
             is_print_load_message: true,
         })?;
         let mut frustum = Frustum::new(display)?;
+        let quad = Quad::new(display)?;
         // ----------------------------------------------------------------------------
 
         // Initialize FrameBuffer Objects ---------------------------------------------
@@ -82,10 +82,10 @@ impl Scene for ScenePcf {
 
         // Initialize MVP -------------------------------------------------------------
         let shadow_scale = Mat4F::new(
-            0.5, 0.0, 0.0, 0.0,
-            0.0, 0.5, 0.0, 0.0,
-            0.0, 0.0, 0.5, 0.0,
-            0.5, 0.5, 0.5, 1.0,
+            0.5, 0.0, 0.0, 0.5,
+            0.0, 0.5, 0.0, 0.5,
+            0.0, 0.0, 0.5, 0.5,
+            0.0, 0.0, 0.0, 1.0,
         );
         let light_pos = Vec3F::new(-2.5, -2.0, -2.5); // World coords
         frustum.orient(light_pos, Vec3F::zero(), Vec3F::unit_y());
@@ -93,9 +93,7 @@ impl Scene for ScenePcf {
 
         let light_pv = shadow_scale * frustum.get_projection_matrix() * frustum.get_view_matrix();
         
-        let view = Mat4F::identity();
-        let projection = Mat4F::identity();
-        let angle = std::f32::consts::PI * 0.85;
+        let angle = std::f32::consts::PI * 2.0 * 0.85;
         let is_animate = true;
         let aspect_ratio = 0.0;
         // ----------------------------------------------------------------------------
@@ -113,10 +111,9 @@ impl Scene for ScenePcf {
 
         let scene = ScenePcf {
             programs, shadow_fbo,
-            plane, building, frustum,
+            plane, building, frustum, quad,
             material_buffer, light_buffer,
-            angle, is_animate, aspect_ratio,
-            light_pv, view, projection,
+            angle, is_animate, aspect_ratio, light_pv,
         };
         Ok(scene)
     }
@@ -135,7 +132,9 @@ impl Scene for ScenePcf {
         // Pass 1 (shadow map generation)
         self.pass1()?;
         // Pass 2 (render)
-        self.pass2(frame)
+        self.pass2(frame)?;
+        // Pass 3 (render shadow map)
+        self.pass3(frame)
     }
 
     fn resize(&mut self, display: &impl Facade, width: u32, height: u32) -> GLResult<()> {
@@ -156,7 +155,7 @@ impl Scene for ScenePcf {
 
 impl ScenePcf {
 
-    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 2], ProgramCreationError> {
+    fn compile_shader_program(display: &impl Facade) -> Result<[Program; 3], ProgramCreationError> {
 
         let pass1_vertex   = include_str!("shaders/pcf/pass1.vert.glsl");
         let pass1_fragment = include_str!("shaders/pcf/pass1.frag.glsl");
@@ -164,15 +163,16 @@ impl ScenePcf {
         let pass2_vertex   = include_str!("shaders/pcf/pass2.vert.glsl");
         let pass2_fragment = include_str!("shaders/pcf/pass2.frag.glsl");
 
+        let pass3_vertex   = include_str!("shaders/shadowmap/pass3.vert.glsl");
+        let pass3_fragment = include_str!("shaders/shadowmap/pass3.frag.glsl");
+
         let pass1 = glium::Program::new(display, GLSourceCode::new(pass1_vertex, pass1_fragment).with_srgb_output(false))?;
         let pass2 = glium::Program::new(display, GLSourceCode::new(pass2_vertex, pass2_fragment).with_srgb_output(true))?;
-        Ok([pass1, pass2])
+        let pass3 = glium::Program::new(display, GLSourceCode::new(pass3_vertex, pass3_fragment).with_srgb_output(true))?;
+        Ok([pass1, pass2, pass3])
     }
 
     fn pass1(&mut self) -> GLResult<()> {
-
-        self.view       = self.frustum.get_view_matrix();
-        self.projection = self.frustum.get_projection_matrix();
 
         let draw_params = glium::draw_parameters::DrawParameters {
             depth: glium::Depth {
@@ -184,8 +184,8 @@ impl ScenePcf {
             ..Default::default()
         };
         
+        // glPolygonOffset(2.5, 10.0); is not support in glium.
         // See https://github.com/glium/glium/issues/826
-        // glPolygonOffset(2.5, 10.0); is not implemented.
 
         self.draw_scene_pass1(&draw_params)?;
 
@@ -194,18 +194,7 @@ impl ScenePcf {
         Ok(())
     }
 
-     fn pass2(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
-
-        let camera_pos = Vec3F::new(1.8 * self.angle.cos(), 7.0, 1.8 * self.angle.sin());
-        self.view = Mat4F::look_at_rh(camera_pos, Vec3F::new(0.0, -0.175, 0.0), Vec3F::unit_y());
-        self.projection = Mat4F::perspective_rh_zo(50.0_f32.to_radians(), self.aspect_ratio, 0.1, 100.0);
-
-        let frustum_origin = self.frustum.get_origin();
-        let light_pos = self.view * Vec4F::new(frustum_origin.x, frustum_origin.y, frustum_origin.z, 1.0);
-        self.light_buffer.write(&LightInfo {
-            LightPosition: light_pos.into_array(),
-            Intensity: [0.85, 0.85, 0.85], ..Default::default()
-        });
+    fn pass2(&mut self, frame: &mut glium::Frame) -> GLResult<()> {
 
         frame.clear_color(0.0, 0.5, 0.5, 1.0);
         frame.clear_depth(1.0);
@@ -220,7 +209,28 @@ impl ScenePcf {
             ..Default::default()
         };
 
-        self.draw_scene_pass2(frame, &self.programs[1], &draw_params)
+        self.draw_scene_pass2(frame, &draw_params)
+    }
+
+    fn pass3(&self, frame: &mut glium::Frame) -> GLResult<()> {
+
+        let draw_params = glium::draw_parameters::DrawParameters {
+            viewport: Some(glium::Rect {
+                left: 0, bottom: 0, width: 512, height: 512,
+            }),
+            ..Default::default()
+        };
+
+        self.shadow_fbo.rent(|(_, shadowmap)| -> GLResult<()> {
+
+            let uniforms = uniform! {
+                ShadowTex: shadowmap.depth.sampled()
+                    .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+            };
+
+            self.quad.render(frame, &self.programs[2], &draw_params, &uniforms)
+        })
     }
 
     fn draw_scene_pass1(&mut self, draw_params: &glium::DrawParameters) -> GLResult<()> {
@@ -228,8 +238,8 @@ impl ScenePcf {
         let program    = &self.programs[0];
         let buidling   = &self.building;
         let plane      = &self.plane;
-        let projection = self.projection.clone();
-        let view       = self.view.clone();
+        let view       = self.frustum.get_view_matrix();
+        let projection = self.frustum.get_projection_matrix();
 
         self.shadow_fbo.rent_mut(|(framebuffer, _)| -> GLResult<()> {
 
@@ -238,9 +248,9 @@ impl ScenePcf {
             let uniforms = uniform! {
                 MVP: (projection * view * model).into_col_arrays(),
             };
+            framebuffer.clear_depth(1.0);
 
             // Render building --------------------------------------------------------
-            framebuffer.clear_depth(1.0);
             buidling.render(framebuffer, program, draw_params, &uniforms)?;
             // ------------------------------------------------------------------------- 
 
@@ -250,14 +260,39 @@ impl ScenePcf {
         })
     }
 
-    fn draw_scene_pass2(&self, framebuffer: &mut impl Surface, program: &glium::Program, draw_params: &glium::DrawParameters) -> GLResult<()> {
+    fn draw_scene_pass2(&self, framebuffer: &mut impl Surface, draw_params: &glium::DrawParameters) -> GLResult<()> {
+        
+        let camera_pos = Vec3F::new(1.8 * self.angle.cos(), 0.7, 1.8 * self.angle.sin());
+        let view = Mat4F::look_at_rh(camera_pos, Vec3F::new(0.0, -0.175, 0.0), Vec3F::unit_y());
+        let projection = Mat4F::perspective_rh_zo(50.0_f32.to_radians(), self.aspect_ratio, 0.1, 100.0);
+
+        let frustum_origin = self.frustum.get_origin();
+        let light_pos = view * Vec4F::new(frustum_origin.x, frustum_origin.y, frustum_origin.z, 1.0);
+        self.light_buffer.write(&LightInfo {
+            LightPosition: light_pos.into_array(),
+            Intensity: [0.85, 0.85, 0.85], ..Default::default()
+        });
 
         self.shadow_fbo.rent(|(_, shadowmap)| -> GLResult<()> {
 
-            // Render building --------------------------------------------------------
             let model = Mat4F::identity();
-            let mv: Mat4F = self.view * model;
+            let mv: Mat4F = view * model;
 
+            let uniforms = uniform! {
+                MaterialInfo: &self.material_buffer,
+                LightInfo: &self.light_buffer,
+                ShadowMap: shadowmap.depth.sampled()
+                    .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
+                    .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+                    .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual)),
+                ModelViewMatrix: mv.clone().into_col_arrays(),
+                NormalMatrix: Mat3F::from(mv).into_col_arrays(),
+                MVP: (projection * mv).into_col_arrays(),
+                ShadowMatrix: (self.light_pv * model).into_col_arrays(),
+            };
+
+            // Render building --------------------------------------------------------
             self.material_buffer.write(&MaterialInfo {
                 Ka: [1.0 * 0.1, 0.85 * 0.1, 0.55 * 0.1],
                 Kd: [1.0, 0.85, 0.55],
@@ -265,21 +300,7 @@ impl ScenePcf {
                 Shininess: 1.0, ..Default::default()
             });
 
-            let uniforms = uniform! {
-                MaterialInfo: &self.material_buffer,
-                LightInfo: &self.light_buffer,
-                ShadowMap: shadowmap.depth.sampled()
-                    // wrap function should be BorderClamp
-                    .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
-                    .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                ModelViewMatrix: mv.clone().into_col_arrays(),
-                NormalMatrix: Mat3F::from(mv).into_col_arrays(),
-                MVP: (self.projection * mv).into_col_arrays(),
-                ShadowMatrix: (self.light_pv * model).into_col_arrays(),
-            };
-
-            self.building.render(framebuffer, program, draw_params, &uniforms)?;
+            self.building.render(framebuffer, &self.programs[1], draw_params, &uniforms)?;
             // ------------------------------------------------------------------------- 
 
             // Render Plane ------------------------------------------------------------
@@ -290,24 +311,7 @@ impl ScenePcf {
                 Shininess: 1.0, ..Default::default()
             });
 
-            let model = Mat4F::identity();
-            let mv: Mat4F = self.view * model;
-
-            let uniforms = uniform! {
-                MaterialInfo: &self.material_buffer,
-                LightInfo: &self.light_buffer,
-                ShadowMap: shadowmap.depth.sampled()
-                    // wrap function should be BorderClamp
-                    .wrap_function(glium::uniforms::SamplerWrapFunction::Clamp)
-                    .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-                    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                ModelViewMatrix: mv.clone().into_col_arrays(),
-                NormalMatrix: Mat3F::from(mv).into_col_arrays(),
-                MVP: (self.projection * mv).into_col_arrays(),
-                ShadowMatrix: (self.light_pv * model).into_col_arrays(),
-            };
-
-            self.plane.render(framebuffer, program, draw_params, &uniforms)
+            self.plane.render(framebuffer, &self.programs[1], draw_params, &uniforms)
             // ------------------------------------------------------------------------- 
         })
     }
