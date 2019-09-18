@@ -128,7 +128,6 @@ impl SceneRunner {
                 | Event::WindowEvent { event, .. } => {
                     match event {
                         | WindowEvent::CloseRequested => {
-                            if params.is_debug { display.insert_debug_marker("End debug").ok(); }
                             *control_flow = ControlFlow::Exit
                         },
                         | WindowEvent::KeyboardInput { input, .. } => {
@@ -139,7 +138,6 @@ impl SceneRunner {
                                             scene.toggle_animation();
                                         },
                                         | (Some(VirtualKeyCode::Escape), ElementState::Released) => {
-                                            if params.is_debug { display.insert_debug_marker("End debug").ok(); }
                                             *control_flow = ControlFlow::Exit
                                         },
                                         | _ => {},
@@ -152,6 +150,9 @@ impl SceneRunner {
                         },
                         | _ => {},
                     }
+                },
+                | Event::LoopDestroyed => {
+                    if params.is_debug { display.insert_debug_marker("End debug").ok(); }
                 },
                 _ => (),
             }
