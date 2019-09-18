@@ -109,19 +109,22 @@ impl SceneRunner {
 
         event_loop.run(move |event, _, control_flow| {
 
-            scene.update(timer.delta_time());
-
-            let mut frame = display.draw();
-            match scene.render2(&display, &mut frame) {
-                | Ok(()) => try_ops(frame.finish().map_err(GLError::rendering_finish)),
-                | Err(e) => {
-                    // frame.finish() must be called no matter if any error occurred.
-                     try_ops(frame.finish().map_err(GLError::rendering_finish));
-                     try_ops(Err(e));
-                }
-            }
-
             match event {
+                | Event::EventsCleared => {
+                    scene.update(timer.delta_time());
+
+                    let mut frame = display.draw();
+                    match scene.render2(&display, &mut frame) {
+                        | Ok(()) => try_ops(frame.finish().map_err(GLError::rendering_finish)),
+                        | Err(e) => {
+                            // frame.finish() must be called no matter if any error occurred.
+                            try_ops(frame.finish().map_err(GLError::rendering_finish));
+                            try_ops(Err(e));
+                        }
+                    }
+                    
+                    timer.tick_frame();
+                },
                 | Event::WindowEvent { event, .. } => {
                     match event {
                         | WindowEvent::CloseRequested => {
@@ -153,7 +156,6 @@ impl SceneRunner {
                 _ => (),
             }
 
-            timer.tick_frame();
         })
     }
 
